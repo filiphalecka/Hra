@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hra proti samote · Hra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Syne:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0E0B07;
+    --bg-card:rgba(250,245,239,0.06);
+    --ink:#FAF5EF;
+    --ink-muted:rgba(250,245,239,0.55);
+    --accent:#8B2E14;
+    --accent-light:#C4603A;
+    --gold:#B8882A;
+    --border:rgba(250,245,239,0.12);
+    --font-display:'Cormorant Garamond',Georgia,serif;
+    --font-body:'Syne',sans-serif;
+    --font-mono:'DM Mono',monospace;
+  }
+  body{background:#0E0B07;color:#FAF5EF;font-family:'Syne',sans-serif;min-height:100vh}
+
+  /* nav */
+  .g-nav{
+    background:#0E0B07;
+    border-bottom:1px solid rgba(250,245,239,0.1);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:.85rem 1.5rem;
+    position:sticky;top:0;z-index:10;
+  }
+  .g-nav-logo{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:1.1rem;font-weight:600;color:#C4603A;
+    text-decoration:none;
+  }
+  .g-nav-back{
+    font-family:'DM Mono',monospace;font-size:.65rem;
+    letter-spacing:.1em;color:rgba(250,245,239,0.35);
+    text-decoration:none;text-transform:uppercase;
+    transition:color .2s;
+  }
+  .g-nav-back:hover{color:rgba(250,245,239,0.7);}
+
+  /* main content area */
+  .g-main{
+    max-width:540px;
+    margin:0 auto;
+    padding:2rem 1.5rem 4rem;
+  }
+
+  /* score section style (dark bg inherited from body) */
+  .score-section{background:transparent}
+  .score-section section{max-width:100%}
+  .score-section h2{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:clamp(1.8rem,4vw,2.5rem);
+    font-weight:600;color:#FAF5EF;
+    margin-bottom:1.5rem;line-height:1.1;
+  }
+  .score-section h2 em{font-style:italic;color:#C4603A;}
+
+  /* footer */
+  footer{
+    border-top:1px solid rgba(250,245,239,0.08);
+    padding:1.5rem;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'DM Mono',monospace;font-size:.65rem;
+    color:rgba(250,245,239,0.22);letter-spacing:.06em;
+  }
+  @media(max-width:500px){
+    footer{flex-direction:column;gap:.5rem;text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="g-nav">
+  <a class="g-nav-logo" href="game.html">Hra proti samote</a>
+  <a class="g-nav-back" href="index.html" onclick="history.replaceState(null,'','index.html');return true;">← späť na stránku</a>
+</nav>
+
+<main class="g-main">
+  <div id="game-root"><div style="font-family:'DM Mono',monospace;font-size:.7rem;color:rgba(250,245,239,0.3);letter-spacing:.1em;padding:1rem 0">načítavam…</div></div>
+</main>
+
+<footer>
+  <span>Hra proti samote · Beta 2025</span>
+  <span>WHO · Multilevel Selection · Open Beta</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  KONFIGURÁCIA                                                ║
+// ║                                                              ║
+// ║  Firebase:                                                   ║
+// ║  1. console.firebase.google.com → Add project               ║
+// ║  2. Authentication → Email/Password → ON                    ║
+// ║  3. Realtime Database → Create → test mode → europe-west1   ║
+// ║  4. Project Settings → Your apps → Web → apiKey + dbURL     ║
+// ║                                                              ║
+// ║  Stripe (platba):                                            ║
+// ║  1. dashboard.stripe.com → Payment Links → Create           ║
+// ║  2. Produkt: "Skrátenie odomknutia mesta" cena podľa seba   ║
+// ║  3. After payment → redirect na URL tvojej stránky +        ║
+// ║     ?stripe_success=1&uid=  (pridaj {metadata.uid} param)   ║
+// ║  4. Vlož URL nižšie                                         ║
+// ╚══════════════════════════════════════════════════════════════╝
+const FB_API_KEY   = 'VLOZ_API_KEY';
+const FB_DB_URL    = 'https://VLOZ-default-rtdb.europe-west1.firebasedatabase.app';
+const USE_FIREBASE = FB_API_KEY !== 'VLOZ_API_KEY';
+
+// Stripe Payment Link — vytvor na dashboard.stripe.com/payment-links
+// Redirect URL nastav na: https://tvojastranka.com/?stripe_success=1
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/VLOZ_LINK';
+
+// Thresholds
+const CITY_THRESHOLD      = 50;  // interakcií na odomknutie mesta
+const CITY_THRESHOLD_PAID = 25;  // po zaplatení
+
+// ── localStorage helpers ──────────────────────────────────────
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// ── Stripe redirect handler ───────────────────────────────────
+(function handleStripeReturn(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('stripe_success')==='1'){
+    const sess = lsGet('hps:session');
+    if(sess && sess.uid){
+      // Mark this user as having paid for threshold reduction
+      const paid = lsGet('hps:paid_users')||{};
+      paid[sess.uid] = true;
+      lsSet('hps:paid_users', paid);
+    }
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
+
+// ── Firebase Auth REST ────────────────────────────────────────
+const AUTH_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:';
+const AUTH = {
+  async signUp(email,password){
+    const r=await fetch(AUTH_URL+'signUp?key='+FB_API_KEY,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password,returnSecureToken:true})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message);return d;
+  },
+  async signIn(email,password){
+    const r=await fetch(AUTH_URL+'signInWithPassword?key='+FB_API_KEY,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password,returnSecureToken:true})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message);return d;
+  },
+  async sendVerification(idToken){
+    await fetch(AUTH_URL+'sendOobCode?key='+FB_API_KEY,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({requestType:'VERIFY_EMAIL',idToken})});
+  },
+  async sendPasswordReset(email){
+    const r=await fetch(AUTH_URL+'sendOobCode?key='+FB_API_KEY,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({requestType:'PASSWORD_RESET',email})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message);
+  },
+  async getUserInfo(idToken){
+    const r=await fetch(AUTH_URL+'lookup?key='+FB_API_KEY,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idToken})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message);return d.users[0];
+  },
+};
+
+// ── Firebase DB REST ──────────────────────────────────────────
+const DB = {
+  getToken(){const s=lsGet('hps:session');return s?s.idToken:null;},
+  async _get(path){
+    const tok=this.getToken();
+    const url=FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:'');
+    const r=await fetch(url);return await r.json();
+  },
+  async _put(path,data){
+    const tok=this.getToken();
+    await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
+      method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  },
+  async _patch(path,data){
+    const tok=this.getToken();
+    await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  },
+  async getPlayers(){
+    if(USE_FIREBASE){try{return(await this._get('players'))||{};}catch{}}
+    return lsGet('hps:players')||{};
+  },
+  async getTeams(){
+    if(USE_FIREBASE){try{return(await this._get('teams'))||{};}catch{}}
+    return lsGet('hps:teams')||{};
+  },
+  async setPlayer(uid,data){
+    if(USE_FIREBASE){try{await this._put('players/'+uid,data);return;}catch(e){console.warn(e);}}
+    const p=lsGet('hps:players')||{};p[uid]=data;lsSet('hps:players',p);
+  },
+  async setTeam(id,data){
+    if(USE_FIREBASE){try{await this._put('teams/'+id,data);return;}catch(e){console.warn(e);}}
+    const t=lsGet('hps:teams')||{};t[id]=data;lsSet('hps:teams',t);
+  },
+  async updateTeamPoints(id,pts){
+    if(USE_FIREBASE){try{await this._patch('teams/'+id,{points:pts});return;}catch(e){console.warn(e);}}
+    const t=lsGet('hps:teams')||{};if(t[id])t[id].points=pts;lsSet('hps:teams',t);
+  },
+  onPlayers(cb){
+    const load=async()=>{cb(await this.getPlayers());};
+    load();
+    if(!USE_FIREBASE)return()=>{};
+    let on=true;
+    const poll=async()=>{if(!on)return;await load();setTimeout(poll,6000);};
+    setTimeout(poll,6000);
+    return()=>{on=false;};
+  },
+  onTeams(cb){
+    const load=async()=>{cb(await this.getTeams());};
+    load();
+    if(!USE_FIREBASE)return()=>{};
+    let on=true;
+    const poll=async()=>{if(!on)return;await load();setTimeout(poll,6000);};
+    setTimeout(poll,6000);
+    return()=>{on=false;};
+  },
+};
+
+// ── Helpers ───────────────────────────────────────────────────
+function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase();}
+function fmtDate(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('sk-SK',{day:'numeric',month:'short'})+' '+
+         d.toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'});
+}
+function authErrMsg(msg){
+  const map={
+    'EMAIL_EXISTS':'Tento e-mail je už registrovaný.',
+    'INVALID_EMAIL':'Neplatný e-mail.',
+    'WEAK_PASSWORD : Password should be at least 6 characters':'Heslo musí mať aspoň 6 znakov.',
+    'WEAK_PASSWORD':'Heslo musí mať aspoň 6 znakov.',
+    'EMAIL_NOT_FOUND':'E-mail nenájdený.',
+    'INVALID_PASSWORD':'Nesprávne heslo.',
+    'INVALID_LOGIN_CREDENTIALS':'Nesprávny e-mail alebo heslo.',
+    'TOO_MANY_ATTEMPTS_TRY_LATER':'Príliš veľa pokusov. Skús neskôr.',
+    'USER_DISABLED':'Účet bol zablokovaný.',
+  };
+  return map[msg]||msg;
+}
+function hasPaid(uid){const p=lsGet('hps:paid_users')||{};return !!p[uid];}
+function cityThreshold(uid){return hasPaid(uid)?CITY_THRESHOLD_PAID:CITY_THRESHOLD;}
+function isCityUnlocked(player){return(player.points||0)>=cityThreshold(player.uid);}
+
+const COUNTRIES=['Slovensko','Česko','Rakúsko','Nemecko','Poľsko','Maďarsko','Iné'];
+const LEVELS=[
+  {id:'solo',  label:'Solo',  icon:'Solo',  desc:'Body iba pre teba'},
+  {id:'team',  label:'Tím',   icon:'Tím',   desc:'Body tebe + tímu'},
+  {id:'city',  label:'Mesto', icon:'Mesto', desc:'Body tebe + tímu + mestu'},
+];
+
+const R=React.createElement;
+const {useState,useEffect,useRef}=React;
+
+// ── Styles ────────────────────────────────────────────────────
+const dark='rgba(250,245,239,';
+const S={
+  inp:{width:'100%',padding:'.7rem 1rem',border:'1px solid rgba(250,245,239,0.18)',
+    background:'rgba(250,245,239,0.05)',fontSize:'.9rem',color:'#FAF5EF',outline:'none',
+    fontFamily:"'Syne',sans-serif",borderRadius:0,marginBottom:'.75rem'},
+  sel:{width:'100%',padding:'.7rem 1rem',border:'1px solid rgba(250,245,239,0.18)',
+    background:'#1a1610',fontSize:'.9rem',color:'#FAF5EF',outline:'none',
+    fontFamily:"'Syne',sans-serif",borderRadius:0,marginBottom:'.75rem',cursor:'pointer'},
+  btnP:{padding:'.75rem 1.5rem',border:'none',background:'#8B2E14',color:'#FAF5EF',
+    fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,letterSpacing:'.08em',
+    textTransform:'uppercase',cursor:'pointer',borderRadius:0,display:'block'},
+  btnS:{padding:'.75rem 1.5rem',border:'1px solid rgba(250,245,239,0.25)',background:'transparent',
+    color:'#FAF5EF',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,
+    letterSpacing:'.08em',textTransform:'uppercase',cursor:'pointer',borderRadius:0},
+  btnG:{padding:'.75rem 1.5rem',border:'none',background:'#B8882A',color:'#FAF5EF',
+    fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,letterSpacing:'.08em',
+    textTransform:'uppercase',cursor:'pointer',borderRadius:0,display:'block'},
+  btnM:{padding:'.55rem .9rem',border:'1px solid rgba(250,245,239,0.14)',background:'transparent',
+    color:dark+'.42)',fontFamily:"'Syne',sans-serif",fontSize:'.75rem',
+    letterSpacing:'.05em',textTransform:'uppercase',cursor:'pointer',borderRadius:0},
+  btnLink:{background:'none',border:'none',color:'rgba(196,96,58,0.85)',fontFamily:"'Syne',sans-serif",
+    fontSize:'.8rem',cursor:'pointer',padding:0,textDecoration:'underline'},
+  card:{background:'rgba(250,245,239,0.05)',border:'1px solid rgba(250,245,239,0.1)',
+    padding:'1.5rem 1.75rem',marginBottom:'1rem'},
+  cardGold:{background:'rgba(184,136,42,0.08)',border:'1px solid rgba(184,136,42,0.3)',
+    padding:'1.5rem 1.75rem',marginBottom:'1rem'},
+  lbl:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.15em',
+    color:dark+'.38)',textTransform:'uppercase',display:'block',marginBottom:'.4rem'},
+  err:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#C4603A',marginTop:'-.5rem',marginBottom:'.75rem'},
+  ok:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#B8882A',marginBottom:'.75rem'},
+  flash:{background:'rgba(184,136,42,0.13)',border:'1px solid rgba(184,136,42,0.28)',
+    padding:'.75rem 1rem',fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+    color:'#FAF5EF',letterSpacing:'.05em',marginBottom:'1rem'},
+  eye:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',letterSpacing:'.15em',
+    textTransform:'uppercase',color:'#C4603A',marginBottom:'.75rem'},
+  h:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'1.9rem',fontWeight:600,
+    color:'#FAF5EF',marginBottom:'1.5rem',lineHeight:1.1},
+  hEm:{fontStyle:'italic',color:'#C4603A'},
+  row:{display:'flex',alignItems:'center',gap:'.75rem',padding:'.85rem 0',
+    borderBottom:'1px solid rgba(250,245,239,0.07)'},
+  pt:{fontFamily:"'DM Mono',monospace",fontSize:'1.1rem',fontWeight:500,color:'#B8882A'},
+  badge:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.08em',
+    padding:'.2rem .55rem',border:'1px solid rgba(250,245,239,0.18)',color:dark+'.48)'},
+  badgeA:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.08em',
+    padding:'.2rem .55rem',background:'#8B2E14',border:'none',color:'#FAF5EF'},
+  badgeG:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.08em',
+    padding:'.2rem .55rem',background:'#B8882A',border:'none',color:'#FAF5EF'},
+  badgeFb:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',letterSpacing:'.06em',
+    padding:'.15rem .45rem',background:'rgba(184,136,42,0.15)',
+    border:'1px solid rgba(184,136,42,0.3)',color:'#B8882A'},
+  tab:{padding:'.6rem 1rem',fontSize:'.8rem',cursor:'pointer',color:dark+'.38)',
+    background:'none',border:'none',borderBottom:'2px solid transparent',
+    fontFamily:"'Syne',sans-serif",letterSpacing:'.05em'},
+  tabA:{padding:'.6rem 1rem',fontSize:'.8rem',cursor:'pointer',color:'#FAF5EF',
+    background:'none',border:'none',borderBottom:'2px solid #C4603A',
+    fontFamily:"'Syne',sans-serif",letterSpacing:'.05em'},
+  stat:{background:'rgba(250,245,239,0.05)',border:'1px solid rgba(250,245,239,0.1)',
+    padding:'1rem 1.25rem',textAlign:'center'},
+  statN:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'2.5rem',
+    fontWeight:600,color:'#C4603A',lineHeight:1},
+  statL:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',color:dark+'.3)',
+    letterSpacing:'.1em',textTransform:'uppercase',marginTop:'.25rem'},
+  tCode:{fontFamily:"'DM Mono',monospace",fontSize:'1.8rem',fontWeight:500,
+    color:'#B8882A',letterSpacing:'.2em',padding:'.75rem 1rem',
+    background:'rgba(250,245,239,0.04)',border:'1px solid rgba(250,245,239,0.1)',
+    textAlign:'center',margin:'.75rem 0'},
+  rank:{display:'inline-flex',alignItems:'center',justifyContent:'center',
+    width:'1.8rem',height:'1.8rem',fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
+    color:dark+'.32)',border:'1px solid rgba(250,245,239,0.1)'},
+  cascade:{display:'flex',alignItems:'center',flexWrap:'wrap',gap:'.25rem',
+    padding:'1rem 1.25rem',background:'rgba(250,245,239,0.03)',
+    border:'1px solid rgba(250,245,239,0.07)'},
+  cn:{padding:'.35rem .7rem',border:'1px solid rgba(250,245,239,0.1)',
+    fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:dark+'.32)'},
+  cna:{padding:'.35rem .7rem',border:'1px solid #C4603A',
+    fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'#C4603A'},
+  cnlock:{padding:'.35rem .7rem',border:'1px dashed rgba(184,136,42,0.4)',
+    fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(184,136,42,0.6)'},
+  arr:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.18)',padding:'0 .1rem'},
+  // Level picker
+  lvlBtn:{flex:1,padding:'.85rem .5rem',border:'1px solid rgba(250,245,239,0.15)',
+    background:'rgba(250,245,239,0.04)',cursor:'pointer',textAlign:'center',
+    fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.5)',fontSize:'.8rem',borderRadius:0},
+  lvlBtnA:{flex:1,padding:'.85rem .5rem',border:'1px solid #C4603A',
+    background:'rgba(196,96,58,0.1)',cursor:'pointer',textAlign:'center',
+    fontFamily:"'Syne',sans-serif",color:'#FAF5EF',fontSize:'.8rem',fontWeight:500,borderRadius:0},
+  lvlBtnLock:{flex:1,padding:'.85rem .5rem',border:'1px dashed rgba(250,245,239,0.1)',
+    background:'transparent',cursor:'not-allowed',textAlign:'center',
+    fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.2)',fontSize:'.8rem',borderRadius:0},
+  progress:{height:'4px',background:'rgba(250,245,239,0.1)',margin:'.75rem 0'},
+  progressFill:{height:'100%',background:'#B8882A',transition:'width .4s ease'},
+};
+
+function Inp({val,set,ph,type='text',onEnter,mono,mb0}){
+  const[f,setF]=useState(false);
+  return R('input',{type,value:val,onChange:e=>set(e.target.value),placeholder:ph,
+    onKeyDown:e=>e.key==='Enter'&&onEnter&&onEnter(),
+    onFocus:()=>setF(true),onBlur:()=>setF(false),
+    style:{...S.inp,...(f?{borderColor:'rgba(250,245,239,0.45)'}:{}),
+      ...(mono?{fontFamily:"'DM Mono',monospace",letterSpacing:'.1em'}:{}),
+      ...(mb0?{marginBottom:0}:{})}});
+}
+function Sel({val,set,opts}){
+  return R('select',{value:val,onChange:e=>set(e.target.value),style:S.sel},
+    R('option',{value:''},'— Vyber krajinu —'),
+    opts.map(o=>R('option',{key:o,value:o},o)));
+}
+function Btn({onClick,children,v='p',full,s,busy}){
+  const base=v==='p'?S.btnP:v==='s'?S.btnS:v==='g'?S.btnG:v==='link'?S.btnLink:S.btnM;
+  return R('button',{onClick,style:{...base,...(full?{width:'100%'}:{}),marginTop:0,...(s||{}),
+    ...(busy?{opacity:.6,cursor:'default'}:{})}},busy?'…':children);
+}
+function Fl({msg}){return msg?R('div',{style:S.flash},msg):null;}
+function Lbl({c}){return R('label',{style:S.lbl},c);}
+function Err({m}){return m?R('div',{style:S.err},m):null;}
+function Ok({m}){return m?R('div',{style:S.ok},m):null;}
+function Bk({to,set,l}){return R(Btn,{onClick:()=>set(to),v:'m',s:{marginBottom:'1.5rem',fontSize:'.7rem',padding:'.45rem .85rem'}},'← '+l);}
+function Divider(){return R('div',{style:{borderTop:'1px solid rgba(250,245,239,0.1)',margin:'1.25rem 0'}});}
+function RankBadge({i}){
+  const extra=i===0?{background:'#B8882A',borderColor:'#B8882A',color:'#1C1711',fontWeight:500}
+    :i===1?{background:'rgba(200,200,200,0.18)'}
+    :i===2?{background:'rgba(176,114,75,0.18)',color:'#E8A87C'}:{};
+  return R('span',{style:{...S.rank,...extra}},i+1);
+}
+
+// ── Level Picker component ────────────────────────────────────
+function LevelPicker({selected,onSelect,me,myTeam}){
+  const cityUnlocked = isCityUnlocked(me);
+  const levels = [
+    {id:'solo', label:'Solo', sub:'len ty'},
+    {id:'team', label:'Tím',  sub:'ty + tím', locked:!me.teamId, lockMsg:'Najprv sa pridaj do tímu'},
+    {id:'city', label:'Mesto',sub:'ty + tím + mesto', locked:!me.teamId||!cityUnlocked,
+      lockMsg:!me.teamId?'Potrebuješ tím':'Odomkneš po '+cityThreshold(me.uid)+' interakciách'},
+  ];
+  return R('div',null,
+    R(Lbl,{c:'Hrám za úroveň'}),
+    R('div',{style:{display:'flex',gap:'.5rem',marginBottom:'1rem'}},
+      levels.map(lv=>{
+        const isLocked = lv.locked;
+        const isSelected = selected===lv.id&&!isLocked;
+        const style = isLocked?S.lvlBtnLock:isSelected?S.lvlBtnA:S.lvlBtn;
+        return R('div',{key:lv.id,style,onClick:()=>!isLocked&&onSelect(lv.id),title:isLocked?lv.lockMsg:''},
+          R('div',{style:{fontWeight:500,marginBottom:'.2rem'}},lv.label),
+          R('div',{style:{fontSize:'.65rem',opacity:.7}},isLocked?'🔒':lv.sub)
+        );
+      })
+    )
+  );
+}
+
+// ── City progress bar ─────────────────────────────────────────
+function CityProgress({me}){
+  const pts = me.points||0;
+  const thresh = cityThreshold(me.uid);
+  const unlocked = pts >= thresh;
+  const paid = hasPaid(me.uid);
+  const pct = Math.min(100, (pts/thresh)*100);
+
+  if(unlocked) return R('div',{style:{...S.card,borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.07)',marginBottom:'1rem'}},
+    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},'Mesto odomknuté'),
+    R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',marginTop:'.35rem'}},'Môžeš hrať za mestskú úroveň.')
+  );
+
+  return R('div',{style:{...S.card,marginBottom:'1rem'}},
+    R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'.5rem'}},
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}},'Postup na mestskú úroveň'),
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#B8882A'}},pts+' / '+thresh)
+    ),
+    R('div',{style:S.progress},
+      R('div',{style:{...S.progressFill,width:pct+'%'}})
+    ),
+    !paid&&R('div',null,
+      R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.45)',marginBottom:'.75rem',lineHeight:1.6}},
+        'Chceš odomknúť rýchlejšie? Za jednorázový poplatok sa prah zníži na ',
+        R('strong',{style:{color:'rgba(250,245,239,0.8)'}},CITY_THRESHOLD_PAID+' interakcií'),
+        ' (teraz: '+thresh+').'
+      ),
+      R(Btn,{onClick:()=>{
+        const link = STRIPE_PAYMENT_LINK+'?client_reference_id='+(me.uid||'anon');
+        window.location.href = link;
+      },v:'g',full:true},'Skrátiť prah → platba')
+    )
+  );
+}
+
+// ── Main App ──────────────────────────────────────────────────
+function App(){
+  const[scr,setScr]=useState('loading');
+  const[me,setMe]=useState(null);
+  const[players,setPlayers]=useState({});
+  const[teams,setTeams]=useState({});
+  const[busy,setBusy]=useState(false);
+  const[flash,setFlash]=useState('');
+  const[email,setEmail]=useState('');
+  const[pw,setPw]=useState('');
+  const[pw2,setPw2]=useState('');
+  const[nick,setNick]=useState('');
+  const[city,setCity]=useState('');
+  const[country,setCountry]=useState('');
+  const[ae,setAe]=useState('');
+  const[aok,setAok]=useState('');
+  const[authTab,setAuthTab]=useState('login');
+  const[note,setNote]=useState('');
+  const[ne,setNe]=useState('');
+  const[playLevel,setPlayLevel]=useState('solo');
+  const[tName,setTName]=useState('');
+  const[tCode,setTCode]=useState('');
+  const[te,setTe]=useState('');
+  const[lbTab,setLbTab]=useState('ind');
+  const[ttab,setTtab]=useState('create');
+  const offRef=useRef([]);
+
+  useEffect(()=>{
+    (async()=>{
+      const sess=lsGet('hps:session');
+      if(sess&&sess.uid){
+        if(USE_FIREBASE){
+          try{
+            const u=await AUTH.getUserInfo(sess.idToken);
+            if(!u.emailVerified){setScr('verify');return;}
+          }catch(e){lsSet('hps:session',null);setScr('auth');return;}
+        }
+        const pl=await DB.getPlayers(),tm=await DB.getTeams();
+        setPlayers(pl);setTeams(tm);
+        if(pl[sess.uid]){setMe(pl[sess.uid]);setScr('home');}
+        else setScr('auth');
+      } else setScr('auth');
+      const off1=DB.onPlayers(p=>{setPlayers(p);const s=lsGet('hps:session');if(s&&p[s.uid])setMe(p[s.uid]);});
+      const off2=DB.onTeams(t=>setTeams(t));
+      offRef.current=[off1,off2];
+    })();
+    return()=>offRef.current.forEach(f=>f());
+  },[]);
+
+  function shFlash(m){setFlash(m);setTimeout(()=>setFlash(''),3500);}
+
+  async function doRegister(){
+    setAe('');setAok('');
+    if(!email.trim()||!pw.trim()||!nick.trim()||!city.trim()||!country){setAe('Vyplň všetky polia.');return;}
+    if(pw!==pw2){setAe('Heslá sa nezhodujú.');return;}
+    if(pw.length<6){setAe('Heslo musí mať aspoň 6 znakov.');return;}
+    setBusy(true);
+    try{
+      if(USE_FIREBASE){
+        const res=await AUTH.signUp(email.trim(),pw);
+        await AUTH.sendVerification(res.idToken);
+        const profile={uid:res.localId,email:email.trim(),nickname:nick.trim(),
+          city:city.trim(),country,teamId:null,points:0,encounters:[]};
+        await DB.setPlayer(res.localId,profile);
+        lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
+        setScr('verify');
+      } else {
+        const pl=lsGet('hps:players')||{};
+        const uid='u_'+Date.now();
+        const profile={uid,email:email.trim(),nickname:nick.trim(),
+          city:city.trim(),country,teamId:null,points:0,encounters:[]};
+        pl[uid]=profile;lsSet('hps:players',pl);
+        lsSet('hps:session',{uid,email:email.trim()});
+        setMe(profile);setPlayers(pl);setScr('home');
+      }
+    }catch(e){setAe(authErrMsg(e.message));}
+    finally{setBusy(false);}
+  }
+
+  async function doLogin(){
+    setAe('');setAok('');
+    if(!email.trim()||!pw.trim()){setAe('Vyplň e-mail a heslo.');return;}
+    setBusy(true);
+    try{
+      if(USE_FIREBASE){
+        const res=await AUTH.signIn(email.trim(),pw);
+        const u=await AUTH.getUserInfo(res.idToken);
+        if(!u.emailVerified){
+          lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
+          setScr('verify');setBusy(false);return;
+        }
+        lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
+        const pl=await DB.getPlayers();setPlayers(pl);
+        if(pl[res.localId]){setMe(pl[res.localId]);setScr('home');}
+        else{setAe('Profil nenájdený.');setBusy(false);}
+      } else {
+        const pl=lsGet('hps:players')||{};
+        const p=Object.values(pl).find(x=>x.email===email.trim());
+        if(!p){setAe('E-mail nenájdený.');setBusy(false);return;}
+        lsSet('hps:session',{uid:p.uid,email:p.email});
+        setMe(p);setPlayers(pl);setScr('home');
+      }
+    }catch(e){setAe(authErrMsg(e.message));}
+    finally{setBusy(false);}
+  }
+
+  async function doReset(){
+    setAe('');setAok('');
+    if(!email.trim()){setAe('Zadaj e-mail.');return;}
+    if(!USE_FIREBASE){setAe('Reset funguje iba s Firebase.');return;}
+    setBusy(true);
+    try{await AUTH.sendPasswordReset(email.trim());setAok('E-mail s odkazom odoslaný!');}
+    catch(e){setAe(authErrMsg(e.message));}
+    finally{setBusy(false);}
+  }
+
+  async function doResendVerify(){
+    const sess=lsGet('hps:session');if(!sess||!sess.idToken){setScr('auth');return;}
+    setBusy(true);
+    try{await AUTH.sendVerification(sess.idToken);shFlash('Verifikačný e-mail odoslaný!');}
+    catch(e){setAe(e.message);}finally{setBusy(false);}
+  }
+
+  async function doCheckVerified(){
+    const sess=lsGet('hps:session');if(!sess||!sess.idToken){setScr('auth');return;}
+    setBusy(true);
+    try{
+      const u=await AUTH.getUserInfo(sess.idToken);
+      if(u.emailVerified){
+        const pl=await DB.getPlayers();setPlayers(pl);
+        if(pl[sess.uid]){setMe(pl[sess.uid]);setScr('home');}
+        else{setAe('Profil nenájdený.');setScr('auth');}
+      } else shFlash('E-mail ešte nie je overený.');
+    }catch(e){setAe(e.message);}finally{setBusy(false);}
+  }
+
+  function doLogout(){
+    lsSet('hps:session',null);setMe(null);setScr('auth');
+    setEmail('');setPw('');setPw2('');setNick('');setCity('');setCountry('');setAe('');setAok('');
+  }
+
+  async function doEncounter(){
+    if(!note.trim()){setNe('Napíš aspoň pár slov.');return;}
+    setBusy(true);
+    try{
+      const pl=await DB.getPlayers(),tm=await DB.getTeams();
+      const uid=me.uid;
+      const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel};
+      const p={...pl[uid],points:(pl[uid].points||0)+1,
+        encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
+      await DB.setPlayer(uid,p);
+      // Cascade points based on selected level
+      if((playLevel==='team'||playLevel==='city')&&p.teamId&&tm[p.teamId]){
+        await DB.updateTeamPoints(p.teamId,(tm[p.teamId].points||0)+1);
+      }
+      // City level — update city leaderboard (stored under team for now)
+      setNote('');setNe('');
+      // Check if city just unlocked
+      const wasLocked=!isCityUnlocked(pl[uid]);
+      const nowUnlocked=isCityUnlocked(p);
+      if(wasLocked&&nowUnlocked) shFlash('Mestská úroveň odomknutá! Môžeš hrať za '+p.city+'.');
+      else shFlash('Stretnutie zaznamenané! +1 bod'+(playLevel!=='solo'?' pre teba aj tím':''));
+      setScr('home');
+    }finally{setBusy(false);}
+  }
+
+  async function doCreateTeam(){
+    const name=tName.trim();if(!name){setTe('Zadaj názov.');return;}
+    setBusy(true);
+    try{
+      const pl=await DB.getPlayers(),tm=await DB.getTeams();
+      if(pl[me.uid].teamId){setTe('Už si v tíme.');setBusy(false);return;}
+      const id='t_'+Date.now(),code=genCode();
+      await DB.setTeam(id,{id,name,code,members:[me.uid],points:0});
+      await DB.setPlayer(me.uid,{...pl[me.uid],teamId:id});
+      setTName('');setTe('');shFlash('Tím vytvorený! Kód: '+code);
+    }finally{setBusy(false);}
+  }
+
+  async function doJoin(){
+    const code=tCode.trim().toUpperCase();if(!code){setTe('Zadaj kód.');return;}
+    setBusy(true);
+    try{
+      const pl=await DB.getPlayers(),tm=await DB.getTeams();
+      if(pl[me.uid].teamId){setTe('Už si v tíme.');setBusy(false);return;}
+      const team=Object.values(tm).find(t=>t.code===code);
+      if(!team){setTe('Tím nenájdený.');setBusy(false);return;}
+      if((team.members||[]).length>=8){setTe('Tím je plný.');setBusy(false);return;}
+      await DB.setTeam(team.id,{...team,members:[...(team.members||[]),me.uid]});
+      await DB.setPlayer(me.uid,{...pl[me.uid],teamId:team.id});
+      setTCode('');setTe('');shFlash('Pridal si sa do tímu '+team.name+'!');
+    }finally{setBusy(false);}
+  }
+
+  async function doLeave(){
+    setBusy(true);
+    try{
+      const pl=await DB.getPlayers(),tm=await DB.getTeams();
+      const tid=pl[me.uid].teamId;if(!tid||!tm[tid]){setBusy(false);return;}
+      await DB.setTeam(tid,{...tm[tid],members:(tm[tid].members||[]).filter(m=>m!==me.uid)});
+      await DB.setPlayer(me.uid,{...pl[me.uid],teamId:null});
+      shFlash('Opustil si tím.');
+    }finally{setBusy(false);}
+  }
+
+  const myTeam=me&&me.teamId?teams[me.teamId]:null;
+  const sPlayers=Object.values(players).sort((a,b)=>b.points-a.points);
+  const sTeams=Object.values(teams).filter(t=>(t.members||[]).length>0).sort((a,b)=>b.points-a.points);
+  const fbBadge=USE_FIREBASE
+    ?R('span',{style:S.badgeFb},'Firebase · live')
+    :R('span',{style:{...S.badgeFb,background:'rgba(250,245,239,0.06)',borderColor:'rgba(250,245,239,0.14)',color:'rgba(250,245,239,0.32)'}},'lokálne · demo');
+
+  if(scr==='loading')return R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+    color:'rgba(250,245,239,0.28)',letterSpacing:'.1em',padding:'1rem 0'}},'načítavam…');
+
+  // ── AUTH ─────────────────────────────────────────────────────
+  if(scr==='auth')return R('div',null,
+    R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
+      R('div',{style:S.eye},'Prihlásenie / registrácia'),fbBadge),
+    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.5rem'}},
+      R('button',{onClick:()=>{setAuthTab('login');setAe('');setAok('');},style:authTab==='login'?S.tabA:S.tab},'Prihlásenie'),
+      R('button',{onClick:()=>{setAuthTab('register');setAe('');setAok('');},style:authTab==='register'?S.tabA:S.tab},'Registrácia')
+    ),
+    authTab==='login'
+      ?R('div',null,
+          R(Lbl,{c:'E-mail'}),R(Inp,{val:email,set:setEmail,ph:'tvoj@email.com',type:'email',onEnter:doLogin}),
+          R(Lbl,{c:'Heslo'}),R(Inp,{val:pw,set:setPw,ph:'minimálne 6 znakov',type:'password',onEnter:doLogin,mb0:true}),
+          R(Err,{m:ae}),R(Ok,{m:aok}),
+          R(Btn,{onClick:doLogin,v:'p',full:true,busy,s:{marginBottom:'.75rem'}},'Prihlásiť sa'),
+          R('div',{style:{textAlign:'center',marginTop:'.5rem'}},
+            R('button',{style:S.btnLink,onClick:doReset},'Zabudol som heslo')))
+      :R('div',null,
+          R(Lbl,{c:'E-mail'}),R(Inp,{val:email,set:setEmail,ph:'tvoj@email.com',type:'email'}),
+          R(Lbl,{c:'Prezývka'}),R(Inp,{val:nick,set:setNick,ph:'napr. filip_h'}),
+          R(Lbl,{c:'Mesto'}),R(Inp,{val:city,set:setCity,ph:'napr. Bratislava'}),
+          R(Lbl,{c:'Krajina'}),R(Sel,{val:country,set:setCountry,opts:COUNTRIES}),
+          R(Lbl,{c:'Heslo'}),R(Inp,{val:pw,set:setPw,ph:'minimálne 6 znakov',type:'password'}),
+          R(Lbl,{c:'Heslo znovu'}),R(Inp,{val:pw2,set:setPw2,ph:'zopakuj heslo',type:'password',onEnter:doRegister,mb0:true}),
+          R(Err,{m:ae}),
+          R(Btn,{onClick:doRegister,v:'p',full:true,busy,s:{marginTop:'.75rem'}},'Zaregistrovať sa'),
+          USE_FIREBASE&&R('p',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+            color:'rgba(250,245,239,0.28)',marginTop:'.75rem',lineHeight:1.6}},
+            'Na tvoj e-mail pošleme potvrdzovací odkaz.'))
+  );
+
+  // ── VERIFY ───────────────────────────────────────────────────
+  if(scr==='verify')return R('div',null,
+    R('div',{style:S.eye},'Overenie e-mailu'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Skontroluj ',R('em',{style:S.hEm},'schránku')),
+    R(Fl,{msg:flash}),
+    R('div',{style:S.card},
+      R('p',{style:{color:'rgba(250,245,239,0.7)',fontSize:'.9rem',lineHeight:1.7,marginBottom:'1.25rem'}},
+        'Poslali sme ti potvrdzovací odkaz. Klikni naň a vráť sa sem.'),
+      R(Btn,{onClick:doCheckVerified,v:'p',full:true,busy,s:{marginBottom:'.75rem'}},'Overil som e-mail →'),
+      R(Divider,null),
+      R(Btn,{onClick:doResendVerify,v:'s',full:true,busy},'Znovu odoslať'),
+      R('div',{style:{textAlign:'center',marginTop:'.75rem'}},
+        R('button',{style:S.btnLink,onClick:doLogout},'Späť na prihlásenie')))
+  );
+
+  // ── HOME ─────────────────────────────────────────────────────
+  if(scr==='home')return R('div',null,
+    R(Fl,{msg:flash}),
+    R('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'1.5rem'}},
+      R('div',null,
+        R('div',{style:{...S.eye,marginBottom:'.2rem'}},'Ahoj'),
+        R('h3',{style:{...S.h,fontSize:'2rem',marginBottom:'.2rem'}},me.nickname),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginBottom:'.15rem'}},
+          me.city+(me.country?', '+me.country:'')),
+        myTeam&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#C4603A',letterSpacing:'.06em'}},'Tím: '+myTeam.name)
+      ),
+      R('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'.5rem'}},
+        myTeam?R('span',{style:S.badgeA},myTeam.name):R('span',{style:S.badge},'Solo'),
+        R('div',{style:{display:'flex',gap:'.4rem',alignItems:'center'}},
+          fbBadge,
+          R(Btn,{onClick:doLogout,v:'m',s:{padding:'.3rem .7rem',fontSize:'.6rem'}},'Odhlásiť')))
+    ),
+    R('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.75rem',marginBottom:'1.5rem'}},
+      R('div',{style:S.stat},R('div',{style:S.statN},me.points||0),R('div',{style:S.statL},'Moje body')),
+      R('div',{style:S.stat},R('div',{style:S.statN},myTeam?myTeam.points||0:'—'),R('div',{style:S.statL},'Body tímu'))
+    ),
+    R('div',{style:{...S.card,marginBottom:'1.5rem'}},
+      R('div',{style:{...S.lbl,marginBottom:'.6rem'}},'Aktívne úrovne'),
+      R('div',{style:S.cascade},
+        R('div',{style:S.cna},'Solo'),
+        R('div',{style:S.arr},'→'),
+        me.teamId?R('div',{style:S.cna},'Tím'):R('div',{style:{...S.cn,cursor:'pointer'},onClick:()=>setScr('team')},'+ Tím'),
+        R('div',{style:{...S.arr,opacity:.3}},'→'),
+        isCityUnlocked(me)
+          ?R('div',{style:S.cna},'Mesto')
+          :R('div',{style:S.cnlock},'Mesto '+(me.points||0)+'/'+cityThreshold(me.uid)),
+        R('div',{style:{...S.arr,opacity:.2}},'→'),
+        R('div',{style:S.cn},'Krajina'),
+        R('div',{style:{...S.arr,opacity:.2}},'→'),
+        R('div',{style:S.cn},'Svet')
+      )
+    ),
+    R(CityProgress,{me}),
+    R(Btn,{onClick:()=>setScr('log'),v:'p',full:true,s:{padding:'1rem',fontSize:'1rem',marginBottom:'.75rem'}},
+      '+ Zaznamenať stretnutie'),
+    R('div',{style:{display:'flex',gap:'.75rem',marginBottom:'1.5rem'}},
+      R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},myTeam?'Môj tím':'Vytvoriť tím'),
+      R(Btn,{onClick:()=>setScr('lb'),v:'m',s:{flex:1}},'Rebríček')
+    ),
+    (me.encounters||[]).length>0&&R('div',null,
+      R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Posledné stretnutia'),
+      (me.encounters||[]).slice(0,5).map((e,i)=>R('div',{key:i,style:{
+        padding:'.7rem 0',borderBottom:'1px solid rgba(250,245,239,0.06)',
+        fontSize:'.85rem',color:'rgba(250,245,239,0.72)'}},
+        R('div',null,e.note),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.28)',marginTop:'.2rem'}},
+          fmtDate(e.date),
+          e.level&&e.level!=='solo'&&R('span',{style:{marginLeft:'.5rem',color:'#C4603A'}},'· '+e.level))))
+    )
+  );
+
+  // ── LOG ──────────────────────────────────────────────────────
+  if(scr==='log')return R('div',null,
+    R(Bk,{to:'home',set:setScr,l:'Späť'}),
+    R('div',{style:S.eye},'Nové stretnutie'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Koho si dnes ',R('em',{style:S.hEm},'stretol?')),
+    R('div',{style:S.card},
+      R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeam}),
+      R(Divider,null),
+      R(Lbl,{c:'Pár slov o stretnutí'}),
+      R('textarea',{rows:4,value:note,onChange:e=>setNote(e.target.value),
+        placeholder:'napr. „Oslovil som chlapíka v kaviarni, hovoril o tom, že sa učí opravovať staré motorky…"',
+        style:{...S.inp,resize:'vertical',lineHeight:1.6}}),
+      ne&&R(Err,{m:ne}),
+      R('div',{style:{display:'flex',gap:'.5rem',flexWrap:'wrap',margin:'.75rem 0'}},
+        R('span',{style:S.badgeA},'+1 · '+me.nickname),
+        (playLevel==='team'||playLevel==='city')&&myTeam&&R('span',{style:S.badgeG},'+1 · '+myTeam.name),
+        playLevel==='city'&&R('span',{style:S.badgeG},'+1 · '+me.city)
+      ),
+      R(Btn,{onClick:doEncounter,v:'p',full:true,busy,s:{padding:'1rem'}},'Zaznamenať (+1 bod)')
+    )
+  );
+
+  // ── TEAM ─────────────────────────────────────────────────────
+  if(scr==='team')return R('div',null,
+    R(Bk,{to:'home',set:setScr,l:'Späť'}),
+    R(Fl,{msg:flash}),
+    R('div',{style:S.eye},'Tím'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},myTeam?myTeam.name:R('em',{style:S.hEm},'Bez tímu')),
+    myTeam?R('div',null,
+      R('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.75rem',marginBottom:'1.5rem'}},
+        R('div',{style:S.stat},R('div',{style:S.statN},myTeam.points||0),R('div',{style:S.statL},'Body tímu')),
+        R('div',{style:S.stat},R('div',{style:S.statN},(myTeam.members||[]).length),R('div',{style:S.statL},'Členov'))
+      ),
+      R('div',{style:S.card},
+        R('div',{style:{...S.lbl,marginBottom:'.25rem'}},'Kód tímu'),
+        R('div',{style:S.tCode},myTeam.code),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.28)'}},'5–8 členov · teraz '+(myTeam.members||[]).length)
+      ),
+      R('div',{style:{...S.card,marginBottom:'1.5rem'}},
+        R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Členovia'),
+        (myTeam.members||[]).map((uid,i)=>{
+          const p=players[uid];
+          return R('div',{key:i,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
+            R('div',{style:{flex:1}},
+              R('div',{style:{fontWeight:uid===me.uid?500:400,color:'rgba(250,245,239,'+(uid===me.uid?.92:.68)+')'}},
+                p?p.nickname:uid.slice(0,8),(uid===me.uid)&&' (ty)'),
+              p&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(250,245,239,0.3)',marginTop:'.1rem'}},p.city+(p.country?', '+p.country:''))
+            ),
+            R('span',{style:S.pt},(p&&p.points)||0));
+        })
+      ),
+      R(Btn,{onClick:doLeave,v:'m',full:true,busy},'Opustiť tím')
+    ):R('div',null,
+      R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
+        R('button',{onClick:()=>{setTtab('create');setTe('');},style:ttab==='create'?S.tabA:S.tab},'Vytvoriť'),
+        R('button',{onClick:()=>{setTtab('join');setTe('');},style:ttab==='join'?S.tabA:S.tab},'Pripojiť sa')
+      ),
+      te&&R(Err,{m:te}),
+      ttab==='create'?R('div',{style:S.card},
+        R(Lbl,{c:'Názov tímu'}),
+        R(Inp,{val:tName,set:setTName,ph:'napr. Tím Bratislava',onEnter:doCreateTeam,mb0:true}),
+        R(Btn,{onClick:doCreateTeam,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Vytvoriť tím')
+      ):R('div',{style:S.card},
+        R(Lbl,{c:'Kód tímu'}),
+        R(Inp,{val:tCode,set:v=>setTCode(v.toUpperCase()),ph:'napr. AB3X7K',onEnter:doJoin,mono:true,mb0:true}),
+        R(Btn,{onClick:doJoin,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť sa')
+      )
+    )
+  );
+
+  // ── LEADERBOARD ──────────────────────────────────────────────
+  if(scr==='lb')return R('div',null,
+    R(Bk,{to:'home',set:setScr,l:'Späť'}),
+    R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
+      R('div',{style:S.eye},'Rebríček'),fbBadge),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Kto ',R('em',{style:S.hEm},'vedie?')),
+    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
+      R('button',{onClick:()=>setLbTab('ind'),style:lbTab==='ind'?S.tabA:S.tab},'Jednotlivci'),
+      R('button',{onClick:()=>setLbTab('team'),style:lbTab==='team'?S.tabA:S.tab},'Tímy')
+    ),
+    lbTab==='ind'?(
+      sPlayers.length===0
+        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
+            color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadni hráči.')
+        :sPlayers.map((p,i)=>R('div',{key:p.uid||p.nickname,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
+            R(RankBadge,{i}),
+            R('div',{style:{flex:1}},
+              R('div',{style:{fontWeight:p.uid===me.uid?500:400,
+                color:'rgba(250,245,239,'+(p.uid===me.uid?.92:.68)+')'}},
+                p.nickname,p.uid===me.uid&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'ty')),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+                p.city+(p.country?', '+p.country:''),
+                p.teamId&&teams[p.teamId]&&' · '+teams[p.teamId].name)
+            ),
+            R('span',{style:S.pt},p.points||0)))
+    ):(
+      sTeams.length===0
+        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
+            color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadne tímy.')
+        :sTeams.map((tm2,i)=>R('div',{key:tm2.id,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
+            R(RankBadge,{i}),
+            R('div',{style:{flex:1}},
+              R('div',{style:{fontWeight:tm2.id===me.teamId?500:400,
+                color:'rgba(250,245,239,'+(tm2.id===me.teamId?.92:.68)+')'}},
+                tm2.name,tm2.id===me.teamId&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'tvoj')),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},(tm2.members||[]).length+' členov')
+            ),
+            R('span',{style:S.pt},tm2.points||0)))
+    )
+  );
+
+  return null;
+}
+
+const root=document.getElementById('game-root');
+if(root)ReactDOM.createRoot(root).render(R(App,null));
+</script>
+</body>
