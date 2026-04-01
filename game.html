@@ -103,48 +103,77 @@
 // ║  3. Realtime Database → Create → test mode → europe-west1   ║
 // ║  4. Project Settings → Your apps → Web → apiKey + dbURL     ║
 // ║                                                              ║
-// ║  Stripe (platba):                                            ║
-// ║  1. dashboard.stripe.com → Payment Links → Create           ║
-// ║  2. Produkt: "Skrátenie odomknutia mesta" cena podľa seba   ║
-// ║  3. After payment → redirect na URL tvojej stránky +        ║
-// ║     ?stripe_success=1&uid=  (pridaj {metadata.uid} param)   ║
-// ║  4. Vlož URL nižšie                                         ║
+// ║  Stripe — vytvor 3 Payment Links:                           ║
+// ║  Malé mesto  (do 5 000 obyvateľov)  → 5 EUR                ║
+// ║  Stredné     (do 100 000)           → 20 EUR               ║
+// ║  Veľké       (100 000+)             → 50 EUR               ║
+// ║  After payment → ?city_licensed=NazovMesta                  ║
 // ╚══════════════════════════════════════════════════════════════╝
 const FB_API_KEY   = 'VLOZ_API_KEY';
 const FB_DB_URL    = 'https://VLOZ-default-rtdb.europe-west1.firebasedatabase.app';
 const USE_FIREBASE = FB_API_KEY !== 'VLOZ_API_KEY';
 
-// Stripe Payment Link — vytvor na dashboard.stripe.com/payment-links
-// Redirect URL nastav na: https://tvojastranka.com/?stripe_success=1
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/VLOZ_LINK';
+// Stripe Payment Links pre mestské licencie
 
-// Thresholds
-const CITY_THRESHOLD      = 50;  // interakcií na odomknutie mesta
-const CITY_THRESHOLD_PAID = 25;  // po zaplatení
+
+// Stripe pre skrátenie osobného prahu
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800';
+
+// Thresholds — interakcie potrebné na odomknutie každej úrovne
+const CITY_THRESHOLD      = 50;   // Mesto
+const CITY_THRESHOLD_PAID = 25;   // Mesto po zaplatení skrátenia
+const REGION_THRESHOLD    = 150;  // Kraj
+const STATE_THRESHOLD     = 300;  // Štát
+const GLOBAL_THRESHOLD    = 500;  // Globálna úroveň
+
+// Stripe Payment Links pre licencie úrovní
+// Mesto
+const STRIPE_CITY_SMALL  = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 5€
+const STRIPE_CITY_MEDIUM = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 20€
+const STRIPE_CITY_LARGE  = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 50€
+// Kraj — vytvor Payment Link na 50€
+const STRIPE_REGION      = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 50€
+// Štát — vytvor Payment Link na 200€
+const STRIPE_STATE       = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 200€
+// Globálna — vytvor Payment Link na 500€
+const STRIPE_GLOBAL      = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 500€
 
 // ── localStorage helpers ──────────────────────────────────────
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-// ── Stripe redirect handler ───────────────────────────────────
+// ── Stripe redirect handlers ──────────────────────────────────
 (function handleStripeReturn(){
   const params = new URLSearchParams(window.location.search);
+  // Osobný prah
   if(params.get('stripe_success')==='1'){
-    const sess = lsGet('hps:session');
-    if(sess && sess.uid){
-      // Mark this user as having paid for threshold reduction
-      const paid = lsGet('hps:paid_users')||{};
-      paid[sess.uid] = true;
-      lsSet('hps:paid_users', paid);
+    const sess=lsGet('hps:session');
+    if(sess&&sess.uid){
+      const paid=lsGet('hps:paid_users')||{};
+      paid[sess.uid]=true;
+      lsSet('hps:paid_users',paid);
     }
-    // Clean URL
-    window.history.replaceState({}, '', window.location.pathname);
+    window.history.replaceState({},'',(window.location.pathname));
   }
+  // Licencie pre všetky úrovne
+  const handleLicense = (param, storageKey) => {
+    const val = params.get(param);
+    if(val){
+      const store = lsGet(storageKey)||{};
+      store[val.toLowerCase()] = {licensed:true, ts: Date.now()};
+      lsSet(storageKey, store);
+      window.history.replaceState({},'',(window.location.pathname));
+    }
+  };
+  handleLicense('city_licensed',   'hps:licensed_cities');
+  handleLicense('region_licensed', 'hps:licensed_regions');
+  handleLicense('state_licensed',  'hps:licensed_states');
+  handleLicense('global_licensed', 'hps:licensed_global');
 })();
 
 // ── Firebase Auth REST ────────────────────────────────────────
-const AUTH_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:';
-const AUTH = {
+const AUTH_URL='https://identitytoolkit.googleapis.com/v1/accounts:';
+const AUTH={
   async signUp(email,password){
     const r=await fetch(AUTH_URL+'signUp?key='+FB_API_KEY,{method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -170,19 +199,18 @@ const AUTH = {
   },
   async getUserInfo(idToken){
     const r=await fetch(AUTH_URL+'lookup?key='+FB_API_KEY,{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({idToken})});
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})});
     const d=await r.json();if(d.error)throw new Error(d.error.message);return d.users[0];
   },
 };
 
 // ── Firebase DB REST ──────────────────────────────────────────
-const DB = {
+const DB={
   getToken(){const s=lsGet('hps:session');return s?s.idToken:null;},
   async _get(path){
     const tok=this.getToken();
-    const url=FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:'');
-    const r=await fetch(url);return await r.json();
+    const r=await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''));
+    return await r.json();
   },
   async _put(path,data){
     const tok=this.getToken();
@@ -202,6 +230,14 @@ const DB = {
     if(USE_FIREBASE){try{return(await this._get('teams'))||{};}catch{}}
     return lsGet('hps:teams')||{};
   },
+  async getBigGroups(){
+    if(USE_FIREBASE){try{return(await this._get('biggroups'))||{};}catch{}}
+    return lsGet('hps:biggroups')||{};
+  },
+  async getCities(){
+    if(USE_FIREBASE){try{return(await this._get('cities'))||{};}catch{}}
+    return lsGet('hps:licensed_cities')||{};
+  },
   async setPlayer(uid,data){
     if(USE_FIREBASE){try{await this._put('players/'+uid,data);return;}catch(e){console.warn(e);}}
     const p=lsGet('hps:players')||{};p[uid]=data;lsSet('hps:players',p);
@@ -210,27 +246,31 @@ const DB = {
     if(USE_FIREBASE){try{await this._put('teams/'+id,data);return;}catch(e){console.warn(e);}}
     const t=lsGet('hps:teams')||{};t[id]=data;lsSet('hps:teams',t);
   },
-  async updateTeamPoints(id,pts){
-    if(USE_FIREBASE){try{await this._patch('teams/'+id,{points:pts});return;}catch(e){console.warn(e);}}
-    const t=lsGet('hps:teams')||{};if(t[id])t[id].points=pts;lsSet('hps:teams',t);
+  async setBigGroup(id,data){
+    if(USE_FIREBASE){try{await this._put('biggroups/'+id,data);return;}catch(e){console.warn(e);}}
+    const g=lsGet('hps:biggroups')||{};g[id]=data;lsSet('hps:biggroups',g);
+  },
+  async setCity(key,data){
+    if(USE_FIREBASE){try{await this._put('cities/'+key,data);return;}catch(e){console.warn(e);}}
+    const c=lsGet('hps:licensed_cities')||{};c[key]=data;lsSet('hps:licensed_cities',c);
+  },
+  async updatePoints(path,pts){
+    if(USE_FIREBASE){try{await this._patch(path,{points:pts});return;}catch(e){console.warn(e);}}
+    // localStorage fallback handled in callers
   },
   onPlayers(cb){
-    const load=async()=>{cb(await this.getPlayers());};
-    load();
+    const load=async()=>{cb(await this.getPlayers());};load();
     if(!USE_FIREBASE)return()=>{};
     let on=true;
     const poll=async()=>{if(!on)return;await load();setTimeout(poll,6000);};
-    setTimeout(poll,6000);
-    return()=>{on=false;};
+    setTimeout(poll,6000);return()=>{on=false;};
   },
   onTeams(cb){
-    const load=async()=>{cb(await this.getTeams());};
-    load();
+    const load=async()=>{cb(await this.getTeams());};load();
     if(!USE_FIREBASE)return()=>{};
     let on=true;
     const poll=async()=>{if(!on)return;await load();setTimeout(poll,6000);};
-    setTimeout(poll,6000);
-    return()=>{on=false;};
+    setTimeout(poll,6000);return()=>{on=false;};
   },
 };
 
@@ -245,8 +285,8 @@ function authErrMsg(msg){
   const map={
     'EMAIL_EXISTS':'Tento e-mail je už registrovaný.',
     'INVALID_EMAIL':'Neplatný e-mail.',
-    'WEAK_PASSWORD : Password should be at least 6 characters':'Heslo musí mať aspoň 6 znakov.',
     'WEAK_PASSWORD':'Heslo musí mať aspoň 6 znakov.',
+    'WEAK_PASSWORD : Password should be at least 6 characters':'Heslo musí mať aspoň 6 znakov.',
     'EMAIL_NOT_FOUND':'E-mail nenájdený.',
     'INVALID_PASSWORD':'Nesprávne heslo.',
     'INVALID_LOGIN_CREDENTIALS':'Nesprávny e-mail alebo heslo.',
@@ -258,13 +298,31 @@ function authErrMsg(msg){
 function hasPaid(uid){const p=lsGet('hps:paid_users')||{};return !!p[uid];}
 function cityThreshold(uid){return hasPaid(uid)?CITY_THRESHOLD_PAID:CITY_THRESHOLD;}
 function isCityUnlocked(player){return(player.points||0)>=cityThreshold(player.uid);}
+function isLicensed(storageKey, name){
+  const c=lsGet(storageKey)||{};
+  const k=(name||'').toLowerCase().trim();
+  return !!(c[k]&&c[k].licensed);
+}
+function isCityLicensed(n){return isLicensed('hps:licensed_cities',n);}
+function isRegionLicensed(n){return isLicensed('hps:licensed_regions',n);}
+function isStateLicensed(n){return isLicensed('hps:licensed_states',n);}
+function isGlobalLicensed(){
+  const c=lsGet('hps:licensed_global')||{};
+  return Object.values(c).some(v=>v&&v.licensed);
+}
+function normCity(s){return(s||'').toLowerCase().trim();}
+
+// Check if player has enough interactions for a level
+function levelInteractions(me){return me.points||0;}
+function canPlayCity(me){return levelInteractions(me)>=cityThreshold(me.uid)&&isCityLicensed(me.city||'');}
+function canPlayRegion(me){return levelInteractions(me)>=REGION_THRESHOLD&&isRegionLicensed(me.region||me.city||'');}
+function canPlayState(me){return levelInteractions(me)>=STATE_THRESHOLD&&isStateLicensed(me.country||'');}
+function canPlayGlobal(me){return levelInteractions(me)>=GLOBAL_THRESHOLD&&isGlobalLicensed();}
+
+// Progress toward a threshold (0-100%)
+function pct(val,max){return Math.min(100,Math.round((val/max)*100));}
 
 const COUNTRIES=['Slovensko','Česko','Rakúsko','Nemecko','Poľsko','Maďarsko','Iné'];
-const LEVELS=[
-  {id:'solo',  label:'Solo',  icon:'Solo',  desc:'Body iba pre teba'},
-  {id:'team',  label:'Tím',   icon:'Tím',   desc:'Body tebe + tímu'},
-  {id:'city',  label:'Mesto', icon:'Mesto', desc:'Body tebe + tímu + mestu'},
-];
 
 const R=React.createElement;
 const {useState,useEffect,useRef}=React;
@@ -349,7 +407,6 @@ const S={
   cnlock:{padding:'.35rem .7rem',border:'1px dashed rgba(184,136,42,0.4)',
     fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(184,136,42,0.6)'},
   arr:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.18)',padding:'0 .1rem'},
-  // Level picker
   lvlBtn:{flex:1,padding:'.85rem .5rem',border:'1px solid rgba(250,245,239,0.15)',
     background:'rgba(250,245,239,0.04)',cursor:'pointer',textAlign:'center',
     fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.5)',fontSize:'.8rem',borderRadius:0},
@@ -361,8 +418,16 @@ const S={
     fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.2)',fontSize:'.8rem',borderRadius:0},
   progress:{height:'4px',background:'rgba(250,245,239,0.1)',margin:'.75rem 0'},
   progressFill:{height:'100%',background:'#B8882A',transition:'width .4s ease'},
+  // city shop
+  shopCard:{border:'1px solid rgba(250,245,239,0.15)',padding:'1.25rem 1.5rem',
+    marginBottom:'.75rem',cursor:'pointer',transition:'border-color .2s'},
+  shopCardH:{border:'1px solid #B8882A',padding:'1.25rem 1.5rem',
+    marginBottom:'.75rem',background:'rgba(184,136,42,0.06)'},
+  price:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'2rem',
+    fontWeight:600,color:'#B8882A',lineHeight:1},
 };
 
+// ── Base components ───────────────────────────────────────────
 function Inp({val,set,ph,type='text',onEnter,mono,mb0}){
   const[f,setF]=useState(false);
   return R('input',{type,value:val,onChange:e=>set(e.target.value),placeholder:ph,
@@ -395,65 +460,249 @@ function RankBadge({i}){
   return R('span',{style:{...S.rank,...extra}},i+1);
 }
 
-// ── Level Picker component ────────────────────────────────────
-function LevelPicker({selected,onSelect,me,myTeam}){
-  const cityUnlocked = isCityUnlocked(me);
-  const levels = [
-    {id:'solo', label:'Solo', sub:'len ty'},
-    {id:'team', label:'Tím',  sub:'ty + tím', locked:!me.teamId, lockMsg:'Najprv sa pridaj do tímu'},
-    {id:'city', label:'Mesto',sub:'ty + tím + mesto', locked:!me.teamId||!cityUnlocked,
-      lockMsg:!me.teamId?'Potrebuješ tím':'Odomkneš po '+cityThreshold(me.uid)+' interakciách'},
+// ── Level Picker ──────────────────────────────────────────────
+function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange}){
+  const hasTeam=myTeams&&myTeams.length>0;
+  const pts=me.points||0;
+  const levels=[
+    {id:'solo',  label:'Solo',   sub:'len ty', locked:false},
+    {id:'team',  label:'Tím',    sub:'ty + tím', locked:!hasTeam, lockMsg:'Potrebuješ tím'},
+    {id:'city',  label:'Mesto',  sub:'+ mesto',
+      locked:!canPlayCity(me),
+      lockMsg:!hasTeam?'Potrebuješ tím':pts<cityThreshold(me.uid)?'Potrebuješ '+cityThreshold(me.uid)+' interakcií (máš '+pts+')':'Mesto nemá licenciu → E-shop'},
+    {id:'region',label:'Kraj',   sub:'+ kraj',
+      locked:!canPlayRegion(me),
+      lockMsg:pts<REGION_THRESHOLD?'Potrebuješ '+REGION_THRESHOLD+' interakcií (máš '+pts+')':'Kraj nemá licenciu → E-shop'},
+    {id:'state', label:'Štát',   sub:'+ štát',
+      locked:!canPlayState(me),
+      lockMsg:pts<STATE_THRESHOLD?'Potrebuješ '+STATE_THRESHOLD+' interakcií':'Štát nemá licenciu → E-shop'},
+    {id:'global',label:'Globálna',sub:'+ svet',
+      locked:!canPlayGlobal(me),
+      lockMsg:pts<GLOBAL_THRESHOLD?'Potrebuješ '+GLOBAL_THRESHOLD+' interakcií':'Globálna úroveň nie je odomknutá → E-shop'},
   ];
   return R('div',null,
     R(Lbl,{c:'Hrám za úroveň'}),
     R('div',{style:{display:'flex',gap:'.5rem',marginBottom:'1rem'}},
       levels.map(lv=>{
-        const isLocked = lv.locked;
-        const isSelected = selected===lv.id&&!isLocked;
-        const style = isLocked?S.lvlBtnLock:isSelected?S.lvlBtnA:S.lvlBtn;
-        return R('div',{key:lv.id,style,onClick:()=>!isLocked&&onSelect(lv.id),title:isLocked?lv.lockMsg:''},
+        const isLocked=lv.locked;
+        const isSelected=selected===lv.id&&!isLocked;
+        return R('div',{key:lv.id,
+          style:isLocked?S.lvlBtnLock:isSelected?S.lvlBtnA:S.lvlBtn,
+          onClick:()=>!isLocked&&onSelect(lv.id),title:isLocked?lv.lockMsg:''},
           R('div',{style:{fontWeight:500,marginBottom:'.2rem'}},lv.label),
           R('div',{style:{fontSize:'.65rem',opacity:.7}},isLocked?'🔒':lv.sub)
         );
       })
+    ),
+    // Ak má viac tímov a hrá za tím, vyber ktorý
+    (selected==='team'||selected==='city')&&hasTeam&&myTeams.length>1&&R('div',null,
+      R(Lbl,{c:'Zbierám pre tím'}),
+      R('select',{value:activeTeamId||'',
+        onChange:e=>onTeamChange(e.target.value),
+        style:{...S.sel,marginBottom:'.5rem'}},
+        myTeams.map(t=>R('option',{key:t.id,value:t.id},t.name))
+      )
     )
   );
 }
 
-// ── City progress bar ─────────────────────────────────────────
-function CityProgress({me}){
-  const pts = me.points||0;
-  const thresh = cityThreshold(me.uid);
-  const unlocked = pts >= thresh;
-  const paid = hasPaid(me.uid);
-  const pct = Math.min(100, (pts/thresh)*100);
+// ── City Progress ─────────────────────────────────────────────
+function LevelProgress({me,onShop}){
+  const pts=me.points||0;
+  const paid=hasPaid(me.uid);
 
-  if(unlocked) return R('div',{style:{...S.card,borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.07)',marginBottom:'1rem'}},
-    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},'Mesto odomknuté'),
-    R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',marginTop:'.35rem'}},'Môžeš hrať za mestskú úroveň.')
+  // Define all levels with their data
+  const levels=[
+    {id:'city',   label:'Mesto',  thresh:cityThreshold(me.uid), can:canPlayCity(me),
+      licensed:isCityLicensed(me.city||''), name:me.city||'?',
+      hint: paid?null:'Zníž prah platbou'},
+    {id:'region', label:'Kraj',   thresh:REGION_THRESHOLD, can:canPlayRegion(me),
+      licensed:isRegionLicensed(me.region||me.city||''), name:me.region||me.city||'?', hint:null},
+    {id:'state',  label:'Štát',   thresh:STATE_THRESHOLD,  can:canPlayState(me),
+      licensed:isStateLicensed(me.country||''), name:me.country||'?', hint:null},
+    {id:'global', label:'Globálna',thresh:GLOBAL_THRESHOLD,can:canPlayGlobal(me),
+      licensed:isGlobalLicensed(), name:'Svet', hint:null},
+  ];
+
+  return R('div',{style:{marginBottom:'1rem'}},
+    levels.map(lv=>{
+      const p=pct(pts,lv.thresh);
+      if(lv.can) return R('div',{key:lv.id,style:{...S.card,
+        borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.06)',marginBottom:'.5rem'}},
+        R('div',{style:{display:'flex',justifyContent:'space-between'}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},lv.label+' · '+lv.name+' ✓'),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(184,136,42,0.6)'}},pts+' bodov')
+        )
+      );
+      // Not yet available
+      const needsInteractions=pts<lv.thresh;
+      const needsLicense=!lv.licensed&&pts>=lv.thresh;
+      return R('div',{key:lv.id,style:{...S.card,marginBottom:'.5rem'}},
+        R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'.4rem'}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}},
+            lv.label+(lv.name&&lv.name!=='?'?' · '+lv.name:'')),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:needsLicense?'#B8882A':'rgba(250,245,239,0.3)'}},
+            needsLicense?'licencia!':(pts+' / '+lv.thresh))
+        ),
+        needsInteractions&&R('div',{style:S.progress},
+          R('div',{style:{...S.progressFill,width:p+'%'}})),
+        needsLicense&&R('div',null,
+          R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.45)',marginBottom:'.6rem',lineHeight:1.5}},
+            lv.name+' ešte nemá licenciu. Kúp ju a odomkni úroveň pre všetkých.'),
+          R(Btn,{onClick:onShop,v:'g',full:true,s:{padding:'.6rem'}},'🏙️ Kúpiť licenciu')
+        ),
+        lv.id==='city'&&needsInteractions&&!paid&&R('div',{style:{marginTop:'.5rem'}},
+          R('div',{style:{fontSize:'.75rem',color:'rgba(250,245,239,0.35)',marginBottom:'.5rem'}},
+            'Skráť prah na '+CITY_THRESHOLD_PAID+' platbou'),
+          R(Btn,{onClick:()=>{window.location.href=STRIPE_PAYMENT_LINK+'?client_reference_id='+(me.uid||'anon');},
+            v:'m',full:true,s:{fontSize:'.7rem'}},'Skrátiť prah')
+        )
+      );
+    })
   );
+}
 
-  return R('div',{style:{...S.card,marginBottom:'1rem'}},
-    R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'.5rem'}},
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}},'Postup na mestskú úroveň'),
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#B8882A'}},pts+' / '+thresh)
+
+// ── City Shop screen ──────────────────────────────────────────
+function CityShop({me,onBack}){
+  const[tab,setTab]=useState('city');
+  const[cityInput,setCityInput]=useState(me.city||'');
+  const[regionInput,setRegionInput]=useState(me.region||me.city||'');
+  const[stateInput,setStateInput]=useState(me.country||'');
+  const pts=me.points||0;
+
+  const cityTiers=[
+    {label:'Malé mesto',sub:'do 5 000 obyvateľov',price:'5 €',link:STRIPE_CITY_SMALL},
+    {label:'Stredné mesto',sub:'do 100 000 obyvateľov',price:'20 €',link:STRIPE_CITY_MEDIUM},
+    {label:'Veľké mesto',sub:'100 000 a viac',price:'50 €',link:STRIPE_CITY_LARGE},
+  ];
+
+  const tabs=[
+    {id:'city',   label:'Mesto',   thresh:cityThreshold(me.uid), licensed:isCityLicensed(cityInput)},
+    {id:'region', label:'Kraj',    thresh:REGION_THRESHOLD, licensed:isRegionLicensed(regionInput)},
+    {id:'state',  label:'Štát',    thresh:STATE_THRESHOLD,  licensed:isStateLicensed(stateInput)},
+    {id:'global', label:'Globálna',thresh:GLOBAL_THRESHOLD, licensed:isGlobalLicensed()},
+  ];
+
+  const activeTab=tabs.find(t=>t.id===tab);
+  const hasEnough=pts>=activeTab.thresh;
+
+  function buyLicense(link, paramKey, paramVal){
+    window.location.href=link+'?client_reference_id='+encodeURIComponent((paramVal||'').toLowerCase());
+  }
+
+  return R('div',null,
+    R(Bk,{to:'home',set:onBack,l:'Späť'}),
+    R('div',{style:S.eye},'E-shop · licencie úrovní'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Odomkni ',R('em',{style:S.hEm},'ďalšiu úroveň')),
+    R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
+      'Jedna platba odomkne úroveň pre všetkých hráčov z danej oblasti. Stačí, keď zaplatí jeden.'),
+
+    // Level tabs
+    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.5rem',flexWrap:'wrap'}},
+      tabs.map(t=>R('button',{key:t.id,
+        onClick:()=>setTab(t.id),
+        style:tab===t.id?S.tabA:S.tab},
+        t.label+(t.licensed?' ✓':'')))
     ),
-    R('div',{style:S.progress},
-      R('div',{style:{...S.progressFill,width:pct+'%'}})
+
+    // Progress check
+    !hasEnough&&R('div',{style:{...S.card,borderColor:'rgba(196,96,58,0.3)',marginBottom:'1rem'}},
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#C4603A',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.5rem'}},
+        'Nedosahol si ešte prah'),
+      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',lineHeight:1.6}},
+        'Na '+activeTab.label.toLowerCase()+' potrebuješ '+activeTab.thresh+' interakcií. Máš '+pts+'.'),
+      R('div',{style:S.progress},R('div',{style:{...S.progressFill,width:pct(pts,activeTab.thresh)+'%'}}))
     ),
-    !paid&&R('div',null,
-      R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.45)',marginBottom:'.75rem',lineHeight:1.6}},
-        'Chceš odomknúť rýchlejšie? Za jednorázový poplatok sa prah zníži na ',
-        R('strong',{style:{color:'rgba(250,245,239,0.8)'}},CITY_THRESHOLD_PAID+' interakcií'),
-        ' (teraz: '+thresh+').'
+
+    activeTab.licensed&&R('div',{style:{...S.card,borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.07)',marginBottom:'1rem'}},
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},'Licencia platná ✓'),
+      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',marginTop:'.35rem'}},'Táto úroveň je odomknutá.')
+    ),
+
+    !activeTab.licensed&&hasEnough&&R('div',null,
+
+      // CITY
+      tab==='city'&&R('div',null,
+        R(Lbl,{c:'Mesto'}),
+        R(Inp,{val:cityInput,set:setCityInput,ph:'napr. Bratislava'}),
+        isCityLicensed(cityInput)
+          ?R('div',{style:S.ok},'✓ '+cityInput+' má platnú licenciu')
+          :cityInput.length>1&&R('div',null,
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginBottom:'1rem',textTransform:'uppercase',letterSpacing:'.1em'}},'Vyber veľkosť mesta:'),
+              cityTiers.map((t,i)=>R('div',{key:i,style:S.shopCard,
+                onClick:()=>buyLicense(t.link,'city_licensed',cityInput)},
+                R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+                  R('div',null,
+                    R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',marginBottom:'.2rem'}},t.label),
+                    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)'}},t.sub)
+                  ),
+                  R('div',{style:S.price},t.price)
+                )
+              ))
+            )
       ),
-      R(Btn,{onClick:()=>{
-        const link = STRIPE_PAYMENT_LINK+'?client_reference_id='+(me.uid||'anon');
-        window.location.href = link;
-      },v:'g',full:true},'Skrátiť prah → platba')
-    )
+
+      // REGION
+      tab==='region'&&R('div',null,
+        R(Lbl,{c:'Kraj / Región'}),
+        R(Inp,{val:regionInput,set:setRegionInput,ph:'napr. Bratislavský kraj'}),
+        isRegionLicensed(regionInput)
+          ?R('div',{style:S.ok},'✓ '+regionInput+' má platnú licenciu')
+          :regionInput.length>1&&R('div',{style:S.shopCard,
+              onClick:()=>buyLicense(STRIPE_REGION,'region_licensed',regionInput)},
+              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+                R('div',null,
+                  R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',marginBottom:'.2rem'}},'Krajská licencia'),
+                  R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)'}},'Odomkne kraj pre všetkých hráčov')
+                ),
+                R('div',{style:S.price},'50 €')
+              )
+            )
+      ),
+
+      // STATE
+      tab==='state'&&R('div',null,
+        R(Lbl,{c:'Štát'}),
+        R(Inp,{val:stateInput,set:setStateInput,ph:'napr. Slovensko'}),
+        isStateLicensed(stateInput)
+          ?R('div',{style:S.ok},'✓ '+stateInput+' má platnú licenciu')
+          :stateInput.length>1&&R('div',{style:S.shopCard,
+              onClick:()=>buyLicense(STRIPE_STATE,'state_licensed',stateInput)},
+              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+                R('div',null,
+                  R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',marginBottom:'.2rem'}},'Štátna licencia'),
+                  R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)'}},'Odomkne štát pre všetkých hráčov')
+                ),
+                R('div',{style:S.price},'200 €')
+              )
+            )
+      ),
+
+      // GLOBAL
+      tab==='global'&&R('div',null,
+        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',lineHeight:1.7,marginBottom:'1rem'}},
+          'Globálna úroveň — súťaž o % hrajúcej populácie sveta. Stačí jeden platca kdekoľvek na svete.'),
+        isGlobalLicensed()
+          ?R('div',{style:S.ok},'✓ Globálna úroveň je odomknutá')
+          :R('div',{style:S.shopCard,onClick:()=>buyLicense(STRIPE_GLOBAL,'global_licensed','world')},
+              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+                R('div',null,
+                  R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',marginBottom:'.2rem'}},'Globálna licencia'),
+                  R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)'}},'Odomkne súťaž o % populácie pre celý svet')
+                ),
+                R('div',{style:S.price},'500 €')
+              )
+            )
+      )
+    ),
+
+    R(Divider,null),
+    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.22)',lineHeight:1.7}},
+      'Po zaplatení ťa Stripe presmeruje späť a úroveň sa automaticky odomkne.',R('br',null),'Stripe · bezpečná platba kartou.')
   );
 }
+
 
 // ── Main App ──────────────────────────────────────────────────
 function App(){
@@ -461,8 +710,11 @@ function App(){
   const[me,setMe]=useState(null);
   const[players,setPlayers]=useState({});
   const[teams,setTeams]=useState({});
+  const[bigGroups,setBigGroups]=useState({});
   const[busy,setBusy]=useState(false);
   const[flash,setFlash]=useState('');
+
+  // auth
   const[email,setEmail]=useState('');
   const[pw,setPw]=useState('');
   const[pw2,setPw2]=useState('');
@@ -472,14 +724,27 @@ function App(){
   const[ae,setAe]=useState('');
   const[aok,setAok]=useState('');
   const[authTab,setAuthTab]=useState('login');
+
+  // game
   const[note,setNote]=useState('');
   const[ne,setNe]=useState('');
   const[playLevel,setPlayLevel]=useState('solo');
+  const[activeTeamId,setActiveTeamId]=useState(null);
+
+  // team management
   const[tName,setTName]=useState('');
   const[tCode,setTCode]=useState('');
   const[te,setTe]=useState('');
-  const[lbTab,setLbTab]=useState('ind');
   const[ttab,setTtab]=useState('create');
+  const[teamTab,setTeamTab]=useState('myteams'); // myteams | join | biggroup
+
+  // biggroup
+  const[bgName,setBgName]=useState('');
+  const[bgCode,setBgCode]=useState('');
+  const[bge,setBge]=useState('');
+  const[bgtab,setBgtab]=useState('create');
+
+  const[lbTab,setLbTab]=useState('ind');
   const offRef=useRef([]);
 
   useEffect(()=>{
@@ -492,12 +757,18 @@ function App(){
             if(!u.emailVerified){setScr('verify');return;}
           }catch(e){lsSet('hps:session',null);setScr('auth');return;}
         }
-        const pl=await DB.getPlayers(),tm=await DB.getTeams();
-        setPlayers(pl);setTeams(tm);
-        if(pl[sess.uid]){setMe(pl[sess.uid]);setScr('home');}
-        else setScr('auth');
+        const pl=await DB.getPlayers(),tm=await DB.getTeams(),bg=await DB.getBigGroups();
+        setPlayers(pl);setTeams(tm);setBigGroups(bg);
+        if(pl[sess.uid]){
+          const p=pl[sess.uid];
+          setMe(p);
+          // Set first team as active if not set
+          if(p.teamIds&&p.teamIds.length>0&&!activeTeamId) setActiveTeamId(p.teamIds[0]);
+          setScr('home');
+        } else setScr('auth');
       } else setScr('auth');
-      const off1=DB.onPlayers(p=>{setPlayers(p);const s=lsGet('hps:session');if(s&&p[s.uid])setMe(p[s.uid]);});
+      const off1=DB.onPlayers(p=>{setPlayers(p);
+        const s=lsGet('hps:session');if(s&&p[s.uid])setMe(p[s.uid]);});
       const off2=DB.onTeams(t=>setTeams(t));
       offRef.current=[off1,off2];
     })();
@@ -506,8 +777,15 @@ function App(){
 
   function shFlash(m){setFlash(m);setTimeout(()=>setFlash(''),3500);}
 
+  // Derived
+  // Player can be in multiple teams (teamIds array)
+  const myTeamIds=(me&&me.teamIds)||[];
+  const myTeams=myTeamIds.map(id=>teams[id]).filter(Boolean);
+  const myActiveTeam=activeTeamId?teams[activeTeamId]:null;
+
+  // ── AUTH ──────────────────────────────────────────────────
   async function doRegister(){
-    setAe('');setAok('');
+    setAe('');
     if(!email.trim()||!pw.trim()||!nick.trim()||!city.trim()||!country){setAe('Vyplň všetky polia.');return;}
     if(pw!==pw2){setAe('Heslá sa nezhodujú.');return;}
     if(pw.length<6){setAe('Heslo musí mať aspoň 6 znakov.');return;}
@@ -517,7 +795,7 @@ function App(){
         const res=await AUTH.signUp(email.trim(),pw);
         await AUTH.sendVerification(res.idToken);
         const profile={uid:res.localId,email:email.trim(),nickname:nick.trim(),
-          city:city.trim(),country,teamId:null,points:0,encounters:[]};
+          city:city.trim(),country,teamIds:[],bigGroupIds:[],points:0,encounters:[]};
         await DB.setPlayer(res.localId,profile);
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
         setScr('verify');
@@ -525,7 +803,7 @@ function App(){
         const pl=lsGet('hps:players')||{};
         const uid='u_'+Date.now();
         const profile={uid,email:email.trim(),nickname:nick.trim(),
-          city:city.trim(),country,teamId:null,points:0,encounters:[]};
+          city:city.trim(),country,teamIds:[],bigGroupIds:[],points:0,encounters:[]};
         pl[uid]=profile;lsSet('hps:players',pl);
         lsSet('hps:session',{uid,email:email.trim()});
         setMe(profile);setPlayers(pl);setScr('home');
@@ -535,7 +813,7 @@ function App(){
   }
 
   async function doLogin(){
-    setAe('');setAok('');
+    setAe('');
     if(!email.trim()||!pw.trim()){setAe('Vyplň e-mail a heslo.');return;}
     setBusy(true);
     try{
@@ -547,28 +825,32 @@ function App(){
           setScr('verify');setBusy(false);return;
         }
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
-        const pl=await DB.getPlayers();setPlayers(pl);
-        const tm2=await DB.getTeams();setTeams(tm2);
-        if(pl[res.localId]){setMe(pl[res.localId]);setScr('home');}
-        else{setAe('Profil nenájdený.');setBusy(false);}
+        const pl=await DB.getPlayers(),tm=await DB.getTeams(),bg=await DB.getBigGroups();
+        setPlayers(pl);setTeams(tm);setBigGroups(bg);
+        if(pl[res.localId]){
+          const p=pl[res.localId];setMe(p);
+          if(p.teamIds&&p.teamIds.length>0)setActiveTeamId(p.teamIds[0]);
+          setScr('home');
+        } else setAe('Profil nenájdený.');
       } else {
         const pl=lsGet('hps:players')||{};
         const p=Object.values(pl).find(x=>x.email===email.trim());
         if(!p){setAe('E-mail nenájdený.');setBusy(false);return;}
         lsSet('hps:session',{uid:p.uid,email:p.email});
-        const tm2=await DB.getTeams();setTeams(tm2);
-        setMe(p);setPlayers(pl);setScr('home');
+        const tm=await DB.getTeams(),bg=await DB.getBigGroups();
+        setTeams(tm);setBigGroups(bg);setMe(p);setPlayers(pl);setScr('home');
+        if(p.teamIds&&p.teamIds.length>0)setActiveTeamId(p.teamIds[0]);
       }
     }catch(e){setAe(authErrMsg(e.message));}
     finally{setBusy(false);}
   }
 
   async function doReset(){
-    setAe('');setAok('');
+    setAe('');
     if(!email.trim()){setAe('Zadaj e-mail.');return;}
     if(!USE_FIREBASE){setAe('Reset funguje iba s Firebase.');return;}
     setBusy(true);
-    try{await AUTH.sendPasswordReset(email.trim());setAok('E-mail s odkazom odoslaný!');}
+    try{await AUTH.sendPasswordReset(email.trim());setAok('E-mail odoslaný!');}
     catch(e){setAe(authErrMsg(e.message));}
     finally{setBusy(false);}
   }
@@ -577,7 +859,7 @@ function App(){
     const sess=lsGet('hps:session');if(!sess||!sess.idToken){setScr('auth');return;}
     setBusy(true);
     try{await AUTH.sendVerification(sess.idToken);shFlash('Verifikačný e-mail odoslaný!');}
-    catch(e){setAe(e.message);}finally{setBusy(false);}
+    catch(e){}finally{setBusy(false);}
   }
 
   async function doCheckVerified(){
@@ -586,7 +868,8 @@ function App(){
     try{
       const u=await AUTH.getUserInfo(sess.idToken);
       if(u.emailVerified){
-        const pl=await DB.getPlayers();setPlayers(pl);
+        const pl=await DB.getPlayers(),tm=await DB.getTeams();
+        setPlayers(pl);setTeams(tm);
         if(pl[sess.uid]){setMe(pl[sess.uid]);setScr('home');}
         else{setAe('Profil nenájdený.');setScr('auth');}
       } else shFlash('E-mail ešte nie je overený.');
@@ -598,82 +881,158 @@ function App(){
     setEmail('');setPw('');setPw2('');setNick('');setCity('');setCountry('');setAe('');setAok('');
   }
 
+  // ── ENCOUNTER ─────────────────────────────────────────────
   async function doEncounter(){
     if(!note.trim()){setNe('Napíš aspoň pár slov.');return;}
     setBusy(true);
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
       const uid=me.uid;
-      const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel};
+      const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,teamId:activeTeamId||null,city:me.city||'',country:me.country||''};
       const p={...pl[uid],points:(pl[uid].points||0)+1,
         encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
       await DB.setPlayer(uid,p);
-      // Cascade points based on selected level
-      if((playLevel==='team'||playLevel==='city')&&p.teamId&&tm[p.teamId]){
-        await DB.updateTeamPoints(p.teamId,(tm[p.teamId].points||0)+1);
+
+      // Cascade points up the hierarchy based on selected level
+      const levelOrder=['solo','team','city','region','state','global'];
+      const levelIdx=levelOrder.indexOf(playLevel);
+
+      // Team & BigGroup
+      if(levelIdx>=1&&activeTeamId&&tm[activeTeamId]){
+        await DB.setTeam(activeTeamId,{...tm[activeTeamId],points:(tm[activeTeamId].points||0)+1});
+        if(tm[activeTeamId].bigGroupId){
+          const bg=await DB.getBigGroups();
+          const bgId=tm[activeTeamId].bigGroupId;
+          if(bg[bgId]) await DB.setBigGroup(bgId,{...bg[bgId],points:(bg[bgId].points||0)+1});
+        }
       }
-      // City level — update city leaderboard (stored under team for now)
+      // City/Region/State/Global — stored as geo leaderboards in DB
+      if(levelIdx>=2){
+        // City points
+        const cityKey=normCity(p.city||'');
+        if(cityKey){
+          const cities=await DB.getCities();
+          const cur=cities[cityKey]||{licensed:false,points:0};
+          await DB.setCity(cityKey,{...cur,points:(cur.points||0)+1});
+        }
+      }
+      // Region, State, Global cascades are logged with the encounter for leaderboard queries
+
+      // Refresh state
+      const plR=await DB.getPlayers(),tmR=await DB.getTeams(),bgR=await DB.getBigGroups();
+      setPlayers(plR);setTeams(tmR);setBigGroups(bgR);
+      if(plR[uid])setMe(plR[uid]);
+
       setNote('');setNe('');
-      // Check if city just unlocked
-      const wasLocked=!isCityUnlocked(pl[uid]);
-      const nowUnlocked=isCityUnlocked(p);
-      if(wasLocked&&nowUnlocked) shFlash('Mestská úroveň odomknutá! Môžeš hrať za '+p.city+'.');
-      else shFlash('Stretnutie zaznamenané! +1 bod'+(playLevel!=='solo'?' pre teba aj tím':''));
+      // Check milestone unlocks
+      const milestones=[
+        {thresh:cityThreshold(me.uid), msg:'Mestská úroveň odomknutá! 🏙️'},
+        {thresh:REGION_THRESHOLD, msg:'Krajská úroveň odomknutá! 🗺️'},
+        {thresh:STATE_THRESHOLD,  msg:'Štátna úroveň odomknutá! 🇸🇰'},
+        {thresh:GLOBAL_THRESHOLD, msg:'Globálna úroveň odomknutá! 🌍'},
+      ];
+      const prevPts=pl[uid].points||0;
+      const newPts=p.points||0;
+      const milestone=milestones.find(m=>prevPts<m.thresh&&newPts>=m.thresh);
+      if(milestone) shFlash(milestone.msg);
+      else shFlash('Stretnutie zaznamenané! +1 bod');
       setScr('home');
     }finally{setBusy(false);}
   }
 
+  // ── TEAM ACTIONS ──────────────────────────────────────────
   async function doCreateTeam(){
     const name=tName.trim();if(!name){setTe('Zadaj názov.');return;}
     setBusy(true);
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
-      if(pl[me.uid].teamId){setTe('Už si v tíme.');setBusy(false);return;}
       const id='t_'+Date.now(),code=genCode();
-      await DB.setTeam(id,{id,name,code,members:[me.uid],points:0});
-      await DB.setPlayer(me.uid,{...pl[me.uid],teamId:id});
+      const newTeam={id,name,code,members:[me.uid],points:0,bigGroupId:null,founderId:me.uid};
+      await DB.setTeam(id,newTeam);
+      const currentIds=pl[me.uid].teamIds||[];
+      await DB.setPlayer(me.uid,{...pl[me.uid],teamIds:[...currentIds,id]});
       const plR=await DB.getPlayers(),tmR=await DB.getTeams();
-      setPlayers(plR);setTeams(tmR);
-      if(plR[me.uid])setMe(plR[me.uid]);
+      setPlayers(plR);setTeams(tmR);if(plR[me.uid])setMe(plR[me.uid]);
+      if(!activeTeamId)setActiveTeamId(id);
       setTName('');setTe('');shFlash('Tím vytvorený! Kód: '+code);
     }finally{setBusy(false);}
   }
 
-  async function doJoin(){
+  async function doJoinTeam(){
     const code=tCode.trim().toUpperCase();if(!code){setTe('Zadaj kód.');return;}
     setBusy(true);
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
-      if(pl[me.uid].teamId){setTe('Už si v tíme.');setBusy(false);return;}
       const team=Object.values(tm).find(t=>t.code===code);
       if(!team){setTe('Tím nenájdený.');setBusy(false);return;}
       if((team.members||[]).length>=8){setTe('Tím je plný.');setBusy(false);return;}
+      const currentIds=pl[me.uid].teamIds||[];
+      if(currentIds.includes(team.id)){setTe('Už si v tomto tíme.');setBusy(false);return;}
       await DB.setTeam(team.id,{...team,members:[...(team.members||[]),me.uid]});
-      await DB.setPlayer(me.uid,{...pl[me.uid],teamId:team.id});
+      await DB.setPlayer(me.uid,{...pl[me.uid],teamIds:[...currentIds,team.id]});
       const plR=await DB.getPlayers(),tmR=await DB.getTeams();
-      setPlayers(plR);setTeams(tmR);
-      if(plR[me.uid])setMe(plR[me.uid]);
+      setPlayers(plR);setTeams(tmR);if(plR[me.uid])setMe(plR[me.uid]);
+      if(!activeTeamId)setActiveTeamId(team.id);
       setTCode('');setTe('');shFlash('Pridal si sa do tímu '+team.name+'!');
     }finally{setBusy(false);}
   }
 
-  async function doLeave(){
+  async function doLeaveTeam(teamId){
     setBusy(true);
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
-      const tid=pl[me.uid].teamId;if(!tid||!tm[tid]){setBusy(false);return;}
-      await DB.setTeam(tid,{...tm[tid],members:(tm[tid].members||[]).filter(m=>m!==me.uid)});
-      await DB.setPlayer(me.uid,{...pl[me.uid],teamId:null});
+      if(!tm[teamId]){setBusy(false);return;}
+      await DB.setTeam(teamId,{...tm[teamId],members:(tm[teamId].members||[]).filter(m=>m!==me.uid)});
+      const newIds=(pl[me.uid].teamIds||[]).filter(id=>id!==teamId);
+      await DB.setPlayer(me.uid,{...pl[me.uid],teamIds:newIds});
       const plR=await DB.getPlayers(),tmR=await DB.getTeams();
-      setPlayers(plR);setTeams(tmR);
-      if(plR[me.uid])setMe(plR[me.uid]);
+      setPlayers(plR);setTeams(tmR);if(plR[me.uid])setMe(plR[me.uid]);
+      if(activeTeamId===teamId)setActiveTeamId(newIds[0]||null);
       shFlash('Opustil si tím.');
     }finally{setBusy(false);}
   }
 
-  const myTeam=me&&me.teamId?teams[me.teamId]:null;
+  // ── BIGGROUP ACTIONS ──────────────────────────────────────
+  async function doCreateBigGroup(teamId){
+    const name=bgName.trim();if(!name){setBge('Zadaj názov.');return;}
+    setBusy(true);
+    try{
+      const tm=await DB.getTeams(),bg=await DB.getBigGroups();
+      const team=tm[teamId];
+      if(!team||team.founderId!==me.uid){setBge('Iba zakladateľ tímu môže vytvoriť veľkú skupinu.');setBusy(false);return;}
+      const id='bg_'+Date.now(),code=genCode();
+      const newBg={id,name,code,teamIds:[teamId],points:0,founderId:me.uid};
+      await DB.setBigGroup(id,newBg);
+      await DB.setTeam(teamId,{...team,bigGroupId:id});
+      const bgR=await DB.getBigGroups(),tmR=await DB.getTeams();
+      setBigGroups(bgR);setTeams(tmR);
+      setBgName('');setBge('');shFlash('Veľká skupina vytvorená! Kód: '+code);
+    }finally{setBusy(false);}
+  }
+
+  async function doJoinBigGroup(teamId){
+    const code=bgCode.trim().toUpperCase();if(!code){setBge('Zadaj kód.');return;}
+    setBusy(true);
+    try{
+      const tm=await DB.getTeams(),bg=await DB.getBigGroups();
+      const team=tm[teamId];
+      if(!team||team.founderId!==me.uid){setBge('Iba zakladateľ tímu môže pripojiť tím k veľkej skupine.');setBusy(false);return;}
+      const group=Object.values(bg).find(g=>g.code===code);
+      if(!group){setBge('Skupina nenájdená.');setBusy(false);return;}
+      if(team.bigGroupId){setBge('Tím je už v skupite.');setBusy(false);return;}
+      await DB.setBigGroup(group.id,{...group,teamIds:[...(group.teamIds||[]),teamId]});
+      await DB.setTeam(teamId,{...team,bigGroupId:group.id});
+      const bgR=await DB.getBigGroups(),tmR=await DB.getTeams();
+      setBigGroups(bgR);setTeams(tmR);
+      setBgCode('');setBge('');shFlash('Tím sa pridal k '+group.name+'!');
+    }finally{setBusy(false);}
+  }
+
+  // Derived leaderboards
   const sPlayers=Object.values(players).sort((a,b)=>b.points-a.points);
   const sTeams=Object.values(teams).filter(t=>(t.members||[]).length>0).sort((a,b)=>b.points-a.points);
+  const sBigGroups=Object.values(bigGroups).filter(g=>(g.teamIds||[]).length>0).sort((a,b)=>b.points-a.points);
+
   const fbBadge=USE_FIREBASE
     ?R('span',{style:S.badgeFb},'Firebase · live')
     :R('span',{style:{...S.badgeFb,background:'rgba(250,245,239,0.06)',borderColor:'rgba(250,245,239,0.14)',color:'rgba(250,245,239,0.32)'}},'lokálne · demo');
@@ -681,7 +1040,7 @@ function App(){
   if(scr==='loading')return R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
     color:'rgba(250,245,239,0.28)',letterSpacing:'.1em',padding:'1rem 0'}},'načítavam…');
 
-  // ── AUTH ─────────────────────────────────────────────────────
+  // ══ AUTH ═════════════════════════════════════════════════
   if(scr==='auth')return R('div',null,
     R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
       R('div',{style:S.eye},'Prihlásenie / registrácia'),fbBadge),
@@ -705,13 +1064,10 @@ function App(){
           R(Lbl,{c:'Heslo'}),R(Inp,{val:pw,set:setPw,ph:'minimálne 6 znakov',type:'password'}),
           R(Lbl,{c:'Heslo znovu'}),R(Inp,{val:pw2,set:setPw2,ph:'zopakuj heslo',type:'password',onEnter:doRegister,mb0:true}),
           R(Err,{m:ae}),
-          R(Btn,{onClick:doRegister,v:'p',full:true,busy,s:{marginTop:'.75rem'}},'Zaregistrovať sa'),
-          USE_FIREBASE&&R('p',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-            color:'rgba(250,245,239,0.28)',marginTop:'.75rem',lineHeight:1.6}},
-            'Na tvoj e-mail pošleme potvrdzovací odkaz.'))
+          R(Btn,{onClick:doRegister,v:'p',full:true,busy,s:{marginTop:'.75rem'}},'Zaregistrovať sa'))
   );
 
-  // ── VERIFY ───────────────────────────────────────────────────
+  // ══ VERIFY ═══════════════════════════════════════════════
   if(scr==='verify')return R('div',null,
     R('div',{style:S.eye},'Overenie e-mailu'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Skontroluj ',R('em',{style:S.hEm},'schránku')),
@@ -726,7 +1082,10 @@ function App(){
         R('button',{style:S.btnLink,onClick:doLogout},'Späť na prihlásenie')))
   );
 
-  // ── HOME ─────────────────────────────────────────────────────
+  // ══ CITY SHOP ════════════════════════════════════════════
+  if(scr==='cityshop')return R(CityShop,{me,onBack:setScr});
+
+  // ══ HOME ═════════════════════════════════════════════════
   if(scr==='home')return R('div',null,
     R(Fl,{msg:flash}),
     R('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'1.5rem'}},
@@ -735,127 +1094,185 @@ function App(){
         R('h3',{style:{...S.h,fontSize:'2rem',marginBottom:'.2rem'}},me.nickname),
         R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginBottom:'.15rem'}},
           me.city+(me.country?', '+me.country:'')),
-        myTeam&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#C4603A',letterSpacing:'.06em'}},'Tím: '+myTeam.name)
+        // Tímy pod menom
+        myTeams.length>0&&R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.35rem',marginTop:'.2rem'}},
+          myTeams.map(t=>R('span',{key:t.id,style:{
+            ...S.badgeA,
+            ...(activeTeamId===t.id?{}:{background:'rgba(139,46,20,0.4)'}),
+            cursor:'pointer'},
+            onClick:()=>setActiveTeamId(t.id),
+            title:'Klikni pre výber aktívneho tímu'},t.name))
+        )
       ),
       R('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'.5rem'}},
-        myTeam?R('span',{style:S.badgeA},myTeam.name):R('span',{style:S.badge},'Solo'),
         R('div',{style:{display:'flex',gap:'.4rem',alignItems:'center'}},
           fbBadge,
           R(Btn,{onClick:doLogout,v:'m',s:{padding:'.3rem .7rem',fontSize:'.6rem'}},'Odhlásiť')))
     ),
-    R('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.75rem',marginBottom:'1.5rem'}},
+    // Štatistiky
+    R('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'.75rem',marginBottom:'1.5rem'}},
       R('div',{style:S.stat},R('div',{style:S.statN},me.points||0),R('div',{style:S.statL},'Moje body')),
-      R('div',{style:S.stat},R('div',{style:S.statN},myTeam?myTeam.points||0:'—'),R('div',{style:S.statL},'Body tímu'))
+      R('div',{style:S.stat},R('div',{style:S.statN},myActiveTeam?myActiveTeam.points||0:'—'),R('div',{style:S.statL},'Tím'+(myTeams.length>1?' (aktívny)':''))),
+      R('div',{style:S.stat},R('div',{style:S.statN},myTeams.length||0),R('div',{style:S.statL},'Moje tímy'))
     ),
+    // Cascade diagram
     R('div',{style:{...S.card,marginBottom:'1.5rem'}},
       R('div',{style:{...S.lbl,marginBottom:'.6rem'}},'Aktívne úrovne'),
       R('div',{style:S.cascade},
         R('div',{style:S.cna},'Solo'),
         R('div',{style:S.arr},'→'),
-        me.teamId?R('div',{style:S.cna},'Tím'):R('div',{style:{...S.cn,cursor:'pointer'},onClick:()=>setScr('team')},'+ Tím'),
+        myTeams.length>0
+          ?R('div',{style:S.cna},myActiveTeam?myActiveTeam.name:'Tím')
+          :R('div',{style:{...S.cn,cursor:'pointer'},onClick:()=>setScr('team')},'+ Tím'),
         R('div',{style:{...S.arr,opacity:.3}},'→'),
-        isCityUnlocked(me)
+        canPlayCity(me)
           ?R('div',{style:S.cna},'Mesto')
-          :R('div',{style:S.cnlock},'Mesto '+(me.points||0)+'/'+cityThreshold(me.uid)),
+          :R('div',{style:{...S.cnlock,cursor:'pointer'},onClick:()=>setScr('cityshop')},
+              'Mesto '+(me.points||0)+'/'+cityThreshold(me.uid)),
+        R('div',{style:{...S.arr,opacity:.25}},'→'),
+        canPlayRegion(me)
+          ?R('div',{style:S.cna},'Kraj')
+          :R('div',{style:{...S.cnlock,cursor:'pointer'},onClick:()=>setScr('cityshop')},
+              'Kraj '+(me.points||0)+'/'+REGION_THRESHOLD),
         R('div',{style:{...S.arr,opacity:.2}},'→'),
-        R('div',{style:S.cn},'Krajina'),
-        R('div',{style:{...S.arr,opacity:.2}},'→'),
-        R('div',{style:S.cn},'Svet')
+        canPlayState(me)
+          ?R('div',{style:S.cna},'Štát')
+          :R('div',{style:{...S.cnlock,cursor:'pointer'},onClick:()=>setScr('cityshop')},
+              'Štát '+(me.points||0)+'/'+STATE_THRESHOLD),
+        R('div',{style:{...S.arr,opacity:.15}},'→'),
+        canPlayGlobal(me)
+          ?R('div',{style:S.cna},'Globálna')
+          :R('div',{style:{...S.cn,opacity:.4,cursor:'pointer'},onClick:()=>setScr('cityshop')},
+              'Globálna '+(me.points||0)+'/'+GLOBAL_THRESHOLD)
       )
     ),
-    R(CityProgress,{me}),
+    R(LevelProgress,{me,onShop:()=>setScr('cityshop')}),
     R(Btn,{onClick:()=>setScr('log'),v:'p',full:true,s:{padding:'1rem',fontSize:'1rem',marginBottom:'.75rem'}},
       '+ Zaznamenať stretnutie'),
-    R('div',{style:{display:'flex',gap:'.75rem',marginBottom:'1.5rem'}},
-      R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},myTeam?'Môj tím':'Vytvoriť tím'),
+    R('div',{style:{display:'flex',gap:'.75rem',marginBottom:'.75rem'}},
+      R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},myTeams.length>0?'Moje tímy':'Vytvoriť tím'),
       R(Btn,{onClick:()=>setScr('lb'),v:'m',s:{flex:1}},'Rebríček')
     ),
+    R(Btn,{onClick:()=>setScr('cityshop'),v:'m',full:true,s:{marginBottom:'1.5rem',fontSize:'.7rem'}},'🏙️ E-shop · mestské licencie'),
     (me.encounters||[]).length>0&&R('div',null,
       R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Posledné stretnutia'),
       (me.encounters||[]).slice(0,5).map((e,i)=>R('div',{key:i,style:{
         padding:'.7rem 0',borderBottom:'1px solid rgba(250,245,239,0.06)',
         fontSize:'.85rem',color:'rgba(250,245,239,0.72)'}},
         R('div',null,e.note),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-          color:'rgba(250,245,239,0.28)',marginTop:'.2rem'}},
-          fmtDate(e.date),
-          e.level&&e.level!=='solo'&&R('span',{style:{marginLeft:'.5rem',color:'#C4603A'}},'· '+e.level))))
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.2rem'}},
+          fmtDate(e.date),e.level&&e.level!=='solo'&&R('span',{style:{marginLeft:'.5rem',color:'#C4603A'}},'· '+e.level))
+      ))
     )
   );
 
-  // ── LOG ──────────────────────────────────────────────────────
+  // ══ LOG ══════════════════════════════════════════════════
   if(scr==='log')return R('div',null,
     R(Bk,{to:'home',set:setScr,l:'Späť'}),
     R('div',{style:S.eye},'Nové stretnutie'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Koho si dnes ',R('em',{style:S.hEm},'stretol?')),
     R('div',{style:S.card},
-      R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeam}),
+      R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeams,
+        activeTeamId,onTeamChange:setActiveTeamId}),
       R(Divider,null),
       R(Lbl,{c:'Pár slov o stretnutí'}),
       R('textarea',{rows:4,value:note,onChange:e=>setNote(e.target.value),
-        placeholder:'napr. „Oslovil som chlapíka v kaviarni, hovoril o tom, že sa učí opravovať staré motorky…"',
+        placeholder:'napr. „Oslovil som chlapíka v kaviarni, hovoril o opravovaní starých motoriek…"',
         style:{...S.inp,resize:'vertical',lineHeight:1.6}}),
       ne&&R(Err,{m:ne}),
       R('div',{style:{display:'flex',gap:'.5rem',flexWrap:'wrap',margin:'.75rem 0'}},
         R('span',{style:S.badgeA},'+1 · '+me.nickname),
-        (playLevel==='team'||playLevel==='city')&&myTeam&&R('span',{style:S.badgeG},'+1 · '+myTeam.name),
+        (playLevel==='team'||playLevel==='city')&&myActiveTeam&&R('span',{style:S.badgeG},'+1 · '+myActiveTeam.name),
         playLevel==='city'&&R('span',{style:S.badgeG},'+1 · '+me.city)
       ),
       R(Btn,{onClick:doEncounter,v:'p',full:true,busy,s:{padding:'1rem'}},'Zaznamenať (+1 bod)')
     )
   );
 
-  // ── TEAM ─────────────────────────────────────────────────────
+  // ══ TÍMY ═════════════════════════════════════════════════
   if(scr==='team')return R('div',null,
     R(Bk,{to:'home',set:setScr,l:'Späť'}),
     R(Fl,{msg:flash}),
-    R('div',{style:S.eye},'Tím'),
-    R('h3',{style:{...S.h,fontSize:'1.6rem'}},myTeam?myTeam.name:R('em',{style:S.hEm},'Bez tímu')),
-    myTeam?R('div',null,
-      R('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.75rem',marginBottom:'1.5rem'}},
-        R('div',{style:S.stat},R('div',{style:S.statN},myTeam.points||0),R('div',{style:S.statL},'Body tímu')),
-        R('div',{style:S.stat},R('div',{style:S.statN},(myTeam.members||[]).length),R('div',{style:S.statL},'Členov'))
-      ),
-      R('div',{style:S.card},
-        R('div',{style:{...S.lbl,marginBottom:'.25rem'}},'Kód tímu'),
-        R('div',{style:S.tCode},myTeam.code),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-          color:'rgba(250,245,239,0.28)'}},'5–8 členov · teraz '+(myTeam.members||[]).length)
-      ),
-      R('div',{style:{...S.card,marginBottom:'1.5rem'}},
-        R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Členovia'),
-        (myTeam.members||[]).map((uid,i)=>{
-          const p=players[uid];
-          return R('div',{key:i,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
-            R('div',{style:{flex:1}},
-              R('div',{style:{fontWeight:uid===me.uid?500:400,color:'rgba(250,245,239,'+(uid===me.uid?.92:.68)+')'}},
-                p?p.nickname:uid.slice(0,8),(uid===me.uid)&&' (ty)'),
-              p&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-                color:'rgba(250,245,239,0.3)',marginTop:'.1rem'}},p.city+(p.country?', '+p.country:''))
+    R('div',{style:S.eye},'Tímy'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Moje ',R('em',{style:S.hEm},'skupiny')),
+
+    // Zoznam mojich tímov
+    myTeams.length>0&&R('div',{style:{marginBottom:'1.5rem'}},
+      R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Moje tímy ('+myTeams.length+')'),
+      myTeams.map(t=>{
+        const isActive=activeTeamId===t.id;
+        const bg=t.bigGroupId?bigGroups[t.bigGroupId]:null;
+        const isFounder=t.founderId===me.uid;
+        return R('div',{key:t.id,style:{...S.card,
+          ...(isActive?{borderColor:'#C4603A'}:{}),marginBottom:'.75rem'}},
+          R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'.5rem'}},
+            R('div',null,
+              R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',fontSize:'.95rem'}},t.name,
+                isFounder&&R('span',{style:{...S.badge,marginLeft:'.5rem',fontSize:'.55rem'}},'zakladateľ')),
+              bg&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(184,136,42,0.8)',marginTop:'.2rem'}},'↳ '+bg.name),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginTop:'.15rem'}},
+                'Kód: '+t.code+' · '+(t.members||[]).length+' členov · '+(t.points||0)+' bodov')
             ),
-            R('span',{style:S.pt},(p&&p.points)||0));
-        })
-      ),
-      R(Btn,{onClick:doLeave,v:'m',full:true,busy},'Opustiť tím')
-    ):R('div',null,
-      R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
-        R('button',{onClick:()=>{setTtab('create');setTe('');},style:ttab==='create'?S.tabA:S.tab},'Vytvoriť'),
-        R('button',{onClick:()=>{setTtab('join');setTe('');},style:ttab==='join'?S.tabA:S.tab},'Pripojiť sa')
-      ),
-      te&&R(Err,{m:te}),
-      ttab==='create'?R('div',{style:S.card},
-        R(Lbl,{c:'Názov tímu'}),
-        R(Inp,{val:tName,set:setTName,ph:'napr. Tím Bratislava',onEnter:doCreateTeam,mb0:true}),
-        R(Btn,{onClick:doCreateTeam,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Vytvoriť tím')
-      ):R('div',{style:S.card},
-        R(Lbl,{c:'Kód tímu'}),
-        R(Inp,{val:tCode,set:v=>setTCode(v.toUpperCase()),ph:'napr. AB3X7K',onEnter:doJoin,mono:true,mb0:true}),
-        R(Btn,{onClick:doJoin,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť sa')
-      )
+            R('div',{style:{display:'flex',gap:'.4rem',flexDirection:'column',alignItems:'flex-end'}},
+              R(Btn,{onClick:()=>setActiveTeamId(t.id),v:isActive?'g':'m',s:{fontSize:'.65rem',padding:'.3rem .7rem'}},
+                isActive?'✓ Aktívny':'Nastaviť aktívny'),
+              isFounder&&!t.bigGroupId&&R(Btn,{onClick:()=>{setBgtab('create');setScr('biggroup_'+t.id);},v:'m',s:{fontSize:'.65rem',padding:'.3rem .7rem'}},'+ Veľká skupina'),
+              isFounder&&!t.bigGroupId&&R(Btn,{onClick:()=>{setBgtab('join');setScr('biggroup_'+t.id);},v:'m',s:{fontSize:'.65rem',padding:'.3rem .7rem'}},'Pripojiť k skupine'),
+              R(Btn,{onClick:()=>doLeaveTeam(t.id),v:'m',s:{fontSize:'.65rem',padding:'.3rem .7rem',color:'rgba(196,96,58,0.6)'}},'Opustiť')
+            )
+          )
+        );
+      })
+    ),
+
+    // Pridať nový tím
+    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
+      R('button',{onClick:()=>{setTtab('create');setTe('');},style:ttab==='create'?S.tabA:S.tab},'Vytvoriť tím'),
+      R('button',{onClick:()=>{setTtab('join');setTe('');},style:ttab==='join'?S.tabA:S.tab},'Pripojiť sa ku tímu')
+    ),
+    te&&R(Err,{m:te}),
+    ttab==='create'?R('div',{style:S.card},
+      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',marginBottom:'1rem',lineHeight:1.6}},
+        'Môžeš byť v niekoľkých tímoch súčasne — skautská družina, skupina z farnosti, kamaráti... Pri každom stretnutí si vyberieš, pre ktorý tím zbieraš.'),
+      R(Lbl,{c:'Názov tímu'}),
+      R(Inp,{val:tName,set:setTName,ph:'napr. Skautská družina Sv. Juraja',onEnter:doCreateTeam,mb0:true}),
+      R(Btn,{onClick:doCreateTeam,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Vytvoriť tím')
+    ):R('div',{style:S.card},
+      R(Lbl,{c:'Kód tímu'}),
+      R(Inp,{val:tCode,set:v=>setTCode(v.toUpperCase()),ph:'napr. AB3X7K',onEnter:doJoinTeam,mono:true,mb0:true}),
+      R(Btn,{onClick:doJoinTeam,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť sa')
     )
   );
 
-  // ── LEADERBOARD ──────────────────────────────────────────────
+  // ══ VEĽKÁ SKUPINA ════════════════════════════════════════
+  if(scr&&scr.startsWith('biggroup_')){
+    const teamId=scr.replace('biggroup_','');
+    const team=teams[teamId];
+    return R('div',null,
+      R(Bk,{to:'team',set:setScr,l:'Späť na tímy'}),
+      R(Fl,{msg:flash}),
+      R('div',{style:S.eye},'Veľká skupina'),
+      R('h3',{style:{...S.h,fontSize:'1.6rem'}},team?team.name:'Tím'),
+      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
+        'Veľká skupina združuje viacero tímov — napríklad skautský zbor združuje viac družín, alebo farnosť združuje skupiny z farnosti.'),
+      R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
+        R('button',{onClick:()=>setBgtab('create'),style:bgtab==='create'?S.tabA:S.tab},'Vytvoriť skupinu'),
+        R('button',{onClick:()=>setBgtab('join'),style:bgtab==='join'?S.tabA:S.tab},'Pripojiť k existujúcej')
+      ),
+      bge&&R(Err,{m:bge}),
+      bgtab==='create'?R('div',{style:S.card},
+        R(Lbl,{c:'Názov veľkej skupiny'}),
+        R(Inp,{val:bgName,set:setBgName,ph:'napr. 4. zbor skauting Bratislava',mb0:true}),
+        R(Btn,{onClick:()=>doCreateBigGroup(teamId),v:'p',full:true,busy,s:{marginTop:'1rem'}},'Vytvoriť veľkú skupinu')
+      ):R('div',{style:S.card},
+        R(Lbl,{c:'Kód veľkej skupiny'}),
+        R(Inp,{val:bgCode,set:v=>setBgCode(v.toUpperCase()),ph:'napr. ZB9K2M',mono:true,mb0:true}),
+        R(Btn,{onClick:()=>doJoinBigGroup(teamId),v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť tím')
+      )
+    );
+  }
+
+  // ══ REBRÍČEK ═════════════════════════════════════════════
   if(scr==='lb')return R('div',null,
     R(Bk,{to:'home',set:setScr,l:'Späť'}),
     R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
@@ -863,38 +1280,46 @@ function App(){
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Kto ',R('em',{style:S.hEm},'vedie?')),
     R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
       R('button',{onClick:()=>setLbTab('ind'),style:lbTab==='ind'?S.tabA:S.tab},'Jednotlivci'),
-      R('button',{onClick:()=>setLbTab('team'),style:lbTab==='team'?S.tabA:S.tab},'Tímy')
+      R('button',{onClick:()=>setLbTab('team'),style:lbTab==='team'?S.tabA:S.tab},'Tímy'),
+      R('button',{onClick:()=>setLbTab('big'),style:lbTab==='big'?S.tabA:S.tab},'Veľké skupiny')
     ),
     lbTab==='ind'?(
       sPlayers.length===0
-        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
-            color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadni hráči.')
+        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadni hráči.')
         :sPlayers.map((p,i)=>R('div',{key:p.uid||p.nickname,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
             R(RankBadge,{i}),
             R('div',{style:{flex:1}},
-              R('div',{style:{fontWeight:p.uid===me.uid?500:400,
-                color:'rgba(250,245,239,'+(p.uid===me.uid?.92:.68)+')'}},
+              R('div',{style:{fontWeight:p.uid===me.uid?500:400,color:'rgba(250,245,239,'+(p.uid===me.uid?.92:.68)+')'}},
                 p.nickname,p.uid===me.uid&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'ty')),
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-                color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
-                p.city+(p.country?', '+p.country:''),
-                p.teamId&&teams[p.teamId]&&' · '+teams[p.teamId].name)
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+                p.city+(p.country?', '+p.country:''))
             ),
             R('span',{style:S.pt},p.points||0)))
-    ):(
+    ):lbTab==='team'?(
       sTeams.length===0
-        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
-            color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadne tímy.')
+        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadne tímy.')
         :sTeams.map((tm2,i)=>R('div',{key:tm2.id,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
             R(RankBadge,{i}),
             R('div',{style:{flex:1}},
-              R('div',{style:{fontWeight:tm2.id===me.teamId?500:400,
-                color:'rgba(250,245,239,'+(tm2.id===me.teamId?.92:.68)+')'}},
-                tm2.name,tm2.id===me.teamId&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'tvoj')),
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-                color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},(tm2.members||[]).length+' členov')
+              R('div',{style:{fontWeight:myTeamIds.includes(tm2.id)?500:400,
+                color:'rgba(250,245,239,'+(myTeamIds.includes(tm2.id)?.92:.68)+')'}},
+                tm2.name,myTeamIds.includes(tm2.id)&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'tvoj')),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+                (tm2.members||[]).length+' členov',
+                tm2.bigGroupId&&bigGroups[tm2.bigGroupId]&&' · '+bigGroups[tm2.bigGroupId].name)
             ),
             R('span',{style:S.pt},tm2.points||0)))
+    ):(
+      sBigGroups.length===0
+        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadne veľké skupiny.')
+        :sBigGroups.map((bg,i)=>R('div',{key:bg.id,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
+            R(RankBadge,{i}),
+            R('div',{style:{flex:1}},
+              R('div',{style:{color:'rgba(250,245,239,0.8)',fontWeight:500}},bg.name),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+                (bg.teamIds||[]).length+' tímov')
+            ),
+            R('span',{style:S.pt},bg.points||0)))
     )
   );
 
@@ -903,5 +1328,7 @@ function App(){
 
 const root=document.getElementById('game-root');
 if(root)ReactDOM.createRoot(root).render(R(App,null));
+
 </script>
 </body>
+</html>
