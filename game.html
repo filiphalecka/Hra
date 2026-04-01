@@ -548,6 +548,7 @@ function App(){
         }
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
         const pl=await DB.getPlayers();setPlayers(pl);
+        const tm2=await DB.getTeams();setTeams(tm2);
         if(pl[res.localId]){setMe(pl[res.localId]);setScr('home');}
         else{setAe('Profil nenájdený.');setBusy(false);}
       } else {
@@ -555,6 +556,7 @@ function App(){
         const p=Object.values(pl).find(x=>x.email===email.trim());
         if(!p){setAe('E-mail nenájdený.');setBusy(false);return;}
         lsSet('hps:session',{uid:p.uid,email:p.email});
+        const tm2=await DB.getTeams();setTeams(tm2);
         setMe(p);setPlayers(pl);setScr('home');
       }
     }catch(e){setAe(authErrMsg(e.message));}
@@ -630,6 +632,9 @@ function App(){
       const id='t_'+Date.now(),code=genCode();
       await DB.setTeam(id,{id,name,code,members:[me.uid],points:0});
       await DB.setPlayer(me.uid,{...pl[me.uid],teamId:id});
+      const plR=await DB.getPlayers(),tmR=await DB.getTeams();
+      setPlayers(plR);setTeams(tmR);
+      if(plR[me.uid])setMe(plR[me.uid]);
       setTName('');setTe('');shFlash('Tím vytvorený! Kód: '+code);
     }finally{setBusy(false);}
   }
@@ -645,6 +650,9 @@ function App(){
       if((team.members||[]).length>=8){setTe('Tím je plný.');setBusy(false);return;}
       await DB.setTeam(team.id,{...team,members:[...(team.members||[]),me.uid]});
       await DB.setPlayer(me.uid,{...pl[me.uid],teamId:team.id});
+      const plR=await DB.getPlayers(),tmR=await DB.getTeams();
+      setPlayers(plR);setTeams(tmR);
+      if(plR[me.uid])setMe(plR[me.uid]);
       setTCode('');setTe('');shFlash('Pridal si sa do tímu '+team.name+'!');
     }finally{setBusy(false);}
   }
@@ -656,6 +664,9 @@ function App(){
       const tid=pl[me.uid].teamId;if(!tid||!tm[tid]){setBusy(false);return;}
       await DB.setTeam(tid,{...tm[tid],members:(tm[tid].members||[]).filter(m=>m!==me.uid)});
       await DB.setPlayer(me.uid,{...pl[me.uid],teamId:null});
+      const plR=await DB.getPlayers(),tmR=await DB.getTeams();
+      setPlayers(plR);setTeams(tmR);
+      if(plR[me.uid])setMe(plR[me.uid]);
       shFlash('Opustil si tím.');
     }finally{setBusy(false);}
   }
