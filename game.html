@@ -118,9 +118,9 @@ const STRIPE_GLOBAL       = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800
 // Thresholds
 const CITY_THRESHOLD      = 50;
 const CITY_THRESHOLD_PAID = 25;
-const REGION_THRESHOLD    = 150;
-const STATE_THRESHOLD     = 300;
-const GLOBAL_THRESHOLD    = 500;
+const REGION_THRESHOLD    = 100;
+const STATE_THRESHOLD     = 150;
+const GLOBAL_THRESHOLD    = 200;
 
 // ── Štartovacie kategórie veľkých skupín ─────────────────────
 // Každá kategória má pole podkategórií (typy skupín)
@@ -441,18 +441,20 @@ const S={
     fontWeight:600,color:'#B8882A',lineHeight:1},
   // Category picker styles
   catGrid:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.5rem',marginBottom:'1rem'},
-  catBtn:{padding:'.7rem',border:'1px solid rgba(250,245,239,0.12)',background:'rgba(250,245,239,0.04)',
-    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',color:'rgba(250,245,239,0.6)',
-    textAlign:'left',borderRadius:0},
-  catBtnA:{padding:'.7rem',border:'1px solid #C4603A',background:'rgba(196,96,58,0.1)',
-    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',color:'#FAF5EF',
-    textAlign:'left',borderRadius:0},
-  typeChip:{display:'inline-block',padding:'.25rem .6rem',margin:'.2rem',
-    border:'1px solid rgba(250,245,239,0.12)',fontFamily:"'DM Mono',monospace",
-    fontSize:'.65rem',color:dark+'.45)',cursor:'pointer'},
-  typeChipA:{display:'inline-block',padding:'.25rem .6rem',margin:'.2rem',
-    border:'1px solid #C4603A',background:'rgba(196,96,58,0.1)',
-    fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#FAF5EF',cursor:'pointer'},
+  catBtn:{padding:'.65rem .9rem',border:'1px solid rgba(250,245,239,0.2)',background:'rgba(250,245,239,0.08)',
+    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,
+    color:'rgba(250,245,239,0.75)',textAlign:'center',borderRadius:0,letterSpacing:'.03em'},
+  catBtnA:{padding:'.65rem .9rem',border:'1px solid #C4603A',background:'rgba(196,96,58,0.18)',
+    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:600,
+    color:'#FAF5EF',textAlign:'center',borderRadius:0,letterSpacing:'.03em'},
+  typeChip:{display:'inline-block',padding:'.3rem .75rem',margin:'.2rem',
+    border:'1px solid rgba(250,245,239,0.25)',fontFamily:"'DM Mono',monospace",
+    fontSize:'.65rem',color:'rgba(250,245,239,0.65)',cursor:'pointer',
+    background:'rgba(250,245,239,0.06)',borderRadius:0},
+  typeChipA:{display:'inline-block',padding:'.3rem .75rem',margin:'.2rem',
+    border:'1px solid #C4603A',background:'rgba(196,96,58,0.18)',
+    fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#FAF5EF',
+    cursor:'pointer',borderRadius:0},
 };
 
 // ── Base components ───────────────────────────────────────────
@@ -779,6 +781,8 @@ function App(){
   const[bgName,setBgName]=useState('');
   const[bgCode,setBgCode]=useState('');
   const[bgCat,setBgCat]=useState('');
+  const[bgParentCode,setBgParentCode]=useState('');
+  const[bge2,setBge2]=useState('');
   const[bgType,setBgType]=useState('');
   const[bge,setBge]=useState('');
   const[bgtab,setBgtab]=useState('create');
@@ -934,14 +938,17 @@ function App(){
       const p={...pl[uid],points:prevPts+1,encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
       await DB.setPlayer(uid,p);
 
-      // Cascade
+      // Cascade — points flow up through all parent biggroups
       if((playLevel==='team'||playLevel==='city')&&activeTeamId&&tm[activeTeamId]){
-        const updT={...tm[activeTeamId],points:(tm[activeTeamId].points||0)+1};
-        await DB.setTeam(activeTeamId,updT);
+        await DB.setTeam(activeTeamId,{...tm[activeTeamId],points:(tm[activeTeamId].points||0)+1});
+        // Walk up biggroup parent chain
         if(tm[activeTeamId].bigGroupId){
           const bg=await DB.getBigGroups();
-          const bgId=tm[activeTeamId].bigGroupId;
-          if(bg[bgId])await DB.setBigGroup(bgId,{...bg[bgId],points:(bg[bgId].points||0)+1});
+          let curId=tm[activeTeamId].bigGroupId;
+          while(curId&&bg[curId]){
+            await DB.setBigGroup(curId,{...bg[curId],points:(bg[curId].points||0)+1});
+            curId=bg[curId].parentId||null;
+          }
         }
       }
 
@@ -1022,10 +1029,43 @@ function App(){
       if(!team||team.founderId!==me.uid){setBge('Iba zakladateľ malej skupiny môže vytvoriť veľkú skupinu.');setBusy(false);return;}
       const id='bg_'+Date.now(),code=genCode();
       await DB.setBigGroup(id,{id,name,code,teamIds:[teamId],points:0,founderId:me.uid,
-        category:bgCat,type:bgType||null});
+        category:bgCat,type:bgType||null,parentId:null});
       await DB.setTeam(teamId,{...team,bigGroupId:id});
       await refreshAll();
       setBgName('');setBgCat('');setBgType('');setBge('');shFlash('Veľká skupina vytvorená! Kód: '+code);
+    }finally{setBusy(false);}
+  }
+
+  // Join a biggroup into a parent biggroup (by code)
+  async function doJoinParentGroup(bgId){
+    const code=bgParentCode.trim().toUpperCase();
+    if(!code){setBge2('Zadaj kód nadradenej skupiny.');return;}
+    setBusy(true);
+    try{
+      const bg=await DB.getBigGroups();
+      const parent=Object.values(bg).find(g=>g.code===code);
+      if(!parent){setBge2('Skupina nenájdená.');setBusy(false);return;}
+      if(parent.id===bgId){setBge2('Skupina nemôže byť rodičom samej seba.');setBusy(false);return;}
+      // Check for circular reference
+      let cur=parent;
+      while(cur&&cur.parentId){
+        if(cur.parentId===bgId){setBge2('Cyklická závislosť — táto skupina je už nadradená.');setBusy(false);return;}
+        cur=bg[cur.parentId];
+      }
+      await DB.setBigGroup(bgId,{...bg[bgId],parentId:parent.id});
+      await refreshAll();
+      setBgParentCode('');setBge2('');shFlash('Skupina zaradená do '+parent.name+'!');
+    }finally{setBusy(false);}
+  }
+
+  async function doLeaveParentGroup(bgId){
+    setBusy(true);
+    try{
+      const bg=await DB.getBigGroups();
+      if(!bg[bgId]){setBusy(false);return;}
+      await DB.setBigGroup(bgId,{...bg[bgId],parentId:null});
+      await refreshAll();
+      shFlash('Skupina odpojená od nadradenej.');
     }finally{setBusy(false);}
   }
 
@@ -1038,11 +1078,46 @@ function App(){
       if(!team||team.founderId!==me.uid){setBge('Iba zakladateľ malej skupiny môže pripojiť tím.');setBusy(false);return;}
       const group=Object.values(bg).find(g=>g.code===code);
       if(!group){setBge('Skupina nenájdená.');setBusy(false);return;}
-      if(team.bigGroupId){setBge('Tím je už v skupite.');setBusy(false);return;}
+      if(team.bigGroupId){setBge('Tím je už v skupine.');setBusy(false);return;}
       await DB.setBigGroup(group.id,{...group,teamIds:[...(group.teamIds||[]),teamId]});
       await DB.setTeam(teamId,{...team,bigGroupId:group.id});
       await refreshAll();
       setBgCode('');setBge('');shFlash('Tím sa pridal k '+group.name+'!');
+    }finally{setBusy(false);}
+  }
+
+  // Join biggroup as individual member (not via team)
+  async function doJoinBigGroupDirect(code){
+    const c=(code||bgCode).trim().toUpperCase();
+    if(!c){setBge('Zadaj kód.');return;}
+    setBusy(true);
+    try{
+      const bg=await DB.getBigGroups(),pl=await DB.getPlayers();
+      const group=Object.values(bg).find(g=>g.code===c);
+      if(!group){setBge('Skupina nenájdená.');setBusy(false);return;}
+      const currentBgIds=pl[me.uid].bigGroupIds||[];
+      if(currentBgIds.includes(group.id)){setBge('Už si členom tejto skupiny.');setBusy(false);return;}
+      const members=group.members||[];
+      if(members.includes(me.uid)){setBge('Už si členom tejto skupiny.');setBusy(false);return;}
+      await DB.setBigGroup(group.id,{...group,members:[...members,me.uid]});
+      await DB.setPlayer(me.uid,{...pl[me.uid],bigGroupIds:[...currentBgIds,group.id]});
+      await refreshAll();
+      setBgCode('');setBge('');shFlash('Pridal si sa k '+group.name+'!');
+    }finally{setBusy(false);}
+  }
+
+  // Leave biggroup as individual member
+  async function doLeaveBigGroupDirect(bgId){
+    setBusy(true);
+    try{
+      const bg=await DB.getBigGroups(),pl=await DB.getPlayers();
+      if(!bg[bgId]){setBusy(false);return;}
+      const members=(bg[bgId].members||[]).filter(m=>m!==me.uid);
+      await DB.setBigGroup(bgId,{...bg[bgId],members});
+      const newBgIds=(pl[me.uid].bigGroupIds||[]).filter(id=>id!==bgId);
+      await DB.setPlayer(me.uid,{...pl[me.uid],bigGroupIds:newBgIds});
+      await refreshAll();
+      shFlash('Opustil si skupinu.');
     }finally{setBusy(false);}
   }
 
@@ -1105,42 +1180,289 @@ function App(){
 
   // ══ SPECIAL SCREENS ══════════════════════════════════════
   if(scr==='cityshop')return R(CityShop,{me,onBack:setScr});
+  if(scr==='join_bg_direct')return R('div',null,
+    R(Bk,{to:'team',set:setScr,l:'Späť'}),
+    R('div',{style:S.eye},'Pripojiť sa ku veľkej skupine'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Zadaj ',R('em',{style:S.hEm},'kód skupiny')),
+    R('div',{style:S.card},
+      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.6,marginBottom:'1.25rem'}},
+        'Kód dostaneš od zakladateľa skupiny (napr. zboru alebo oblasti).'),
+      R(Lbl,{c:'Kód skupiny'}),
+      R(Inp,{val:bgCode,set:v=>setBgCode(v.toUpperCase()),ph:'napr. ZB9K2M',mono:true,mb0:true}),
+      bge&&R(Err,{m:bge}),
+      R(Btn,{onClick:()=>doJoinBigGroupDirect(bgCode),v:'p',full:true,busy,
+        s:{marginTop:'1rem'}},'Pripojiť sa')
+    )
+  );
+
   if(scr==='reqcat')return R(RequestCategory,{me,onBack:setScr,onSubmitted:()=>setScr('team')});
 
   // BigGroup screens (dynamic id)
   if(scr&&scr.startsWith('biggroup_')){
     const teamId=scr.replace('biggroup_','');
     const team=teams[teamId];
-    const existingBg=team&&team.bigGroupId?bigGroups[team.bigGroupId]:null;
+    const myBg=team&&team.bigGroupId?bigGroups[team.bigGroupId]:null;
+    const isFounder=myBg&&myBg.founderId===me.uid;
+
+    // Build ancestor chain for current biggroup
+    function getAncestors(bgId){
+      const chain=[];
+      let cur=bgId;
+      while(cur&&bigGroups[cur]){
+        chain.push(bigGroups[cur]);
+        cur=bigGroups[cur].parentId||null;
+      }
+      return chain;
+    }
+    // Get direct children biggroups
+    function getChildren(bgId){
+      return Object.values(bigGroups).filter(g=>g.parentId===bgId);
+    }
+
+    const ancestors=myBg?getAncestors(myBg.id):[];
+    const parent=myBg&&myBg.parentId?bigGroups[myBg.parentId]:null;
+    const children=myBg?getChildren(myBg.id):[];
+
     return R('div',null,
       R(Bk,{to:'team',set:setScr,l:'Späť na skupiny'}),
       R(Fl,{msg:flash}),
       R('div',{style:S.eye},'Veľká skupina'),
       R('h3',{style:{...S.h,fontSize:'1.6rem'}},team?team.name:'Tím'),
-      existingBg?R('div',{style:S.card},
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.5rem'}},'Zaradená do'),
-        R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF'}},existingBg.name),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)',marginTop:'.25rem'}},
-          existingBg.category+(existingBg.type?' · '+existingBg.type:'')+' · Kód: '+existingBg.code)
-      ):R('div',null,
+
+      // ── Ak tím NEMÁ veľkú skupinu ──
+      !myBg&&R('div',null,
         R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
-          'Veľká skupina združuje malé skupiny rovnakého typu — napríklad trieda združuje skupiny z tej istej triedy.'),
+          'Veľká skupina združuje malé skupiny rovnakého typu. Môžeš vytvoriť novú alebo sa pripojiť ku existujúcej kódom.'),
         R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
           R('button',{onClick:()=>setBgtab('create'),style:bgtab==='create'?S.tabA:S.tab},'Vytvoriť novú'),
-          R('button',{onClick:()=>setBgtab('join'),style:bgtab==='join'?S.tabA:S.tab},'Pripojiť k existujúcej')
+          R('button',{onClick:()=>setBgtab('join'),style:bgtab==='join'?S.tabA:S.tab},'Pripojiť kódom')
         ),
         bge&&R(Err,{m:bge}),
         bgtab==='create'?R('div',{style:S.card},
-          R(Lbl,{c:'Názov veľkej skupiny'}),
-          R(Inp,{val:bgName,set:setBgName,ph:'napr. III. A Gymnázium Mudroňova'}),
+          R(Lbl,{c:'Názov'}),
+          R(Inp,{val:bgName,set:setBgName,ph:'napr. Oddiel sv. Juraja'}),
           R(CategoryPicker,{categories,selectedCat:bgCat,selectedType:bgType,
             onCat:setBgCat,onType:setBgType,onRequestNew:()=>setScr('reqcat')}),
-          R(Btn,{onClick:()=>doCreateBigGroup(teamId),v:'p',full:true,busy,s:{marginTop:'1rem'}},'Vytvoriť veľkú skupinu')
+          R(Btn,{onClick:()=>doCreateBigGroup(teamId),v:'p',full:true,busy,s:{marginTop:'1rem'}},'Vytvoriť')
         ):R('div',{style:S.card},
-          R(Lbl,{c:'Kód veľkej skupiny'}),
+          R(Lbl,{c:'Kód skupiny'}),
           R(Inp,{val:bgCode,set:v=>setBgCode(v.toUpperCase()),ph:'napr. ZB9K2M',mono:true,mb0:true}),
-          R(Btn,{onClick:()=>doJoinBigGroup(teamId),v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť tím')
+          R(Btn,{onClick:()=>doJoinBigGroup(teamId),v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť sa')
         )
+      ),
+
+      // ── Ak tím MÁ veľkú skupinu ──
+      myBg&&R('div',null,
+
+        // Hierarchia — strom nahor
+        R('div',{style:{...S.card,marginBottom:'.75rem'}},
+          R('div',{style:{...S.lbl,marginBottom:'.75rem'}},'Hierarchia skupín'),
+          // Zobraz reťaz od koreňa nadol
+          R('div',{style:{display:'flex',flexDirection:'column',gap:'.4rem'}},
+            [...ancestors].reverse().map((g,i)=>{
+              const isCurrent=g.id===myBg.id;
+              return R('div',{key:g.id,style:{
+                display:'flex',alignItems:'center',gap:'.5rem',
+                paddingLeft:(i*1.2)+'rem'}},
+                R('span',{style:{color:'rgba(250,245,239,0.2)',fontFamily:"'DM Mono',monospace",fontSize:'.7rem'}},
+                  i===0?'▶':' └'),
+                R('div',{style:{
+                  padding:'.4rem .8rem',
+                  border:'1px solid '+(isCurrent?'#C4603A':'rgba(250,245,239,0.15)'),
+                  background:isCurrent?'rgba(196,96,58,0.1)':'transparent',
+                  fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                  color:isCurrent?'#FAF5EF':'rgba(250,245,239,0.5)',
+                  flex:1}},
+                  g.name,
+                  isCurrent&&R('span',{style:{marginLeft:'.5rem',color:'#C4603A'}},'← ty'),
+                  R('span',{style:{marginLeft:'.5rem',opacity:.4}},'· '+g.points+' b')
+                )
+              );
+            }),
+            // Deti tejto skupiny
+            children.length>0&&R('div',{style:{marginTop:'.5rem'}},
+              R('div',{style:{...S.lbl,marginBottom:'.4rem'}},'Podradené skupiny ('+children.length+')'),
+              children.map(c=>R('div',{key:c.id,style:{
+                display:'flex',alignItems:'center',gap:'.5rem',
+                paddingLeft:'1.2rem',marginBottom:'.3rem'}},
+                R('span',{style:{color:'rgba(250,245,239,0.2)',fontFamily:"'DM Mono',monospace",fontSize:'.7rem'}},' └'),
+                R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                  color:'rgba(250,245,239,0.45)',padding:'.35rem .7rem',
+                  border:'1px solid rgba(250,245,239,0.1)',flex:1}},
+                  c.name,' · ',c.points,' b')
+              ))
+            )
+          ),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+            color:'rgba(250,245,239,0.28)',marginTop:'.75rem'}},
+            'Kód: '+myBg.code,
+            myBg.category&&' · '+myBg.category+(myBg.type?' / '+myBg.type:'')
+          )
+        ),
+
+        // Pripojiť k nadradenej / odpojiť
+        isFounder&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
+          R('div',{style:{...S.lbl,marginBottom:'.75rem'}},'Nadradená skupina'),
+          parent
+            ?R('div',null,
+                R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.7)',marginBottom:'.75rem'}},
+                  'Táto skupina patrí pod: ',R('strong',null,parent.name)),
+                R(Btn,{onClick:()=>doLeaveParentGroup(myBg.id),v:'m',busy,
+                  s:{fontSize:'.7rem',color:'rgba(196,96,58,0.7)'}},'Odpojiť od nadradenej')
+              )
+            :R('div',null,
+                R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',marginBottom:'.75rem',lineHeight:1.6}},
+                  'Táto skupina zatiaľ nie je zaradená do vyššej skupiny. Zadaj kód nadradenej skupiny (napr. zboru).'),
+                bge2&&R(Err,{m:bge2}),
+                R(Lbl,{c:'Kód nadradenej skupiny'}),
+                R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+                  ph:'napr. ZB9K2M',mono:true,mb0:true}),
+                R(Btn,{onClick:()=>doJoinParentGroup(myBg.id),v:'p',full:true,busy,
+                  s:{marginTop:'1rem'}},'Zaradiť do nadradenej')
+              )
+        ),
+
+        // Info pre ne-zakladateľov
+        !isFounder&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}}),
+          R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)'}},'Hierarchiu môže spravovať len zakladateľ skupiny.')
+        )
+      )
+    );
+  }
+
+  // ══ SPRÁVA VEĽKEJ SKUPINY ════════════════════════════════
+  if(scr&&scr.startsWith('manage_bg_')){
+    const bgId=scr.replace('manage_bg_','');
+    const bg=bigGroups[bgId];
+    if(!bg) return R('div',null,R(Bk,{to:'team',set:setScr,l:'Späť'}),R('div',{style:S.err},'Skupina nenájdená.'));
+
+    const isFounder=bg.founderId===me.uid;
+    const isMember=(bg.members||[]).includes(me.uid)||
+      (bg.teamIds||[]).some(tid=>(teams[tid]&&(teams[tid].members||[]).includes(me.uid)));
+    const parent=bg.parentId?bigGroups[bg.parentId]:null;
+
+    // Build full ancestor chain
+    function getChain(id){
+      const chain=[];let cur=id;
+      while(cur&&bigGroups[cur]){chain.push(bigGroups[cur]);cur=bigGroups[cur].parentId||null;}
+      return chain;
+    }
+    const chain=getChain(bgId);
+    const children=Object.values(bigGroups).filter(g=>g.parentId===bgId);
+    const childTeams=(bg.teamIds||[]).map(id=>teams[id]).filter(Boolean);
+
+    // Geographic level this biggroup unlocks at
+    const geoLevels=[
+      {label:'Vždy aktívne',min:0},
+      {label:'Vždy aktívne',min:0},
+      {label:'Odomkne sa s mestom',min:50},
+      {label:'Odomkne sa s krajom',min:100},
+      {label:'Odomkne sa so štátom',min:150},
+      {label:'Odomkne sa s globálnou',min:200},
+    ];
+
+    return R('div',null,
+      R(Bk,{to:'team',set:setScr,l:'Späť'}),
+      R(Fl,{msg:flash}),
+      R('div',{style:S.eye},'Správa skupiny'),
+      R('h3',{style:{...S.h,fontSize:'1.6rem'}},bg.name),
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+        color:'rgba(250,245,239,0.35)',marginBottom:'1.5rem',letterSpacing:'.08em'}},
+        bg.category+(bg.type?' · '+bg.type:'')+' · Kód: ',
+        R('strong',{style:{color:'#B8882A',letterSpacing:'.15em'}},bg.code),
+        ' · '+bg.points+' bodov'
+      ),
+
+      // Hierarchia
+      R('div',{style:{...S.card,marginBottom:'.75rem'}},
+        R(Lbl,{c:'Hierarchia'}),
+        R('div',{style:{display:'flex',flexDirection:'column',gap:'.35rem'}},
+          [...chain].reverse().map((g,i)=>{
+            const isCur=g.id===bgId;
+            return R('div',{key:g.id,
+              style:{display:'flex',alignItems:'center',gap:'.5rem',paddingLeft:(i*1.25)+'rem',cursor:isCur?'default':'pointer'},
+              onClick:()=>!isCur&&setScr('manage_bg_'+g.id)},
+              R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+                color:'rgba(250,245,239,0.2)',flexShrink:0}},i===0?'◆':' └'),
+              R('div',{style:{
+                padding:'.35rem .75rem',flex:1,
+                border:'1px solid '+(isCur?'#C4603A':'rgba(250,245,239,0.12)'),
+                background:isCur?'rgba(196,96,58,0.1)':'rgba(250,245,239,0.03)',
+                fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                color:isCur?'#FAF5EF':'rgba(250,245,239,0.5)'}},
+                g.name,
+                !isCur&&R('span',{style:{marginLeft:'.4rem',fontSize:'.55rem',color:'rgba(250,245,239,0.25)'}},'→ otvoriť'),
+                R('span',{style:{marginLeft:'.5rem',opacity:.35}},'· '+g.points+' b')
+              )
+            );
+          }),
+          // Podradené skupiny
+          children.length>0&&children.map(c=>R('div',{key:c.id,
+            style:{display:'flex',alignItems:'center',gap:'.5rem',
+              paddingLeft:(chain.length*1.25)+'rem',cursor:'pointer'},
+            onClick:()=>setScr('manage_bg_'+c.id)},
+            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+              color:'rgba(250,245,239,0.15)',flexShrink:0}},' └'),
+            R('div',{style:{padding:'.35rem .75rem',flex:1,
+              border:'1px solid rgba(250,245,239,0.08)',
+              fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+              color:'rgba(250,245,239,0.38)'}},
+              c.name,' · ',c.points,' b',
+              R('span',{style:{marginLeft:'.4rem',fontSize:'.55rem',color:'rgba(250,245,239,0.25)'}},'→ otvoriť')
+            )
+          )),
+          // Malé skupiny (tímy)
+          childTeams.length>0&&R('div',{style:{marginTop:'.25rem'}},
+            childTeams.map(t=>R('div',{key:t.id,
+              style:{display:'flex',alignItems:'center',gap:'.5rem',
+                paddingLeft:(chain.length*1.25)+'rem',marginTop:'.25rem'}},
+              R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+                color:'rgba(250,245,239,0.1)',flexShrink:0}},' └'),
+              R('div',{style:{padding:'.25rem .6rem',
+                border:'1px dashed rgba(250,245,239,0.08)',
+                fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(250,245,239,0.25)'}},
+                '👥 '+t.name+' · '+(t.members||[]).length+' členov')
+            ))
+          )
+        )
+      ),
+
+      // Pripojiť k nadradenej (len zakladateľ)
+      isFounder&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
+        R(Lbl,{c:parent?'Nadradená skupina':'Pripojiť k nadradenej'}),
+        parent
+          ?R('div',null,
+              R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.65)',marginBottom:'.75rem'}},
+                bg.name,' patrí pod ',
+                R('span',{style:{color:'#FAF5EF',fontWeight:500}},parent.name)),
+              R('div',{style:{display:'flex',gap:'.5rem'}},
+                R(Btn,{onClick:()=>setScr('manage_bg_'+parent.id),v:'m',
+                  s:{fontSize:'.7rem'}},'Otvoriť '+parent.name),
+                R(Btn,{onClick:()=>doLeaveParentGroup(bgId),v:'m',busy,
+                  s:{fontSize:'.7rem',color:'rgba(196,96,58,0.6)'}},'Odpojiť')
+              )
+            )
+          :R('div',null,
+              R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.45)',
+                marginBottom:'.75rem',lineHeight:1.6}},
+                'Zadaj kód nadradenej skupiny (napr. zboru alebo oblasti).'),
+              bge2&&R(Err,{m:bge2}),
+              R(Lbl,{c:'Kód nadradenej skupiny'}),
+              R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+                ph:'napr. ZB9K2M',mono:true,mb0:true}),
+              R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'p',full:true,busy,
+                s:{marginTop:'1rem'}},'Zaradiť do nadradenej')
+            )
+      ),
+
+      // Opustiť skupinu (pre členov čo nie sú zakladatelia)
+      !isFounder&&isMember&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
+        R(Lbl,{c:'Členstvo'}),
+        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',marginBottom:'.75rem'}},'Si členom tejto skupiny.'),
+        R(Btn,{onClick:()=>doLeaveBigGroupDirect(bgId),v:'m',busy,
+          s:{color:'rgba(196,96,58,0.6)',fontSize:'.75rem'}},'Opustiť skupinu')
       )
     );
   }
@@ -1270,6 +1592,53 @@ function App(){
         );
       })
     ),
+    // Moje veľké skupiny
+    R('div',{style:{...S.lbl,marginBottom:'1rem',marginTop:'1.5rem'}},'Veľké skupiny'),
+    R('div',{style:{marginBottom:'1.5rem'}},
+      // BigGroups where I'm founder (via my teams)
+      (()=>{
+        const myBgIds=new Set();
+        myTeams.forEach(t=>{if(t.bigGroupId)myBgIds.add(t.bigGroupId);});
+        // Also biggroups I joined directly
+        ((me.bigGroupIds)||[]).forEach(id=>myBgIds.add(id));
+        const myBgList=[...myBgIds].map(id=>bigGroups[id]).filter(Boolean);
+        if(myBgList.length===0) return R('div',{style:{fontFamily:"'DM Mono',monospace",
+          fontSize:'.7rem',color:'rgba(250,245,239,0.22)',padding:'.5rem 0'}},
+          'Zatiaľ nie si v žiadnej veľkej skupine.');
+        return R('div',{style:{display:'flex',flexDirection:'column',gap:'.5rem'}},
+          myBgList.map(bg=>{
+            const isFounder=bg.founderId===me.uid;
+            const parent=bg.parentId?bigGroups[bg.parentId]:null;
+            return R('div',{key:bg.id,style:{...S.card,marginBottom:0,
+              padding:'1rem 1.25rem',cursor:'pointer'},
+              onClick:()=>setScr('manage_bg_'+bg.id)},
+              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+                R('div',null,
+                  R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,
+                    color:'#FAF5EF',fontSize:'.9rem',marginBottom:'.2rem'}},
+                    bg.name,isFounder&&R('span',{style:{...S.badge,marginLeft:'.5rem',
+                      fontSize:'.55rem'}},'zakladateľ')),
+                  parent&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                    color:'rgba(184,136,42,0.7)',marginBottom:'.15rem'}},'↳ '+parent.name),
+                  R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                    color:'rgba(250,245,239,0.28)'}},
+                    bg.category+(bg.type?' · '+bg.type:'')+' · '+bg.points+' bodov')
+                ),
+                R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                  color:'rgba(250,245,239,0.35)',marginTop:'.15rem'}},'Spravovať →')
+              )
+            );
+          })
+        );
+      })(),
+      // Join biggroup directly by code
+      R('div',{style:{marginTop:'1rem'}},
+        R(Btn,{onClick:()=>setScr('join_bg_direct'),v:'m',
+          s:{fontSize:'.7rem',width:'100%'}},'+ Pripojiť sa ku veľkej skupine kódom')
+      )
+    ),
+
+    R('div',{style:{...S.lbl,marginBottom:'.75rem'}},'Malé skupiny'),
     R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
       R('button',{onClick:()=>setTtab('create'),style:ttab==='create'?S.tabA:S.tab},'Vytvoriť malú skupinu'),
       R('button',{onClick:()=>setTtab('join'),style:ttab==='join'?S.tabA:S.tab},'Pripojiť sa kódom')
@@ -1289,71 +1658,135 @@ function App(){
   );
 
   // ══ REBRÍČEK ═════════════════════════════════════════════
-  if(scr==='lb')return R('div',null,
-    R(Bk,{to:'home',set:setScr,l:'Späť'}),
-    R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
-      R('div',{style:S.eye},'Rebríček'),fbBadge),
-    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Kto ',R('em',{style:S.hEm},'vedie?')),
-    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem',flexWrap:'wrap'}},
-      R('button',{onClick:()=>setLbTab('ind'),style:lbTab==='ind'?S.tabA:S.tab},'Jednotlivci'),
-      R('button',{onClick:()=>setLbTab('small'),style:lbTab==='small'?S.tabA:S.tab},'Malé skupiny'),
-      R('button',{onClick:()=>setLbTab('big'),style:lbTab==='big'?S.tabA:S.tab},'Veľké skupiny')
-    ),
+  if(scr==='lb'){
+    // Geo leaderboards derived from players
+    const cityMap={},regionMap={},stateMap={},globalTotal={pts:0,players:0};
+    Object.values(players).forEach(p=>{
+      if(p.city){const k=p.city;cityMap[k]=(cityMap[k]||{name:k,points:0,players:0});cityMap[k].points+=p.points||0;cityMap[k].players++;}
+      if(p.region||p.city){const k=p.region||p.city;regionMap[k]=(regionMap[k]||{name:k,points:0,players:0});regionMap[k].points+=p.points||0;regionMap[k].players++;}
+      if(p.country){const k=p.country;stateMap[k]=(stateMap[k]||{name:k,points:0,players:0});stateMap[k].points+=p.points||0;stateMap[k].players++;}
+      globalTotal.pts+=p.points||0;globalTotal.players++;
+    });
+    const sCities=Object.values(cityMap).sort((a,b)=>b.points-a.points);
+    const sRegions=Object.values(regionMap).sort((a,b)=>b.points-a.points);
+    const sStates=Object.values(stateMap).sort((a,b)=>b.points-a.points);
 
-    // Category filter for big groups
-    lbTab==='big'&&R('div',{style:{marginBottom:'1rem'}},
-      R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.3rem',marginBottom:'.5rem'}},
-        R('button',{style:!lbCatFilter?{...S.typeChipA}:{...S.typeChip},
-          onClick:()=>setLbCatFilter('')},'Všetky'),
-        categories.map(c=>R('button',{key:c.id,
-          style:lbCatFilter===c.id?S.typeChipA:S.typeChip,
-          onClick:()=>setLbCatFilter(lbCatFilter===c.id?'':c.id)},c.label))
-      )
-    ),
+    const geoTabs=[
+      {id:'city',label:'Mestá'},
+      {id:'region',label:'Kraje'},
+      {id:'state',label:'Štáty'},
+      {id:'global',label:'Svet'},
+    ];
+    const groupTabs=[
+      {id:'ind',label:'Jednotlivci'},
+      {id:'small',label:'Malé skupiny'},
+      {id:'big',label:'Veľké skupiny'},
+    ];
+    const isGeoTab=['city','region','state','global'].includes(lbTab);
 
-    lbTab==='ind'&&(
-      sPlayers.length===0
-        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadni hráči.')
+    const emptyRow=(msg)=>R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},msg);
+    const geoRow=(item,i,myName)=>R('div',{key:item.name,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
+      R(RankBadge,{i}),
+      R('div',{style:{flex:1}},
+        R('div',{style:{fontWeight:item.name===myName?500:400,color:'rgba(250,245,239,'+(item.name===myName?.92:.68)+')'}},
+          item.name,item.name===myName&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'ty')),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+          item.players+' hráčov')
+      ),
+      R('span',{style:S.pt},item.points)
+    );
+
+    return R('div',null,
+      R(Bk,{to:'home',set:setScr,l:'Späť'}),
+      R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
+        R('div',{style:S.eye},'Rebríček'),fbBadge),
+      R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Kto ',R('em',{style:S.hEm},'vedie?')),
+
+      // Tab groups
+      R('div',{style:{marginBottom:'1.5rem'}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',letterSpacing:'.12em',color:'rgba(250,245,239,0.3)',textTransform:'uppercase',marginBottom:'.4rem'}},'Skupiny'),
+        R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'.75rem',flexWrap:'wrap'}},
+          groupTabs.map(t=>R('button',{key:t.id,onClick:()=>setLbTab(t.id),style:lbTab===t.id?S.tabA:S.tab},t.label))
+        ),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',letterSpacing:'.12em',color:'rgba(250,245,239,0.3)',textTransform:'uppercase',marginBottom:'.4rem'}},'Geografické'),
+        R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',flexWrap:'wrap'}},
+          geoTabs.map(t=>R('button',{key:t.id,onClick:()=>setLbTab(t.id),style:lbTab===t.id?S.tabA:S.tab},t.label))
+        )
+      ),
+
+      // Category filter for big groups
+      lbTab==='big'&&R('div',{style:{marginBottom:'1rem'}},
+        R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.3rem'}},
+          R('button',{style:!lbCatFilter?S.typeChipA:S.typeChip,onClick:()=>setLbCatFilter('')},'Všetky'),
+          categories.map(c=>R('button',{key:c.id,
+            style:lbCatFilter===c.id?S.typeChipA:S.typeChip,
+            onClick:()=>setLbCatFilter(lbCatFilter===c.id?'':c.id)},c.label))
+        )
+      ),
+
+      // INDIVIDUAL
+      lbTab==='ind'&&(sPlayers.length===0?emptyRow('Ešte žiadni hráči.')
         :sPlayers.map((p,i)=>R('div',{key:p.uid||p.nickname,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
-            R(RankBadge,{i}),
-            R('div',{style:{flex:1}},
-              R('div',{style:{fontWeight:p.uid===me.uid?500:400,color:'rgba(250,245,239,'+(p.uid===me.uid?.92:.68)+')'}},
-                p.nickname,p.uid===me.uid&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'ty')),
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
-                p.city+(p.country?', '+p.country:''))
-            ),
-            R('span',{style:S.pt},p.points||0)))
-    ),
+          R(RankBadge,{i}),
+          R('div',{style:{flex:1}},
+            R('div',{style:{fontWeight:p.uid===me.uid?500:400,color:'rgba(250,245,239,'+(p.uid===me.uid?.92:.68)+')'}},
+              p.nickname,p.uid===me.uid&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'ty')),
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+              p.city+(p.country?', '+p.country:''))
+          ),
+          R('span',{style:S.pt},p.points||0)))),
 
-    lbTab==='small'&&(
-      sTeams.length===0
-        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},'Ešte žiadne malé skupiny.')
+      // SMALL GROUPS
+      lbTab==='small'&&(sTeams.length===0?emptyRow('Ešte žiadne malé skupiny.')
         :sTeams.map((t,i)=>R('div',{key:t.id,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
-            R(RankBadge,{i}),
-            R('div',{style:{flex:1}},
-              R('div',{style:{fontWeight:myTeamIds.includes(t.id)?500:400,color:'rgba(250,245,239,'+(myTeamIds.includes(t.id)?.92:.68)+')'}},
-                t.name,myTeamIds.includes(t.id)&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'tvoja')),
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
-                (t.members||[]).length+' členov',
-                t.bigGroupId&&bigGroups[t.bigGroupId]&&' · '+bigGroups[t.bigGroupId].name)
-            ),
-            R('span',{style:S.pt},t.points||0)))
-    ),
+          R(RankBadge,{i}),
+          R('div',{style:{flex:1}},
+            R('div',{style:{fontWeight:myTeamIds.includes(t.id)?500:400,color:'rgba(250,245,239,'+(myTeamIds.includes(t.id)?.92:.68)+')'}},
+              t.name,myTeamIds.includes(t.id)&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.55rem'}},'tvoja')),
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+              (t.members||[]).length+' členov',
+              t.bigGroupId&&bigGroups[t.bigGroupId]&&' · '+bigGroups[t.bigGroupId].name)
+          ),
+          R('span',{style:S.pt},t.points||0)))),
 
-    lbTab==='big'&&(
-      sBigGroups.length===0
-        ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.22)',padding:'2rem 0',textAlign:'center'}},
-            lbCatFilter?'Žiadne skupiny v tejto kategórii.':'Ešte žiadne veľké skupiny.')
+      // BIG GROUPS
+      lbTab==='big'&&(sBigGroups.length===0
+        ?emptyRow(lbCatFilter?'Žiadne skupiny v tejto kategórii.':'Ešte žiadne veľké skupiny.')
         :sBigGroups.map((bg,i)=>R('div',{key:bg.id,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
-            R(RankBadge,{i}),
-            R('div',{style:{flex:1}},
-              R('div',{style:{color:'rgba(250,245,239,0.85)',fontWeight:500}},bg.name),
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
-                bg.category+(bg.type?' · '+bg.type:'')+' · '+(bg.teamIds||[]).length+' malých skupín')
-            ),
-            R('span',{style:S.pt},bg.points||0)))
-    )
-  );
+          R(RankBadge,{i}),
+          R('div',{style:{flex:1}},
+            R('div',{style:{color:'rgba(250,245,239,0.85)',fontWeight:500}},bg.name,
+              bg.parentId&&bigGroups[bg.parentId]&&R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',color:'rgba(250,245,239,0.3)',marginLeft:'.5rem'}},'↑ '+bigGroups[bg.parentId].name)),
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+              bg.category+(bg.type?' · '+bg.type:'')+' · '+(bg.teamIds||[]).length+' malých skupín')
+          ),
+          R('span',{style:S.pt},bg.points||0)))),
+
+      // CITIES
+      lbTab==='city'&&(sCities.length===0?emptyRow('Žiadne mestá ešte.')
+        :sCities.map((item,i)=>geoRow(item,i,me.city))),
+
+      // REGIONS
+      lbTab==='region'&&(sRegions.length===0?emptyRow('Žiadne kraje ešte.')
+        :sRegions.map((item,i)=>geoRow(item,i,me.region||me.city))),
+
+      // STATES
+      lbTab==='state'&&(sStates.length===0?emptyRow('Žiadne štáty ešte.')
+        :sStates.map((item,i)=>geoRow(item,i,me.country))),
+
+      // GLOBAL
+      lbTab==='global'&&R('div',null,
+        R('div',{style:{...S.cardGold,textAlign:'center',padding:'2rem'}},
+          R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'3.5rem',fontWeight:600,color:'#B8882A',lineHeight:1}},globalTotal.pts),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.12em',color:'rgba(250,245,239,0.35)',textTransform:'uppercase',marginTop:'.5rem'}},'Celkové body · Svet'),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'rgba(250,245,239,0.45)',marginTop:'.75rem'}},
+            globalTotal.players+' hráčov z '+Object.keys(stateMap).length+' štátov'),
+          R('div',{style:{marginTop:'1.25rem',fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'rgba(184,136,42,0.6)'}},
+            'Cieľ: 50 % hrajúcej populácie sveta')
+        )
+      )
+    );
+  }
 
   return null;
 }
