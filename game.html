@@ -1351,26 +1351,41 @@ function App(){
           )
         ),
 
-        // Pripojiť k nadradenej / odpojiť
+        // Pripojiť k nadradenej — vždy viditeľné pre zakladateľa
         isFounder&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
-          R('div',{style:{...S.lbl,marginBottom:'.75rem'}},'Nadradená skupina'),
-          parent
-            ?R('div',null,
-                R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.7)',marginBottom:'.75rem'}},
-                  'Táto skupina patrí pod: ',R('strong',null,parent.name)),
-                R(Btn,{onClick:()=>doLeaveParentGroup(myBg.id),v:'m',busy,
-                  s:{fontSize:'.7rem',color:'rgba(196,96,58,0.7)'}},'Odpojiť od nadradenej')
-              )
-            :R('div',null,
-                R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',marginBottom:'.75rem',lineHeight:1.6}},
-                  'Táto skupina zatiaľ nie je zaradená do vyššej skupiny. Zadaj kód nadradenej skupiny (napr. zboru).'),
-                bge2&&R(Err,{m:bge2}),
-                R(Lbl,{c:'Kód nadradenej skupiny'}),
-                R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
-                  ph:'napr. ZB9K2M',mono:true,mb0:true}),
-                R(Btn,{onClick:()=>doJoinParentGroup(myBg.id),v:'p',full:true,busy,
-                  s:{marginTop:'1rem'}},'Zaradiť do nadradenej')
-              )
+          R(Lbl,{c:'Nadradená skupina'}),
+          parent&&R('div',{style:{
+            display:'flex',alignItems:'center',justifyContent:'space-between',
+            flexWrap:'wrap',gap:'.5rem',padding:'.65rem 1rem',
+            background:'rgba(184,136,42,0.07)',border:'1px solid rgba(184,136,42,0.2)',
+            marginBottom:'.75rem'}},
+            R('div',null,
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(184,136,42,0.7)',textTransform:'uppercase',
+                letterSpacing:'.1em',marginBottom:'.15rem'}},'Zaradená v'),
+              R('div',{style:{fontWeight:500,color:'#FAF5EF'}},parent.name)
+            ),
+            R('div',{style:{display:'flex',gap:'.4rem'}},
+              R(Btn,{onClick:()=>setScr('manage_bg_'+parent.id),v:'m',
+                s:{fontSize:'.65rem',padding:'.3rem .65rem'}},'Otvoriť'),
+              R(Btn,{onClick:()=>doLeaveParentGroup(myBg.id),v:'m',busy,
+                s:{fontSize:'.65rem',padding:'.3rem .65rem',
+                  color:'rgba(196,96,58,0.6)'}},'Odpojiť')
+            )
+          ),
+          R('div',{style:{fontSize:'.82rem',color:'rgba(250,245,239,0.4)',
+            marginBottom:'.6rem'}},
+            parent?'Zmeniť nadradenú skupinu:':'Zadaj kód nadradenej skupiny:'),
+          bge2&&R(Err,{m:bge2}),
+          R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
+            R('div',{style:{flex:1}},
+              R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+                ph:'kód skupiny, napr. ZB9K2M',mono:true,mb0:true})
+            ),
+            R(Btn,{onClick:()=>doJoinParentGroup(myBg.id),v:'p',busy,
+              s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},
+              parent?'Zmeniť':'Zaradiť')
+          )
         ),
 
         // Info pre ne-zakladateľov
@@ -1480,32 +1495,46 @@ function App(){
         )
       ),
 
-      // Pripojiť k nadradenej (len zakladateľ)
+      // Pripojiť k nadradenej — vždy viditeľné pre zakladateľa
       isFounder&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
-        R(Lbl,{c:parent?'Nadradená skupina':'Pripojiť k nadradenej'}),
-        parent
-          ?R('div',null,
-              R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.65)',marginBottom:'.75rem'}},
-                bg.name,' patrí pod ',
-                R('span',{style:{color:'#FAF5EF',fontWeight:500}},parent.name)),
-              R('div',{style:{display:'flex',gap:'.5rem'}},
-                R(Btn,{onClick:()=>setScr('manage_bg_'+parent.id),v:'m',
-                  s:{fontSize:'.7rem'}},'Otvoriť '+parent.name),
-                R(Btn,{onClick:()=>doLeaveParentGroup(bgId),v:'m',busy,
-                  s:{fontSize:'.7rem',color:'rgba(196,96,58,0.6)'}},'Odpojiť')
-              )
+        R(Lbl,{c:'Nadradená skupina'}),
+
+        // Ak má nadradenú — zobraz info + tlačidlo na zmenu
+        parent&&R('div',{style:{marginBottom:'1rem'}},
+          R('div',{style:{display:'flex',alignItems:'center',
+            justifyContent:'space-between',flexWrap:'wrap',gap:'.5rem',
+            padding:'.65rem 1rem',background:'rgba(184,136,42,0.07)',
+            border:'1px solid rgba(184,136,42,0.2)',marginBottom:'.5rem'}},
+            R('div',null,
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(184,136,42,0.7)',textTransform:'uppercase',
+                letterSpacing:'.1em',marginBottom:'.15rem'}},'Aktuálne zaradená v'),
+              R('div',{style:{fontWeight:500,color:'#FAF5EF',fontSize:'.9rem'}},parent.name)
+            ),
+            R('div',{style:{display:'flex',gap:'.4rem'}},
+              R(Btn,{onClick:()=>setScr('manage_bg_'+parent.id),v:'m',
+                s:{fontSize:'.65rem',padding:'.3rem .65rem'}},'Otvoriť'),
+              R(Btn,{onClick:()=>doLeaveParentGroup(bgId),v:'m',busy,
+                s:{fontSize:'.65rem',padding:'.3rem .65rem',
+                  color:'rgba(196,96,58,0.6)'}},'Odpojiť')
             )
-          :R('div',null,
-              R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.45)',
-                marginBottom:'.75rem',lineHeight:1.6}},
-                'Zadaj kód nadradenej skupiny (napr. zboru alebo oblasti).'),
-              bge2&&R(Err,{m:bge2}),
-              R(Lbl,{c:'Kód nadradenej skupiny'}),
-              R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
-                ph:'napr. ZB9K2M',mono:true,mb0:true}),
-              R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'p',full:true,busy,
-                s:{marginTop:'1rem'}},'Zaradiť do nadradenej')
-            )
+          )
+        ),
+
+        // Formulár na (z)meniť nadradenú — vždy viditeľný
+        R('div',{style:{fontSize:'.82rem',color:'rgba(250,245,239,0.4)',
+          marginBottom:'.6rem',lineHeight:1.5}},
+          parent?'Zmeniť nadradenú skupinu:':'Zadaj kód nadradenej skupiny (napr. zboru):'),
+        bge2&&R(Err,{m:bge2}),
+        R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
+          R('div',{style:{flex:1}},
+            R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+              ph:'kód skupiny, napr. ZB9K2M',mono:true,mb0:true})
+          ),
+          R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'p',busy,
+            s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},
+            parent?'Zmeniť':'Zaradiť')
+        )
       ),
 
       // Opustiť skupinu (pre členov čo nie sú zakladatelia)
