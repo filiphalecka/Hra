@@ -339,16 +339,58 @@ function renderGroups(){
   const el=document.getElementById('groups-list');
   if(groups.length===0){el.innerHTML='<div class="empty">Žiadne veľké skupiny.</div>';return;}
   el.innerHTML=groups.map(g=>`
-    <div class="row">
+    <div class="row" style="align-items:flex-start;padding:.9rem 0;">
       <div style="flex:1;">
-        <div style="font-weight:500;color:rgba(250,245,239,.88);">${g.name}</div>
-        <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.3);margin-top:.15rem;">
+        <div style="font-weight:500;color:rgba(250,245,239,.88);margin-bottom:.2rem;">${g.name}
+          ${g.active===false?'<span style="font-family:'DM Mono',monospace;font-size:.55rem;padding:.15rem .45rem;background:rgba(184,136,42,0.15);border:1px solid rgba(184,136,42,0.3);color:#B8882A;margin-left:.5rem;">VYPNUTÁ</span>':''}
+        </div>
+        <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.3);margin-top:.1rem;">
           ${g.category||'—'}${g.type?' · '+g.type:''} · ${(g.teamIds||[]).length} malých skupín · Kód: ${g.code}
+          ${g.parentId?(' · ↑ nadradená: '+(allBigGroups[g.parentId]?.name||g.parentId)):''}
         </div>
       </div>
-      <span style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;color:#B8882A;">${g.points||0}</span>
+      <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;">
+        <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:#B8882A;">${g.points||0}</span>
+        <button class="btn btn-m" style="padding:.3rem .6rem;font-size:.65rem;" onclick="toggleBigGroup('${g.id}')">${g.active===false?'▶ Zapnúť':'⏸ Vypnúť'}</button>
+        <button class="btn btn-d" style="padding:.3rem .6rem;font-size:.65rem;" onclick="deleteBigGroup('${g.id}')">🗑</button>
+      </div>
     </div>
   `).join('');
+}
+
+// ── BigGroup admin actions ───────────────────────────────────────────────────
+async function toggleBigGroup(id){
+  const cur=allBigGroups[id];if(!cur)return;
+  const newActive=cur.active===false;
+  if(USE_FIREBASE){try{await dbPatch('biggroups/'+id,{active:newActive});}catch(e){showFlash('Chyba: '+e.message);return;}}
+  else{const bg=lsGet('hps:biggroups')||{};if(bg[id])bg[id].active=newActive;lsSet('hps:biggroups',bg);}
+  allBigGroups[id].active=newActive;
+  showFlash(newActive?'Skupina zapnutá ✓':'Skupina vypnutá.');renderGroups();
+}
+
+async function deleteBigGroup(id){
+  const name=allBigGroups[id]?.name||id;
+  if(!confirm('Naozaj zmazať skupinu "'+name+'"? Táto akcia je nevratná.'))return;
+  if(USE_FIREBASE){
+    try{
+      const allBg=await dbGet('biggroups')||{};
+      for(const [gid,g] of Object.entries(allBg)){
+        if(g.parentId===id) await dbPatch('biggroups/'+gid,{parentId:null});
+      }
+      const allTm=await dbGet('teams')||{};
+      for(const [tid,t] of Object.entries(allTm)){
+        if(t.bigGroupId===id) await dbPatch('teams/'+tid,{bigGroupId:null});
+      }
+      await dbPut('biggroups/'+id,null);
+    }catch(e){showFlash('Chyba: '+e.message);return;}
+  } else {
+    const bg=lsGet('hps:biggroups')||{};
+    Object.values(bg).forEach(g=>{if(g.parentId===id)g.parentId=null;});
+    delete bg[id];lsSet('hps:biggroups',bg);
+  }
+  delete allBigGroups[id];
+  showFlash('Skupina "'+name+'" zmazaná ✓');
+  await loadAll();
 }
 
 // ── Players ───────────────────────────────────────────────────

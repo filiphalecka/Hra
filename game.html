@@ -824,6 +824,55 @@ function App(){
   const myTeams=myTeamIds.map(id=>teams[id]).filter(Boolean);
   const myActiveTeam=activeTeamId?teams[activeTeamId]:null;
 
+  async function toggleGroupActive(type, id){
+    setBusy(true);
+    try{
+      if(type==='team'){
+        const tm=await DB.getTeams();
+        if(!tm[id])return;
+        await DB.setTeam(id,{...tm[id],active:!(tm[id].active!==false)});
+      } else {
+        const bg=await DB.getBigGroups();
+        if(!bg[id])return;
+        await DB.setBigGroup(id,{...bg[id],active:!(bg[id].active!==false)});
+      }
+      await refreshAll();
+      shFlash('Skupina aktualizovaná.');
+    }finally{setBusy(false);}
+  }
+
+  async function deleteGroup(type, id){
+    if(!window.confirm('Naozaj zmazať skupinu?'))return;
+    setBusy(true);
+    try{
+      if(type==='team'){
+        const pl=await DB.getPlayers(),tm=await DB.getTeams();
+        // Remove from all players
+        for(const uid of Object.keys(pl)){
+          if((pl[uid].teamIds||[]).includes(id)){
+            await DB.setPlayer(uid,{...pl[uid],teamIds:(pl[uid].teamIds||[]).filter(x=>x!==id)});
+          }
+        }
+        await DB.setTeam(id,null);
+      } else {
+        const bg=await DB.getBigGroups();
+        // Detach children
+        for(const g of Object.values(bg)){
+          if(g.parentId===id) await DB.setBigGroup(g.id,{...g,parentId:null});
+        }
+        // Detach teams
+        const tm=await DB.getTeams();
+        for(const t of Object.values(tm)){
+          if(t.bigGroupId===id) await DB.setTeam(t.id,{...t,bigGroupId:null});
+        }
+        await DB.setBigGroup(id,null);
+      }
+      await refreshAll();
+      shFlash('Skupina zmazaná.');
+      setScr('team');
+    }finally{setBusy(false);}
+  }
+
   async function refreshAll(){
     const[pl,tm,bg]=await Promise.all([DB.getPlayers(),DB.getTeams(),DB.getBigGroups()]);
     setPlayers(pl);setTeams(tm);setBigGroups(bg);
@@ -1198,6 +1247,8 @@ function App(){
   if(scr==='reqcat')return R(RequestCategory,{me,onBack:setScr,onSubmitted:()=>setScr('team')});
 
   // BigGroup screens (dynamic id)
+  }
+
   if(scr&&scr.startsWith('biggroup_')){
     const teamId=scr.replace('biggroup_','');
     const team=teams[teamId];
@@ -1463,6 +1514,23 @@ function App(){
         R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',marginBottom:'.75rem'}},'Si členom tejto skupiny.'),
         R(Btn,{onClick:()=>doLeaveBigGroupDirect(bgId),v:'m',busy,
           s:{color:'rgba(196,96,58,0.6)',fontSize:'.75rem'}},'Opustiť skupinu')
+      ),
+
+      // Zapnúť/Vypnúť + zmazať (zakladateľ alebo admin)
+      (isFounder||isAdmin(me))&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
+        R(Lbl,{c:'Správa skupiny'}),
+        R('div',{style:{display:'flex',gap:'.5rem',flexWrap:'wrap'}},
+          R(Btn,{onClick:()=>toggleGroupActive('bg',bgId),v:'m',busy,
+            s:{fontSize:'.75rem',
+              color:bg.active===false?'rgba(184,136,42,0.8)':'rgba(250,245,239,0.5)'}},
+            bg.active===false?'▶ Zapnúť skupinu':'⏸ Vypnúť skupinu'),
+          isAdmin(me)&&R(Btn,{onClick:()=>deleteGroup('bg',bgId),v:'m',busy,
+            s:{fontSize:'.75rem',color:'rgba(196,96,58,0.6)',
+              borderColor:'rgba(196,96,58,0.25)'}},'🗑 Zmazať skupinu')
+        ),
+        bg.active===false&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(184,136,42,0.5)',marginTop:'.75rem',lineHeight:1.6}},
+          'Vypnutá skupina sa nezobrazuje v rebríčku ale body sa zachovávajú.')
       )
     );
   }
@@ -1558,7 +1626,13 @@ function App(){
   );
 
   // ══ SKUPINY ═══════════════════════════════════════════════
-  if(scr==='team')return R('div',null,
+  if(scr==='team'){
+    // Compute biggroup list outside JSX
+    const myBgIds=new Set();
+    myTeams.forEach(t=>{if(t.bigGroupId)myBgIds.add(t.bigGroupId);});
+    ((me.bigGroupIds)||[]).forEach(id=>myBgIds.add(id));
+    const myBigGroupList=[...myBgIds].map(id=>bigGroups[id]).filter(Boolean);
+    return R('div',null,
     R(Bk,{to:'home',set:setScr,l:'Späť'}),
     R(Fl,{msg:flash}),
     R('div',{style:S.eye},'Moje skupiny'),
@@ -1585,8 +1659,15 @@ function App(){
               isFounder&&!t.bigGroupId&&R(Btn,{
                 onClick:()=>setScr('biggroup_'+t.id),v:'m',
                 s:{fontSize:'.65rem',padding:'.3rem .7rem',borderColor:'rgba(184,136,42,0.3)',color:'rgba(184,136,42,0.8)'}},'+ Veľká skupina'),
+              R(Btn,{onClick:()=>toggleGroupActive('team',t.id),v:'m',
+                s:{fontSize:'.65rem',padding:'.3rem .7rem',
+                  color:t.active===false?'rgba(184,136,42,0.7)':'rgba(250,245,239,0.4)'}},
+                t.active===false?'▶ Zapnúť':'⏸ Vypnúť'),
               R(Btn,{onClick:()=>doLeaveTeam(t.id),v:'m',
-                s:{fontSize:'.65rem',padding:'.3rem .7rem',color:'rgba(196,96,58,0.5)'}},'Opustiť')
+                s:{fontSize:'.65rem',padding:'.3rem .7rem',color:'rgba(196,96,58,0.5)'}},'Opustiť'),
+              me.uid===t.founderId&&R(Btn,{onClick:()=>deleteGroup('team',t.id),v:'m',
+                s:{fontSize:'.65rem',padding:'.3rem .7rem',color:'rgba(196,96,58,0.4)',
+                  borderColor:'rgba(196,96,58,0.2)'}},'🗑')
             )
           )
         );
@@ -1596,17 +1677,12 @@ function App(){
     R('div',{style:{...S.lbl,marginBottom:'1rem',marginTop:'1.5rem'}},'Veľké skupiny'),
     R('div',{style:{marginBottom:'1.5rem'}},
       // BigGroups where I'm founder (via my teams)
-      (()=>{
-        const myBgIds=new Set();
-        myTeams.forEach(t=>{if(t.bigGroupId)myBgIds.add(t.bigGroupId);});
-        // Also biggroups I joined directly
-        ((me.bigGroupIds)||[]).forEach(id=>myBgIds.add(id));
-        const myBgList=[...myBgIds].map(id=>bigGroups[id]).filter(Boolean);
-        if(myBgList.length===0) return R('div',{style:{fontFamily:"'DM Mono',monospace",
-          fontSize:'.7rem',color:'rgba(250,245,239,0.22)',padding:'.5rem 0'}},
-          'Zatiaľ nie si v žiadnej veľkej skupine.');
-        return R('div',{style:{display:'flex',flexDirection:'column',gap:'.5rem'}},
-          myBgList.map(bg=>{
+myBigGroupList.length===0
+        ?R('div',{style:{fontFamily:"'DM Mono',monospace",
+            fontSize:'.7rem',color:'rgba(250,245,239,0.22)',padding:'.5rem 0'}},
+          'Zatiaľ nie si v žiadnej veľkej skupine.')
+        :R('div',{style:{display:'flex',flexDirection:'column',gap:'.5rem'}},
+          myBigGroupList.map(bg=>{
             const isFounder=bg.founderId===me.uid;
             const parent=bg.parentId?bigGroups[bg.parentId]:null;
             return R('div',{key:bg.id,style:{...S.card,marginBottom:0,
@@ -1629,8 +1705,7 @@ function App(){
               )
             );
           })
-        );
-      })(),
+        ),
       // Join biggroup directly by code
       R('div',{style:{marginTop:'1rem'}},
         R(Btn,{onClick:()=>setScr('join_bg_direct'),v:'m',
