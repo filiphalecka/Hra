@@ -1081,7 +1081,10 @@ function App(){
         category:bgCat,type:bgType||null,parentId:null});
       await DB.setTeam(teamId,{...team,bigGroupId:id});
       await refreshAll();
-      setBgName('');setBgCat('');setBgType('');setBge('');shFlash('Veľká skupina vytvorená! Kód: '+code);
+      setBgName('');setBgCat('');setBgType('');setBge('');
+      // Presmeruj na správu skupiny kde môžeš hneď pridať nadradenú
+      setScr('manage_bg_'+id);
+      shFlash('Skupina vytvorená! Kód: '+code+' · Teraz ju môžeš zaradiť do vyššieho celku.');
     }finally{setBusy(false);}
   }
 
@@ -1247,8 +1250,6 @@ function App(){
   if(scr==='reqcat')return R(RequestCategory,{me,onBack:setScr,onSubmitted:()=>setScr('team')});
 
   // BigGroup screens (dynamic id)
-  }
-
   if(scr&&scr.startsWith('biggroup_')){
     const teamId=scr.replace('biggroup_','');
     const team=teams[teamId];
@@ -1256,19 +1257,12 @@ function App(){
     const isFounder=myBg&&myBg.founderId===me.uid;
 
     // Build ancestor chain for current biggroup
-    function getAncestors(bgId){
-      const chain=[];
-      let cur=bgId;
-      while(cur&&bigGroups[cur]){
-        chain.push(bigGroups[cur]);
-        cur=bigGroups[cur].parentId||null;
-      }
+    const getAncestors=(bgId)=>{
+      const chain=[];let cur=bgId;
+      while(cur&&bigGroups[cur]){chain.push(bigGroups[cur]);cur=bigGroups[cur].parentId||null;}
       return chain;
-    }
-    // Get direct children biggroups
-    function getChildren(bgId){
-      return Object.values(bigGroups).filter(g=>g.parentId===bgId);
-    }
+    };
+    const getChildren=(bgId)=>Object.values(bigGroups).filter(g=>g.parentId===bgId);
 
     const ancestors=myBg?getAncestors(myBg.id):[];
     const parent=myBg&&myBg.parentId?bigGroups[myBg.parentId]:null;
@@ -1409,11 +1403,11 @@ function App(){
     const parent=bg.parentId?bigGroups[bg.parentId]:null;
 
     // Build full ancestor chain
-    function getChain(id){
+    const getChain=(id)=>{
       const chain=[];let cur=id;
       while(cur&&bigGroups[cur]){chain.push(bigGroups[cur]);cur=bigGroups[cur].parentId||null;}
       return chain;
-    }
+    };
     const chain=getChain(bgId);
     const children=Object.values(bigGroups).filter(g=>g.parentId===bgId);
     const childTeams=(bg.teamIds||[]).map(id=>teams[id]).filter(Boolean);
@@ -1434,10 +1428,31 @@ function App(){
       R('div',{style:S.eye},'Správa skupiny'),
       R('h3',{style:{...S.h,fontSize:'1.6rem'}},bg.name),
       R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-        color:'rgba(250,245,239,0.35)',marginBottom:'1.5rem',letterSpacing:'.08em'}},
+        color:'rgba(250,245,239,0.35)',marginBottom:'1rem',letterSpacing:'.08em'}},
         bg.category+(bg.type?' · '+bg.type:'')+' · Kód: ',
         R('strong',{style:{color:'#B8882A',letterSpacing:'.15em'}},bg.code),
         ' · '+bg.points+' bodov'
+      ),
+
+      // Ak nemá nadradenú — formulár hore ako výzva na akciu
+      isFounder&&!parent&&R('div',{style:{...S.cardGold,marginBottom:'.75rem'}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+          color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase',
+          marginBottom:'.5rem'}},'Zaraď skupinu do vyššieho celku'),
+        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',
+          lineHeight:1.6,marginBottom:'.75rem'}},
+          'Táto skupina zatiaľ nie je súčasťou žiadneho zboru, farnosti ani iného vyššieho celku. Zadaj kód nadradenej skupiny.'),
+        bge2&&R(Err,{m:bge2}),
+        R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
+          R('div',{style:{flex:1}},
+            R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+              ph:'kód nadradenej skupiny',mono:true,mb0:true})
+          ),
+          R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'g',busy,
+            s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},'Zaradiť')
+        ),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.3)',marginTop:'.5rem'}},'Nemáš kód? Požiadaj vedúceho zboru.')
       ),
 
       // Hierarchia
@@ -1760,6 +1775,7 @@ myBigGroupList.length===0
       R(Btn,{onClick:doJoinTeam,v:'p',full:true,busy,s:{marginTop:'1rem'}},'Pripojiť sa')
     )
   );
+  }
 
   // ══ REBRÍČEK ═════════════════════════════════════════════
   if(scr==='lb'){
