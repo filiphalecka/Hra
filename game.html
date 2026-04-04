@@ -103,21 +103,12 @@
 // ╚══════════════════════════════════════════════════════════════╝
 const FB_API_KEY   = 'AIzaSyB2SGGL1JE7b60WPGU9nrWOAJwZ_zbT7Ao';
 const FB_DB_URL    = 'https://hra-proti-samote-default-rtdb.europe-west1.firebasedatabase.app';
-const USE_FIREBASE = FB_API_KEY !== 'VLOZ_API_KEY';
+const USE_FIREBASE = false; // Firebase dočasne vypnuté
 const ADMIN_EMAIL  = 'filip.halecka@gmail.com';
 
-// Stripe Payment Links
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // skrátenie prahu
-const STRIPE_CITY_SMALL   = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 5€
-const STRIPE_CITY_MEDIUM  = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 20€
-const STRIPE_CITY_LARGE   = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 50€
-const STRIPE_REGION       = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 50€
-const STRIPE_STATE        = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 200€
-const STRIPE_GLOBAL       = 'https://buy.stripe.com/test_aFa00ld739Cg9mWgt84c800'; // 500€
 
 // Thresholds
 const CITY_THRESHOLD      = 50;
-const CITY_THRESHOLD_PAID = 25;
 const REGION_THRESHOLD    = 100;
 const STATE_THRESHOLD     = 150;
 const GLOBAL_THRESHOLD    = 200;
@@ -140,11 +131,7 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 // ── Stripe redirect handlers ──────────────────────────────────
 (function handleStripeReturn(){
   const params = new URLSearchParams(window.location.search);
-  if(params.get('stripe_success')==='1'){
-    const sess=lsGet('hps:session');
-    if(sess&&sess.uid){const paid=lsGet('hps:paid_users')||{};paid[sess.uid]=true;lsSet('hps:paid_users',paid);}
-    window.history.replaceState({},'',window.location.pathname);
-  }
+
   const handleLicense=(param,storageKey)=>{
     const val=params.get(param);
     if(val){
@@ -318,8 +305,8 @@ function authErrMsg(msg){
   };
   return map[msg]||msg;
 }
-function hasPaid(uid){const p=lsGet('hps:paid_users')||{};return !!p[uid];}
-function cityThreshold(uid){return hasPaid(uid)?CITY_THRESHOLD_PAID:CITY_THRESHOLD;}
+function hasPaid(uid){return false;}
+function cityThreshold(uid){return CITY_THRESHOLD;}
 function isLicensed(storageKey,name){
   const c=lsGet(storageKey)||{};
   const k=(name||'').toLowerCase().trim();
@@ -598,10 +585,7 @@ function LevelProgress({me,onShop}){
             lv.name+' ešte nemá licenciu. Kúp ju a odomkni pre všetkých.'),
           R(Btn,{onClick:onShop,v:'g',full:true,s:{padding:'.6rem'}},'🏙️ Kúpiť licenciu')
         ),
-        lv.id==='city'&&needsInteractions&&!paid&&R('div',{style:{marginTop:'.5rem'}},
-          R(Btn,{onClick:()=>{window.location.href=STRIPE_PAYMENT_LINK+'?client_reference_id='+(me.uid||'anon');},
-            v:'m',full:true,s:{fontSize:'.7rem'}},'Skrátiť prah (platba)')
-        )
+
       );
     })
   );
@@ -609,139 +593,20 @@ function LevelProgress({me,onShop}){
 
 // ── City/Level Shop ───────────────────────────────────────────
 function CityShop({me,onBack}){
-  const[tab,setTab]=useState('city');
-  const[cityInput,setCityInput]=useState(me.city||'');
-  const[regionInput,setRegionInput]=useState(me.city||'');
-  const[stateInput,setStateInput]=useState(me.country||'');
-  const pts=me.points||0;
-  const cityTiers=[
-    {label:'Malé mesto',sub:'do 5 000 obyvateľov',price:'5 €',link:STRIPE_CITY_SMALL},
-    {label:'Stredné mesto',sub:'do 100 000 obyvateľov',price:'20 €',link:STRIPE_CITY_MEDIUM},
-    {label:'Veľké mesto',sub:'100 000 a viac',price:'50 €',link:STRIPE_CITY_LARGE},
-  ];
-  const tabs=[
-    {id:'city',  label:'Mesto',   thresh:cityThreshold(me.uid),licensed:isCityLicensed(cityInput)},
-    {id:'region',label:'Kraj',    thresh:REGION_THRESHOLD,licensed:isRegionLicensed(regionInput)},
-    {id:'state', label:'Štát',    thresh:STATE_THRESHOLD, licensed:isStateLicensed(stateInput)},
-    {id:'global',label:'Globálna',thresh:GLOBAL_THRESHOLD,licensed:isGlobalLicensed()},
-  ];
-  const activeTab=tabs.find(t=>t.id===tab);
-  const hasEnough=pts>=activeTab.thresh;
-  function buyLicense(link,paramKey,paramVal){
-    window.location.href=link+'?client_reference_id='+encodeURIComponent((paramVal||'').toLowerCase());
-  }
   return R('div',null,
     R(Bk,{to:'home',set:onBack,l:'Späť'}),
-    R('div',{style:S.eye},'E-shop · licencie'),
-    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Odomkni ',R('em',{style:S.hEm},'ďalšiu úroveň')),
-    R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
-      'Jedna platba odomkne úroveň pre všetkých hráčov z danej oblasti.'),
-    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.5rem',flexWrap:'wrap'}},
-      tabs.map(t=>R('button',{key:t.id,onClick:()=>setTab(t.id),style:tab===t.id?S.tabA:S.tab},
-        t.label+(t.licensed?' ✓':'')))
-    ),
-    !hasEnough&&R('div',{style:{...S.card,borderColor:'rgba(196,96,58,0.3)',marginBottom:'1rem'}},
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#C4603A',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.5rem'}},'Nedosiahol si prah'),
-      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',lineHeight:1.6}},'Potrebuješ '+activeTab.thresh+' interakcií. Máš '+pts+'.'),
-      R('div',{style:S.progress},R('div',{style:{...S.progressFill,width:pct(pts,activeTab.thresh)+'%'}}))
-    ),
-    activeTab.licensed&&R('div',{style:{...S.card,borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.07)',marginBottom:'1rem'}},
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},'Licencia platná ✓')
-    ),
-    !activeTab.licensed&&hasEnough&&R('div',null,
-      tab==='city'&&R('div',null,
-        R(Lbl,{c:'Mesto'}),R(Inp,{val:cityInput,set:setCityInput,ph:'napr. Bratislava'}),
-        isCityLicensed(cityInput)
-          ?R('div',{style:S.ok},'✓ '+cityInput+' má licenciu')
-          :cityInput.length>1&&cityTiers.map((t,i)=>R('div',{key:i,style:S.shopCard,
-              onClick:()=>buyLicense(t.link,'city_licensed',cityInput)},
-              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-                R('div',null,
-                  R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',marginBottom:'.2rem'}},t.label),
-                  R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)'}},t.sub)
-                ),R('div',{style:S.price},t.price))))
-      ),
-      tab==='region'&&R('div',null,
-        R(Lbl,{c:'Kraj'}),R(Inp,{val:regionInput,set:setRegionInput,ph:'napr. Bratislavský kraj'}),
-        isRegionLicensed(regionInput)
-          ?R('div',{style:S.ok},'✓ '+regionInput+' má licenciu')
-          :regionInput.length>1&&R('div',{style:S.shopCard,onClick:()=>buyLicense(STRIPE_REGION,'region_licensed',regionInput)},
-              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-                R('div',null,R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF'}},'Krajská licencia')),
-                R('div',{style:S.price},'50 €')))
-      ),
-      tab==='state'&&R('div',null,
-        R(Lbl,{c:'Štát'}),R(Inp,{val:stateInput,set:setStateInput,ph:'napr. Slovensko'}),
-        isStateLicensed(stateInput)
-          ?R('div',{style:S.ok},'✓ '+stateInput+' má licenciu')
-          :stateInput.length>1&&R('div',{style:S.shopCard,onClick:()=>buyLicense(STRIPE_STATE,'state_licensed',stateInput)},
-              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-                R('div',null,R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF'}},'Štátna licencia')),
-                R('div',{style:S.price},'200 €')))
-      ),
-      tab==='global'&&R('div',null,
-        isGlobalLicensed()
-          ?R('div',{style:S.ok},'✓ Globálna úroveň je odomknutá')
-          :R('div',{style:S.shopCard,onClick:()=>buyLicense(STRIPE_GLOBAL,'global_licensed','world')},
-              R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-                R('div',null,
-                  R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,color:'#FAF5EF',marginBottom:'.2rem'}},'Globálna licencia'),
-                  R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)'}},'Súťaž o % populácie sveta')
-                ),R('div',{style:S.price},'500 €')))
+    R('div',{style:S.eye},'Licencie úrovní'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Čoskoro ',R('em',{style:S.hEm},'dostupné')),
+    R('div',{style:{...S.card}},
+      R('div',{style:{fontSize:'.9rem',color:'rgba(250,245,239,0.6)',lineHeight:1.7}},
+        'Mestské, krajské a štátne licencie budú dostupné čoskoro. Zatiaľ kontaktuj nás priamo na ',
+        R('strong',null,'filip.halecka@gmail.com'),
+        ' ak chceš odomknúť svoju oblasť.'
       )
-    ),
-    R(Divider,null),
-    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.22)',lineHeight:1.7}},
-      'Stripe · bezpečná platba kartou · po zaplatení sa úroveň odomkne automaticky.')
+    )
   );
 }
 
-// ── Request New Category screen ───────────────────────────────
-function RequestCategory({me,onBack,onSubmitted}){
-  const[label,setLabel]=useState('');
-  const[types,setTypes]=useState('');
-  const[busy,setBusy]=useState(false);
-  const[done,setDone]=useState(false);
-  const[err,setErr]=useState('');
-  async function doSubmit(){
-    if(!label.trim()){setErr('Zadaj názov kategórie.');return;}
-    setBusy(true);
-    try{
-      const id='cat_'+Date.now();
-      const typesArr=types.split(',').map(s=>s.trim()).filter(Boolean);
-      await DB.submitCategoryRequest({
-        id,label:label.trim(),types:typesArr,
-        requestedBy:me.uid,requestedByEmail:me.email,
-        ts:new Date().toISOString(),approved:false
-      });
-      setDone(true);
-      setTimeout(()=>onSubmitted&&onSubmitted(),2000);
-    }catch(e){setErr('Chyba: '+e.message);}
-    finally{setBusy(false);}
-  }
-  if(done)return R('div',null,
-    R(Bk,{to:'team',set:onBack,l:'Späť'}),
-    R('div',{style:{...S.card,borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.07)'}},
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#B8882A'}},'Návrh odoslaný!'),
-      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',marginTop:'.5rem'}},'Admin kategóriu schváli čo najskôr.')
-    )
-  );
-  return R('div',null,
-    R(Bk,{to:'team',set:onBack,l:'Späť'}),
-    R('div',{style:S.eye},'Navrhnúť novú kategóriu'),
-    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Nová ',R('em',{style:S.hEm},'kategória')),
-    R('div',{style:{...S.card}},
-      R(Lbl,{c:'Názov kategórie (napr. Skauting, Školstvo...)'}),
-      R(Inp,{val:label,set:setLabel,ph:'napr. Tanec'}),
-      R(Lbl,{c:'Typy skupín, oddelené čiarkou (nepovinné)'}),
-      R(Inp,{val:types,set:setTypes,ph:'napr. Súbor, Škola, Klub',mb0:true}),
-      R('div',{style:{fontSize:'.75rem',color:'rgba(250,245,239,0.35)',marginBottom:'1rem',marginTop:'.5rem',lineHeight:1.6}},
-        'Admin schváli návrh. Dostaneš upozornenie keď bude aktívna.'),
-      R(Err,{m:err}),
-      R(Btn,{onClick:doSubmit,v:'p',full:true,busy},'Odoslať návrh')
-    )
-  );
-}
 
 // ── Main App ──────────────────────────────────────────────────
 function App(){
@@ -1712,7 +1577,7 @@ function App(){
       R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},myTeams.length>0?'Moje skupiny':'Vytvoriť skupinu'),
       R(Btn,{onClick:()=>setScr('lb'),v:'m',s:{flex:1}},'Rebríček')
     ),
-    R(Btn,{onClick:()=>setScr('cityshop'),v:'m',full:true,s:{marginBottom:'1.5rem',fontSize:'.7rem'}},'🏙️ E-shop · licencie úrovní'),
+    
     (me.encounters||[]).length>0&&R('div',null,
       R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Posledné stretnutia'),
       (me.encounters||[]).slice(0,5).map((e,i)=>R('div',{key:i,style:{
