@@ -783,6 +783,10 @@ function App(){
   const[bgCat,setBgCat]=useState('');
   const[bgParentCode,setBgParentCode]=useState('');
   const[bge2,setBge2]=useState('');
+  const[bgParentName,setBgParentName]=useState('');
+  const[bgParentCat,setBgParentCat]=useState('');
+  const[bgParentType,setBgParentType]=useState('');
+  const[showCreateParent,setShowCreateParent]=useState(false);
   const[bgType,setBgType]=useState('');
   const[bge,setBge]=useState('');
   const[bgtab,setBgtab]=useState('create');
@@ -1088,6 +1092,30 @@ function App(){
     }finally{setBusy(false);}
   }
 
+  // Create a NEW parent biggroup and attach current group to it
+  async function doCreateParentGroup(childBgId){
+    const name=bgParentName.trim();
+    if(!name){setBge2('Zadaj názov.');return;}
+    if(!bgParentCat){setBge2('Vyber kategóriu.');return;}
+    setBusy(true);
+    try{
+      const bg=await DB.getBigGroups();
+      const child=bg[childBgId];
+      if(!child){setBge2('Skupina nenájdená.');setBusy(false);return;}
+      const id='bg_'+Date.now(),code=genCode();
+      // Create new parent group
+      await DB.setBigGroup(id,{id,name,code,teamIds:[],members:[me.uid],
+        points:0,founderId:me.uid,category:bgParentCat,
+        type:bgParentType||null,parentId:null});
+      // Attach child to new parent
+      await DB.setBigGroup(childBgId,{...child,parentId:id});
+      await refreshAll();
+      setBgParentName('');setBgParentCat('');setBgParentType('');
+      setBge2('');setShowCreateParent(false);
+      shFlash('Skupina "'+name+'" vytvorená a priradená! Kód: '+code);
+    }finally{setBusy(false);}
+  }
+
   // Join a biggroup into a parent biggroup (by code)
   async function doJoinParentGroup(bgId){
     const code=bgParentCode.trim().toUpperCase();
@@ -1367,19 +1395,44 @@ function App(){
                   color:'rgba(196,96,58,0.6)'}},'Odpojiť')
             )
           ),
-          R('div',{style:{fontSize:'.82rem',color:'rgba(250,245,239,0.4)',
-            marginBottom:'.6rem'}},
-            parent?'Zmeniť nadradenú skupinu:':'Zadaj kód nadradenej skupiny:'),
+          // Tabs: pripojiť kódom | vytvoriť novú
+          R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',
+            marginBottom:'1rem'}},
+            R('button',{onClick:()=>setShowCreateParent(false),
+              style:!showCreateParent?S.tabA:S.tab},'Pripojiť kódom'),
+            R('button',{onClick:()=>setShowCreateParent(true),
+              style:showCreateParent?S.tabA:S.tab},'Vytvoriť novú')
+          ),
           bge2&&R(Err,{m:bge2}),
-          R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
-            R('div',{style:{flex:1}},
-              R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
-                ph:'kód skupiny, napr. ZB9K2M',mono:true,mb0:true})
-            ),
-            R(Btn,{onClick:()=>doJoinParentGroup(myBg.id),v:'p',busy,
-              s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},
-              parent?'Zmeniť':'Zaradiť')
-          )
+          !showCreateParent
+            ?R('div',null,
+                R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+                  marginBottom:'.6rem'}},
+                  parent?'Zmeniť nadradenú skupinu:':'Zadaj kód existujúcej skupiny:'),
+                R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
+                  R('div',{style:{flex:1}},
+                    R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+                      ph:'kód skupiny, napr. ZB9K2M',mono:true,mb0:true})
+                  ),
+                  R(Btn,{onClick:()=>doJoinParentGroup(myBg.id),v:'p',busy,
+                    s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},
+                    parent?'Zmeniť':'Zaradiť')
+                )
+              )
+            :R('div',null,
+                R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+                  marginBottom:'.75rem',lineHeight:1.6}},
+                  'Vytvor novú nadradenú skupinu (napr. zbor pre oddiel). '+myBg.name+' sa do nej automaticky zaradí.'),
+                R(Lbl,{c:'Názov novej skupiny'}),
+                R(Inp,{val:bgParentName,set:setBgParentName,
+                  ph:'napr. 75. zbor Jána Vojtaššáka'}),
+                R(CategoryPicker,{categories,
+                  selectedCat:bgParentCat,selectedType:bgParentType,
+                  onCat:setBgParentCat,onType:setBgParentType,
+                  onRequestNew:()=>setScr('reqcat')}),
+                R(Btn,{onClick:()=>doCreateParentGroup(myBg.id),v:'p',full:true,busy,
+                  s:{marginTop:'1rem'}},'Vytvoriť a zaradiť')
+              )
         ),
 
         // Info pre ne-zakladateľov
@@ -1536,20 +1589,44 @@ function App(){
           )
         ),
 
-        // Formulár na (z)meniť nadradenú — vždy viditeľný
-        R('div',{style:{fontSize:'.82rem',color:'rgba(250,245,239,0.4)',
-          marginBottom:'.6rem',lineHeight:1.5}},
-          parent?'Zmeniť nadradenú skupinu:':'Zadaj kód nadradenej skupiny (napr. zboru):'),
+        // Tabs: pripojiť kódom | vytvoriť novú
+        R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',
+          marginBottom:'1rem'}},
+          R('button',{onClick:()=>setShowCreateParent(false),
+            style:!showCreateParent?S.tabA:S.tab},'Pripojiť kódom'),
+          R('button',{onClick:()=>setShowCreateParent(true),
+            style:showCreateParent?S.tabA:S.tab},'Vytvoriť novú')
+        ),
         bge2&&R(Err,{m:bge2}),
-        R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
-          R('div',{style:{flex:1}},
-            R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
-              ph:'kód skupiny, napr. ZB9K2M',mono:true,mb0:true})
-          ),
-          R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'p',busy,
-            s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},
-            parent?'Zmeniť':'Zaradiť')
-        )
+        !showCreateParent
+          ?R('div',null,
+              R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+                marginBottom:'.6rem'}},
+                parent?'Zmeniť nadradenú skupinu:':'Zadaj kód existujúcej skupiny:'),
+              R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
+                R('div',{style:{flex:1}},
+                  R(Inp,{val:bgParentCode,set:v=>setBgParentCode(v.toUpperCase()),
+                    ph:'kód skupiny, napr. ZB9K2M',mono:true,mb0:true})
+                ),
+                R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'p',busy,
+                  s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},
+                  parent?'Zmeniť':'Zaradiť')
+              )
+            )
+          :R('div',null,
+              R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+                marginBottom:'.75rem',lineHeight:1.6}},
+                'Vytvor novú nadradenú skupinu (napr. zbor, farnosť). '+bg.name+' sa do nej automaticky zaradí.'),
+              R(Lbl,{c:'Názov novej skupiny'}),
+              R(Inp,{val:bgParentName,set:setBgParentName,
+                ph:'napr. 75. zbor Jána Vojtaššáka'}),
+              R(CategoryPicker,{categories,
+                selectedCat:bgParentCat,selectedType:bgParentType,
+                onCat:setBgParentCat,onType:setBgParentType,
+                onRequestNew:()=>setScr('reqcat')}),
+              R(Btn,{onClick:()=>doCreateParentGroup(bgId),v:'p',full:true,busy,
+                s:{marginTop:'1rem'}},'Vytvoriť a zaradiť')
+            )
       ),
 
       // Opustiť skupinu (pre členov čo nie sú zakladatelia)
