@@ -103,7 +103,7 @@
 // ╚══════════════════════════════════════════════════════════════╝
 const FB_API_KEY   = 'AIzaSyB2SGGL1JE7b60WPGU9nrWOAJwZ_zbT7Ao';
 const FB_DB_URL    = 'https://hra-proti-samote-default-rtdb.europe-west1.firebasedatabase.app';
-const USE_FIREBASE = false; // Firebase dočasne vypnuté
+const USE_FIREBASE = FB_API_KEY !== 'VLOZ_API_KEY';
 const ADMIN_EMAIL  = 'filip.halecka@gmail.com';
 
 
@@ -326,7 +326,41 @@ function canPlayGlobal(me){return(me.points||0)>=GLOBAL_THRESHOLD&&isGlobalLicen
 function pct(val,max){return Math.min(100,Math.round((val/max)*100));}
 function isAdmin(me){return me&&me.email===ADMIN_EMAIL;}
 
-const COUNTRIES=['Slovensko','Česko','Rakúsko','Nemecko','Poľsko','Maďarsko','Iné'];
+// Regions grouped by country for registration
+const REGIONS=[
+  // Slovensko — 8 krajov
+  'SK · Bratislavský kraj',
+  'SK · Trnavský kraj',
+  'SK · Trenčiansky kraj',
+  'SK · Nitriansky kraj',
+  'SK · Žilinský kraj',
+  'SK · Banskobystrický kraj',
+  'SK · Prešovský kraj',
+  'SK · Košický kraj',
+  // Česko — 14 krajov
+  'CZ · Praha',
+  'CZ · Středočeský kraj',
+  'CZ · Jihočeský kraj',
+  'CZ · Plzeňský kraj',
+  'CZ · Karlovarský kraj',
+  'CZ · Ústecký kraj',
+  'CZ · Liberecký kraj',
+  'CZ · Královéhradecký kraj',
+  'CZ · Pardubický kraj',
+  'CZ · Kraj Vysočina',
+  'CZ · Jihomoravský kraj',
+  'CZ · Olomoucký kraj',
+  'CZ · Moravskoslezský kraj',
+  'CZ · Zlínský kraj',
+  // Ostatné
+  'AT · Rakúsko',
+  'DE · Nemecko',
+  'PL · Poľsko',
+  'HU · Maďarsko',
+  'Iné',
+];
+// Keep COUNTRIES for backward compat
+const COUNTRIES=REGIONS;
 
 const R=React.createElement;
 const {useState,useEffect,useRef}=React;
@@ -509,6 +543,29 @@ function CategoryPicker({categories,selectedCat,selectedType,onCat,onType,onRequ
 }
 
 // ── Level Picker ──────────────────────────────────────────────
+// Level order for minLevel logic
+const LEVEL_ORDER=['solo','team','city','region','state','global'];
+
+function getMinLevel(me){
+  // Highest unlocked level becomes the minimum
+  if(canPlayGlobal(me)) return 'global';
+  if(canPlayState(me))  return 'state';
+  if(canPlayRegion(me)) return 'region';
+  if(canPlayCity(me))   return 'city';
+  if((me.teamIds||[]).length>0) return 'team';
+  return 'solo';
+}
+
+// Bonding hints per level
+const BONDING_HINTS={
+  solo:   'Urob niečo dobré pre niekoho blízkeho — priateľa, suseda, cudzinca.',
+  team:   'Urob niečo dobré pre člena svojej skupiny.',
+  city:   'Urob niečo dobré pre niekoho vo svojom meste — suseda, kolegu, cudzinca.',
+  region: 'Urob niečo dobré pre niekoho vo svojom kraji.',
+  state:  'Urob niečo dobré pre niekoho vo svojej krajine.',
+  global: 'Urob niečo dobré pre niekoho kdekoľvek na svete.',
+};
+
 function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange}){
   const hasTeam=myTeams&&myTeams.length>0;
   const pts=me.points||0;
@@ -524,6 +581,7 @@ function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange}){
     {id:'global',label:'Svet',    sub:'+ svet',   locked:!canPlayGlobal(me),
       lockMsg:pts<GLOBAL_THRESHOLD?'Potrebuješ '+GLOBAL_THRESHOLD+' interakcií':'Nie je odomknuté'},
   ];
+
   return R('div',null,
     R(Lbl,{c:'Hrám za úroveň'}),
     R('div',{style:{display:'flex',gap:'.4rem',flexWrap:'wrap',marginBottom:'1rem'}},
@@ -629,6 +687,7 @@ function App(){
   const[ae,setAe]=useState('');
   const[aok,setAok]=useState('');
   const[authTab,setAuthTab]=useState('login');
+  const[referralCode,setReferralCode]=useState('');
 
   // game
   const[note,setNote]=useState('');
@@ -666,8 +725,8 @@ function App(){
       if(sess&&sess.uid){
         if(USE_FIREBASE){
           try{
-            const u=await AUTH.getUserInfo(sess.idToken);
-            if(!u.emailVerified){setScr('verify');return;}
+            await AUTH.getUserInfo(sess.idToken);
+            // Email verification skipped for beta
           }catch(e){lsSet('hps:session',null);setScr('auth');return;}
         }
         const[pl,tm,bg,cats]=await Promise.all([
@@ -751,27 +810,56 @@ function App(){
   // ── AUTH ──────────────────────────────────────────────────
   async function doRegister(){
     setAe('');
-    if(!email.trim()||!pw.trim()||!nick.trim()||!city.trim()||!country){setAe('Vyplň všetky polia.');return;}
+    if(!email.trim()||!pw.trim()||!nick.trim()||!city.trim()||!country){setAe('Vyplň všetky polia vrátane kraja.');return;}
     if(pw!==pw2){setAe('Heslá sa nezhodujú.');return;}
     if(pw.length<6){setAe('Heslo musí mať aspoň 6 znakov.');return;}
     setBusy(true);
     try{
       if(USE_FIREBASE){
         const res=await AUTH.signUp(email.trim(),pw);
-        await AUTH.sendVerification(res.idToken);
+        const myCode=res.localId.substr(0,6).toUpperCase();
+        const refBonus=referralCode.trim()?10:0;
         const profile={uid:res.localId,email:email.trim(),nickname:nick.trim(),
-          city:city.trim(),country,teamIds:[],bigGroupIds:[],points:0,encounters:[]};
+          city:city.trim(),region:country,country:regionToCountry(country),
+          teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
+          referralCode:myCode,
+          referredBy:referralCode.trim()||null};
         await DB.setPlayer(res.localId,profile);
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
-        setScr('verify');
+        // Give referrer 5 points
+        if(referralCode.trim()){
+          const allPl=await DB.getPlayers();
+          const referrer=Object.values(allPl).find(p=>p.referralCode===referralCode.trim());
+          if(referrer){
+            await DB.setPlayer(referrer.uid,{...referrer,points:(referrer.points||0)+5});
+          }
+        }
+        const plR=await DB.getPlayers();
+        setPlayers(plR);setMe(profile);setScr('home');
+        if(refBonus>0) setTimeout(()=>shFlash('Vitaj! Dostal si +'+refBonus+' bodov za kód pozvania 🎉'),300);
       } else {
         const pl=lsGet('hps:players')||{};
         const uid='u_'+Date.now();
+        const myCode=uid.substr(0,6).toUpperCase();
+        const refBonus=referralCode.trim()?10:0;
         const profile={uid,email:email.trim(),nickname:nick.trim(),
-          city:city.trim(),country,teamIds:[],bigGroupIds:[],points:0,encounters:[]};
+          city:city.trim(),region:country,country:regionToCountry(country),
+          teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
+          referralCode:myCode,
+          referredBy:referralCode.trim()||null};
         pl[uid]=profile;lsSet('hps:players',pl);
+        // Give referrer 5 points
+        if(referralCode.trim()){
+          const allPl=lsGet('hps:players')||{};
+          const referrer=Object.values(allPl).find(p=>p.referralCode===referralCode.trim());
+          if(referrer){
+            allPl[referrer.uid]={...referrer,points:(referrer.points||0)+5};
+            lsSet('hps:players',allPl);
+          }
+        }
         lsSet('hps:session',{uid,email:email.trim()});
         setMe(profile);setPlayers(pl);setScr('home');
+        if(refBonus>0) setTimeout(()=>shFlash('Vitaj! Dostal si +'+refBonus+' bodov za kód pozvania 🎉'),300);
       }
     }catch(e){setAe(authErrMsg(e.message));}
     finally{setBusy(false);}
@@ -785,7 +873,8 @@ function App(){
       if(USE_FIREBASE){
         const res=await AUTH.signIn(email.trim(),pw);
         const u=await AUTH.getUserInfo(res.idToken);
-        if(!u.emailVerified){
+        // Email verification skipped for beta
+        if(false){
           lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
           setScr('verify');setBusy(false);return;
         }
@@ -850,7 +939,8 @@ function App(){
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
       const uid=me.uid;
-      const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,
+      const encTypeSaved=((pl[uid].points||0)+1)%2===0?'bonding':'bridging';
+      const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
         teamId:activeTeamId||null,city:me.city||'',country:me.country||''};
       const prevPts=pl[uid].points||0;
       const p={...pl[uid],points:prevPts+1,encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
@@ -1101,9 +1191,11 @@ function App(){
           R(Lbl,{c:'E-mail'}),R(Inp,{val:email,set:setEmail,ph:'tvoj@email.com',type:'email'}),
           R(Lbl,{c:'Prezývka'}),R(Inp,{val:nick,set:setNick,ph:'napr. filip_h'}),
           R(Lbl,{c:'Mesto'}),R(Inp,{val:city,set:setCity,ph:'napr. Bratislava'}),
-          R(Lbl,{c:'Krajina'}),R(Sel,{val:country,set:setCountry,opts:COUNTRIES,ph:'— Vyber krajinu —'}),
+          R(Lbl,{c:'Kraj / Región'}),R(Sel,{val:country,set:v=>{setCountry(v);},opts:REGIONS,ph:'— Vyber kraj —'}),
           R(Lbl,{c:'Heslo'}),R(Inp,{val:pw,set:setPw,ph:'minimálne 6 znakov',type:'password'}),
           R(Lbl,{c:'Heslo znovu'}),R(Inp,{val:pw2,set:setPw2,ph:'zopakuj heslo',type:'password',onEnter:doRegister,mb0:true}),
+          R(Lbl,{c:'Kód pozvania (nepovinné)'}),
+          R(Inp,{val:referralCode,set:v=>setReferralCode(v.toUpperCase()),ph:'kód od niekoho kto ťa pozval',mono:true,mb0:true}),
           R(Err,{m:ae}),
           R(Btn,{onClick:doRegister,v:'p',full:true,busy,s:{marginTop:'.75rem'}},'Zaregistrovať sa'))
   );
@@ -1528,8 +1620,11 @@ function App(){
       R('div',null,
         R('div',{style:{...S.eye,marginBottom:'.2rem'}},'Ahoj'),
         R('h3',{style:{...S.h,fontSize:'2rem',marginBottom:'.2rem'}},me.nickname),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginBottom:'.25rem'}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginBottom:'.1rem'}},
           me.city+(me.country?', '+me.country:'')),
+        me.referralCode&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(184,136,42,0.6)',marginBottom:'.25rem',letterSpacing:'.1em'}},
+          'Tvoj kód: ',R('strong',{style:{color:'#B8882A'}},me.referralCode)),
         myTeams.length>0&&R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.3rem'}},
           myTeams.map(t=>R('span',{key:t.id,style:{
             ...S.badgeA,cursor:'pointer',
@@ -1590,26 +1685,60 @@ function App(){
   );
 
   // ══ LOG ══════════════════════════════════════════════════
-  if(scr==='log')return R('div',null,
+  if(scr==='log'){
+    // Auto-determine type: odd points = bridging, even = bonding
+    const nextPts=(me.points||0)+1;
+    const encType=nextPts%2===0?'bonding':'bridging';
+    const isBonding=encType==='bonding';
+    const bondingHint=BONDING_HINTS[playLevel]||BONDING_HINTS.solo;
+
+    return R('div',null,
     R(Bk,{to:'home',set:setScr,l:'Späť'}),
+
+    // Header card showing what type this encounter is
+    R('div',{style:{
+      background:isBonding?'rgba(184,136,42,0.1)':'rgba(139,46,20,0.1)',
+      border:'1px solid '+(isBonding?'rgba(184,136,42,0.3)':'rgba(139,46,20,0.3)'),
+      padding:'1rem 1.25rem',marginBottom:'1.25rem',
+      display:'flex',alignItems:'center',gap:'1rem'}},
+      R('div',{style:{fontSize:'1.8rem',lineHeight:1}},isBonding?'💛':'🤝'),
+      R('div',null,
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          letterSpacing:'.15em',textTransform:'uppercase',
+          color:isBonding?'#B8882A':'#C4603A',marginBottom:'.2rem'}},
+          isBonding?'Bonding · bod '+nextPts:'Bridging · bod '+nextPts),
+        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.75)',lineHeight:1.5}},
+          isBonding?bondingHint:'Oslovi niekoho, koho nepoznáš.')
+      )
+    ),
+
     R('div',{style:S.eye},'Nové stretnutie'),
-    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Koho si dnes ',R('em',{style:S.hEm},'stretol?')),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},
+      isBonding
+        ?R('span',null,'Čo dobré si dnes ',R('em',{style:{...S.hEm,color:'#B8882A'}},'urobil?'))
+        :R('span',null,'Koho si dnes ',R('em',{style:S.hEm},'stretol?'))
+    ),
     R('div',{style:S.card},
       R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeams,activeTeamId,onTeamChange:setActiveTeamId}),
       R(Divider,null),
-      R(Lbl,{c:'Pár slov o stretnutí'}),
+      R(Lbl,{c:isBonding?'Čo si urobil a pre koho?':'Pár slov o stretnutí'}),
       R('textarea',{rows:4,value:note,onChange:e=>setNote(e.target.value),
-        placeholder:'napr. „Oslovil som chlapíka v kaviarni…"',
+        placeholder:isBonding
+          ?'napr. „Pomohol som susedovi s nákupom, bol osamelý starší pán…"'
+          :'napr. „Oslovil som chlapíka v kaviarni, hovoril o opravovaní starých motoriek…"',
         style:{...S.inp,resize:'vertical',lineHeight:1.6}}),
       ne&&R(Err,{m:ne}),
       R('div',{style:{display:'flex',gap:'.5rem',flexWrap:'wrap',margin:'.75rem 0'}},
-        R('span',{style:S.badgeA},'+1 · '+me.nickname),
+        R('span',{style:{...S.badgeA,background:isBonding?'#B8882A':'#8B2E14'}},
+          '+1 · '+me.nickname),
         (playLevel==='team'||playLevel==='city')&&myActiveTeam&&R('span',{style:S.badgeG},'+1 · '+myActiveTeam.name),
         playLevel==='city'&&R('span',{style:S.badgeG},'+1 · '+me.city)
       ),
-      R(Btn,{onClick:doEncounter,v:'p',full:true,busy,s:{padding:'1rem'}},'Zaznamenať (+1 bod)')
+      R(Btn,{onClick:doEncounter,v:isBonding?'g':'p',full:true,busy,
+        s:{padding:'1rem'}},
+        isBonding?'💛 Zaznamenať bonding (+1 bod)':'🤝 Zaznamenať bridging (+1 bod)')
     )
-  );
+  );}
 
   // ══ SKUPINY ═══════════════════════════════════════════════
   if(scr==='team'){
