@@ -558,12 +558,12 @@ function getMinLevel(me){
 
 // Bonding hints per level
 const BONDING_HINTS={
-  solo:   'Urob niečo dobré pre niekoho blízkeho — priateľa, suseda, cudzinca.',
-  team:   'Urob niečo dobré pre člena svojej skupiny.',
-  city:   'Urob niečo dobré pre niekoho vo svojom meste — suseda, kolegu, cudzinca.',
-  region: 'Urob niečo dobré pre niekoho vo svojom kraji.',
-  state:  'Urob niečo dobré pre niekoho vo svojej krajine.',
-  global: 'Urob niečo dobré pre niekoho kdekoľvek na svete.',
+  solo:   'Urob niečo dobré pre niekoho blízkeho — priateľa, rodinného príslušníka, suseda.',
+  team:   'Urob niečo dobré pre člena svojej malej skupiny. Posilni vzťah zvnútra.',
+  city:   'Urob niečo dobré pre niekoho vo svojej komunite — suseda, kolegu, člena skupiny.',
+  region: 'Urob niečo dobré pre niekoho vo svojom kraji, koho už poznáš alebo stretávaš.',
+  state:  'Urob niečo dobré pre niekoho vo svojej krajine — niekoho z tvojho okruhu.',
+  global: 'Urob niečo dobré pre niekoho blízkeho, nech je kdekoľvek na svete.',
 };
 
 function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange}){
@@ -1708,7 +1708,7 @@ function App(){
           color:isBonding?'#B8882A':'#C4603A',marginBottom:'.2rem'}},
           isBonding?'Bonding · bod '+nextPts:'Bridging · bod '+nextPts),
         R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.75)',lineHeight:1.5}},
-          isBonding?bondingHint:'Oslovi niekoho, koho nepoznáš.')
+          isBonding?bondingHint:'Udržiavaj dobro vo vnútri — urob niečo pre niekoho blízkeho.')
       )
     ),
 
@@ -1721,10 +1721,10 @@ function App(){
     R('div',{style:S.card},
       R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeams,activeTeamId,onTeamChange:setActiveTeamId}),
       R(Divider,null),
-      R(Lbl,{c:isBonding?'Čo si urobil a pre koho?':'Pár slov o stretnutí'}),
+      R(Lbl,{c:isBonding?'Čo si urobil pre niekoho blízkeho?':'Pár slov o stretnutí s cudzincom'}),
       R('textarea',{rows:4,value:note,onChange:e=>setNote(e.target.value),
         placeholder:isBonding
-          ?'napr. „Pomohol som susedovi s nákupom, bol osamelý starší pán…"'
+          ?'napr. „Pomohol som členovi skupiny, zavolal som kamarátovi ktorý mal ťažké obdobie…"'
           :'napr. „Oslovil som chlapíka v kaviarni, hovoril o opravovaní starých motoriek…"',
         style:{...S.inp,resize:'vertical',lineHeight:1.6}}),
       ne&&R(Err,{m:ne}),
