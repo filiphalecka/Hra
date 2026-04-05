@@ -80,14 +80,16 @@
     font-size: clamp(2rem, 8vw, 4rem);
     font-weight: 600; color: #FAF5EF;
     text-align: center; padding: 0 1.5rem;
-    animation: fadeIn 1s ease forwards;
+    opacity: 0;
+    animation: fadeIn 1s .2s ease forwards;
   }
   #splash h1 em { font-style: italic; color: var(--accent-light); }
   #splash .splash-sub {
     font-family: var(--font-mono); font-size: .65rem;
     letter-spacing: .2em; color: rgba(250,245,239,.4);
     text-transform: uppercase;
-    animation: fadeIn 1s .4s ease both;
+    opacity: 0;
+    animation: fadeIn 1s .7s ease forwards;
   }
   #splash .splash-btn {
     margin-top: 1rem;
@@ -95,17 +97,19 @@
     letter-spacing: .12em; text-transform: uppercase;
     color: #1C1711; background: #FAF5EF;
     border: none; padding: .85rem 2.5rem; cursor: pointer;
-    animation: fadeIn .8s .9s ease both;
+    opacity: 0;
+    animation: fadeIn .8s 1.2s ease forwards;
   }
   #splash .splash-skip {
     font-family: var(--font-mono); font-size: .6rem;
     letter-spacing: .1em; color: rgba(250,245,239,.2);
     background: none; border: none; cursor: pointer;
     text-transform: uppercase;
-    animation: fadeIn .5s 1.3s ease both;
+    opacity: 0;
+    animation: fadeIn .5s 1.6s ease forwards;
   }
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
@@ -365,7 +369,7 @@
 <div class="hero">
   <span class="hero-label">Sezóna 01 — Beta</span>
   <h1>Hra, ktorá <em>lieči</em> samotu</h1>
-  <p>Z krízy osamelosti sa stala epidémia. Hra je mojou odpoveďou na túto situáciu. Získavaš body za spoznávanie nových ľudí, postupuješ na vyššie levely, reprezentuješ svoju skupinu, svoje mesto, svoju krajinu a svet.</p>
+  <p>WHO vyhlásila krízu samoty epidémiou. Táto hra je odpoveďou — získavaš body za každé skutočné spojenie s iným človekom.</p>
   <div class="hero-stats">
     <div class="hero-stat">
       <div class="n">1 z 4</div>
@@ -488,10 +492,9 @@
     <h2 class="section-title">O <em>projekte</em></h2>
     <div class="about-cols">
       <div class="about-text">
-        <p>WHO vyhlásila osamotenosť za globálnu zdravotnú krízu — porovnateľnú v dôsledkoch s fajčením alebo nedostatkom pohybu. Napriek tomu ju väčšina ľudí vníma ako osobný problém, nie ako niečo, čo sa dá kolektívne adresovať. Táto hra je pokus ukázať, že sa dá.</p>
-        <p>Základ je jednoduchý: každé zoznámenie s cudzím človekom je merateľná udalosť. Ak je merateľná, dá sa z nej urobiť hra. Ak je z nej hra, dá sa škálovať — od susedstva po mesto, od mesta po štát. Myšlienka vychádza z evolučného princípu <strong>multilevel selection</strong>: prospievať môžeš zároveň ako jednotlivec aj ako súčasť skupiny — tieto dve veci sa nemusia vylučovať.</p>
-        <p>Hra nie je navrhnutá ako oprava niečoho nefunkčného. Je navrhnutá ako <strong>priestor na zlepšenie</strong> — pridanie niečoho, čo tu bolo vždy latentne prítomné, ale nemalo štruktúru ani meranie. Ľudia sa chcú stretávať. Táto hra im dáva dôvod a kontext.</p>
-        <p>Beta verzia je zámerne jednoduchá: jeden formulár, jeden bod, jeden rebríček. Mestská, krajinská a svetová úroveň sa otvoria neskôr — keď bude dostatok hráčov, ktorí overili, že základná mechanika funguje.</p>
+        <p>WHO vyhlásila osamelosť za globálnu zdravotnú krízu — s podobnými zdravotnými dopadmi ako fajčenie alebo nedostatok pohybu. Napriek tomu ju väčšina ľudí vníma ako osobný problém, nie ako niečo, čo sa dá riešiť systémovo. Táto hra je pokus ukázať, že to ide.</p>
+        <p>Základ je jednoduchý: každé zoznámenie s cudzím človekom je merateľná udalosť. Ak je merateľná, dá sa z nej urobiť hra. Ak je z nej hra, dá sa škálovať — od susedstva po svet. Myšlienka vychádza z evolučného princípu <strong>multilevel selection</strong>: prosperita jednotlivca a skupiny môžu ísť ruku v ruke. Na každého čaká zmysluplná rola — ak sa toho chopí zo správneho konca.</p>
+        <p>Hra je pozvaním žiť život plnšie, vo väčšej pospolitosti — a pomáhať žiť plnší život aj ostatným.</p>
       </div>
       <div>
         <div class="section-label" style="margin-bottom:1.5rem">Úrovne súťaže</div>
@@ -550,7 +553,7 @@
       <div>
         <div class="profile-name">Filip Halečka</div>
         <div class="profile-role">Školský psychológ · Violončelista</div>
-        <p class="profile-bio">Pracujem so školami a komunitami, kde vidím každý deň ako ľudia hľadajú spojenie ale nevedia ako ho nájsť. Táto hra je môj pokus dať tomu štruktúru — merateľnú, hravú a škálovateľnú.</p>
+        <p class="profile-bio">Som školský psychológ, sociálny pracovník na psychiatrii a morálne ambiciózny nerd. Tento projekt je vyústením mojej bakalárskej práce — a osobného presvedčenia, že čím širší morálny okruh si človek uhryzie, tým plnší život žije. Rád čítam, píšem, hrám airsoft a premýšľam o veciach ktoré sa nedajú ľahko vyriešiť. Nenechám sa.</p>
       </div>
     </div>
   </div>
