@@ -960,6 +960,21 @@ function App(){
         }
       }
 
+      // ── Pyramídová kaskáda ───────────────────────────────────
+      // Za každý bod: rodič +0.1, starý rodič +0.01, prastarý +0.001
+      try {
+        const plAll=await DB.getPlayers();
+        let refCode=(plAll[uid]||{}).referredBy||null;
+        const fractions=[0.1,0.01,0.001];
+        for(let i=0;i<fractions.length&&refCode;i++){
+          const referrer=Object.values(plAll).find(p=>p.referralCode===refCode);
+          if(!referrer) break;
+          const newPts=Math.round(((referrer.points||0)+fractions[i])*1000)/1000;
+          await DB.setPlayer(referrer.uid,{...referrer,points:newPts});
+          refCode=referrer.referredBy||null;
+        }
+      } catch(e){ console.warn('Pyramid cascade error:',e); }
+
       // Milestone check
       const milestones=[
         {thresh:cityThreshold(me.uid),msg:'Mestská úroveň odomknutá! 🏙️'},
