@@ -362,6 +362,17 @@ const REGIONS=[
 // Keep COUNTRIES for backward compat
 const COUNTRIES=REGIONS;
 
+function regionToCountry(r){
+  if(!r) return '';
+  if(r.startsWith('SK')) return 'Slovensko';
+  if(r.startsWith('CZ')) return 'Česko';
+  if(r.startsWith('AT')) return 'Rakúsko';
+  if(r.startsWith('DE')) return 'Nemecko';
+  if(r.startsWith('PL')) return 'Poľsko';
+  if(r.startsWith('HU')) return 'Maďarsko';
+  return r;
+}
+
 const R=React.createElement;
 const {useState,useEffect,useRef}=React;
 
