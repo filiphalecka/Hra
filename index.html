@@ -349,6 +349,7 @@
     <h1>Hra proti <em>samote</em></h1>
   </div>
   <span class="splash-sub">Sezóna 01 · Beta</span>
+  <script>function closeSplash(){var s=document.getElementById('splash');if(s){s.style.transition='opacity .4s';s.style.opacity='0';setTimeout(function(){s.style.display='none';document.body.style.overflow='';},400);}}</script>
   <button class="splash-btn" onclick="closeSplash()">Vstúpiť do hry</button>
   <button class="splash-skip" onclick="closeSplash()">preskočiť</button>
 </div>
@@ -360,10 +361,9 @@
     <li><a href="#ako-hrat">Zapojiť sa</a></li>
     <li><a href="#projekt">Projekt</a></li>
     <li><a href="#o-mne">O mne</a></li>
-    <li><a href="#licencie" class="nav-cta">Licencie</a></li>
+    <li><a href="#licencie">Licencie</a></li>
     <li><a href="game.html" class="nav-cta">Hrať</a></li>
   </ul>
-  <a href="game.html" class="nav-cta" style="display:block">Hrať</a>
 </nav>
 
 <!-- HERO -->
@@ -638,7 +638,7 @@
 </footer>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-function closeSplash() {
+function closeSplash_old() {
   const s = document.getElementById('splash');
   s.style.transition = 'opacity .5s';
   s.style.opacity = '0';
