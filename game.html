@@ -1732,7 +1732,7 @@ function App(){
         R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
           letterSpacing:'.15em',textTransform:'uppercase',
           color:isBonding?'#B8882A':'#C4603A',marginBottom:'.2rem'}},
-          isBonding?'Bonding · bod '+nextPts:'Bridging · bod '+nextPts),
+          isBonding?'Bod '+nextPts+' · pestovanie vzťahov':'Bod '+nextPts+' · zoznámenie'),
         R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.75)',lineHeight:1.5}},
           isBonding?bondingHint:'Udržiavaj dobro vo vnútri — urob niečo pre niekoho blízkeho.')
       )
@@ -1741,16 +1741,16 @@ function App(){
     R('div',{style:S.eye},'Nové stretnutie'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},
       isBonding
-        ?R('span',null,'Čo dobré si dnes ',R('em',{style:{...S.hEm,color:'#B8882A'}},'urobil?'))
-        :R('span',null,'Koho si dnes ',R('em',{style:S.hEm},'stretol?'))
+        ?R('span',null,'Čo dobré si dnes ',R('em',{style:{...S.hEm,color:'#B8882A'}},'urobil pre niekoho blízkeho?'))
+        :R('span',null,'Koho nového si dnes ',R('em',{style:S.hEm},'spoznal?'))
     ),
     R('div',{style:S.card},
       R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeams,activeTeamId,onTeamChange:setActiveTeamId}),
       R(Divider,null),
-      R(Lbl,{c:isBonding?'Čo si urobil pre niekoho blízkeho?':'Pár slov o stretnutí s cudzincom'}),
+      R(Lbl,{c:isBonding?'Čo si urobil a pre koho?':'Pár slov o stretnutí'}),
       R('textarea',{rows:4,value:note,onChange:e=>setNote(e.target.value),
         placeholder:isBonding
-          ?'napr. „Pomohol som členovi skupiny, zavolal som kamarátovi ktorý mal ťažké obdobie…"'
+          ?'napr. „Pomohol som susedovi, zavolal som kamarátovi, urobil som niečo pre rodinu…"'
           :'napr. „Oslovil som chlapíka v kaviarni, hovoril o opravovaní starých motoriek…"',
         style:{...S.inp,resize:'vertical',lineHeight:1.6}}),
       ne&&R(Err,{m:ne}),
@@ -1762,7 +1762,7 @@ function App(){
       ),
       R(Btn,{onClick:doEncounter,v:isBonding?'g':'p',full:true,busy,
         s:{padding:'1rem'}},
-        isBonding?'💛 Zaznamenať bonding (+1 bod)':'🤝 Zaznamenať bridging (+1 bod)')
+        isBonding?'💛 Zaznamenať (+1 bod)':'🤝 Zaznamenať (+1 bod)')
     )
   );}
 
@@ -1994,12 +1994,51 @@ myBigGroupList.length===0
       // GLOBAL
       lbTab==='global'&&R('div',null,
         R('div',{style:{...S.cardGold,textAlign:'center',padding:'2rem'}},
-          R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'3.5rem',fontWeight:600,color:'#B8882A',lineHeight:1}},globalTotal.pts),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.12em',color:'rgba(250,245,239,0.35)',textTransform:'uppercase',marginTop:'.5rem'}},'Celkové body · Svet'),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'rgba(250,245,239,0.45)',marginTop:'.75rem'}},
-            globalTotal.players+' hráčov z '+Object.keys(stateMap).length+' štátov'),
-          R('div',{style:{marginTop:'1.25rem',fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'rgba(184,136,42,0.6)'}},
-            'Cieľ: 50 % hrajúcej populácie sveta')
+          // World population 8.3 billion (UN 2026)
+          // Target: 50% = 4,150,000,000
+          (()=>{
+            const WORLD_POP=8300000000;
+            const TARGET=WORLD_POP*0.5;
+            const players=globalTotal.players||0;
+            const pct=(players/WORLD_POP*100);
+            const missing=Math.max(0,Math.round(TARGET-players));
+            const pctDisplay=pct<0.0001?pct.toFixed(8):pct<0.01?pct.toFixed(6):pct.toFixed(4);
+            return R('div',null,
+              R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+                fontSize:'3.5rem',fontWeight:600,color:'#B8882A',lineHeight:1}},
+                pctDisplay+'%'),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                letterSpacing:'.12em',color:'rgba(250,245,239,0.35)',
+                textTransform:'uppercase',marginTop:'.35rem',marginBottom:'1.25rem'}},
+                'hráčov zo svetovej populácie'),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
+                color:'rgba(250,245,239,0.6)',marginBottom:'.35rem'}},
+                players.toLocaleString('sk-SK')+' hráčov z '+Object.keys(stateMap).length+' štátov'),
+              R('div',{style:{height:'6px',background:'rgba(250,245,239,0.08)',
+                margin:'.75rem 0',borderRadius:'3px'}},
+                R('div',{style:{height:'100%',background:'#B8882A',borderRadius:'3px',
+                  width:Math.min(100,pct/50*100)+'%',transition:'width .5s'}})
+              ),
+              R('div',{style:{display:'flex',justifyContent:'space-between',
+                fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(250,245,239,0.3)',marginBottom:'1.25rem'}},
+                R('span','0 %'),
+                R('span',{style:{color:'rgba(184,136,42,0.6)'}},'cieľ: 50 %'),
+                R('span','100 %')
+              ),
+              R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+                fontSize:'1.6rem',fontWeight:400,color:'rgba(250,245,239,0.5)',
+                fontStyle:'italic',marginBottom:'.25rem'}},
+                'Chýba ešte'),
+              R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+                fontSize:'2.8rem',fontWeight:600,color:'#FAF5EF',lineHeight:1}},
+                missing.toLocaleString('sk-SK')),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(250,245,239,0.25)',letterSpacing:'.1em',
+                textTransform:'uppercase',marginTop:'.35rem'}},
+                'ľudí do 50 % svetovej populácie · UN 2026 · 8,3 mld.')
+            );
+          })()
         )
       )
     );
