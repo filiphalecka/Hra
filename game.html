@@ -517,6 +517,28 @@ const S={
     fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.2)',fontSize:'.8rem',borderRadius:0},
   progress:{height:'4px',background:'rgba(250,245,239,0.1)',margin:'.75rem 0'},
   progressFill:{height:'100%',background:'#B8882A',transition:'width .4s ease'},
+  fog:{
+    filter:'blur(5px)',
+    userSelect:'none',
+    pointerEvents:'none',
+    opacity:.7,
+  },
+  fogWrap:{
+    position:'relative',
+    overflow:'hidden',
+    borderRadius:'2px',
+  },
+  fogOverlay:{
+    position:'absolute',inset:0,
+    background:'linear-gradient(to bottom,transparent 0%,rgba(14,11,7,0.75) 50%,rgba(14,11,7,0.97) 100%)',
+    display:'flex',alignItems:'flex-end',justifyContent:'center',
+    paddingBottom:'1.25rem',
+  },
+  fogLabel:{
+    fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+    letterSpacing:'.12em',color:'rgba(250,245,239,0.4)',
+    textTransform:'uppercase',textAlign:'center',
+  },
   shopCard:{border:'1px solid rgba(250,245,239,0.15)',padding:'1.25rem 1.5rem',
     marginBottom:'.75rem',cursor:'pointer'},
   price:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'2rem',
@@ -1919,7 +1941,8 @@ function App(){
       '+ Zaznamenať stretnutie'),
     R('div',{style:{display:'flex',gap:'.75rem',marginBottom:'.75rem'}},
       R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},myTeams.length>0?'Moje skupiny':'Vytvoriť skupinu'),
-      R(Btn,{onClick:()=>setScr('lb'),v:'m',s:{flex:1}},'Rebríček')
+      R(Btn,{onClick:()=>setScr('lb'),v:'m',s:{flex:1}},'Rebríček'),
+      R(Btn,{onClick:()=>setScr('cityshop'),v:'m',s:{flex:1}},'🏙️ E-shop')
     ),
     
     (me.encounters||[]).length>0&&R('div',null,
