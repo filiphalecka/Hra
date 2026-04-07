@@ -1289,6 +1289,18 @@ function App(){
 
   // Derived
   const sPlayers=Object.values(players).sort((a,b)=>b.points-a.points);
+
+  // Global stats — always computed
+  const globalStats=(()=>{
+    try{
+      const WORLD_POP=8300000000;
+      const count=Object.keys(players||{}).length;
+      const pct=count/WORLD_POP*100;
+      const missing=Math.max(0,Math.round(WORLD_POP*0.5-count));
+      const pctDisplay=pct<0.0001?pct.toFixed(8):pct<0.01?pct.toFixed(6):pct.toFixed(4);
+      return {count,pct,pctDisplay,missing};
+    }catch(e){return {count:0,pct:0,pctDisplay:'0.00000000',missing:4150000000};}
+  })();
   const sBigGroups=Object.values(bigGroups)
     .filter(g=>(g.teamIds||[]).length>0)
     .filter(g=>!lbCatFilter||g.category===lbCatFilter)
