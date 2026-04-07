@@ -111,6 +111,7 @@ const ADMIN_EMAIL  = 'filip.halecka@gmail.com';
 const CITY_THRESHOLD      = 50;
 const REGION_THRESHOLD    = 100;
 const STATE_THRESHOLD     = 150;
+const CONTINENT_THRESHOLD = 175;
 const GLOBAL_THRESHOLD    = 200;
 
 // ── Štartovacie kategórie veľkých skupín ─────────────────────
@@ -144,6 +145,7 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
   handleLicense('city_licensed',   'hps:licensed_cities');
   handleLicense('region_licensed', 'hps:licensed_regions');
   handleLicense('state_licensed',  'hps:licensed_states');
+  handleLicense('continent_licensed','hps:licensed_continents');
   handleLicense('global_licensed', 'hps:licensed_global');
 })();
 
@@ -322,7 +324,18 @@ function isGlobalLicensed(){
 function canPlayCity(me){return(me.points||0)>=cityThreshold(me.uid)&&isCityLicensed(me.city||'');}
 function canPlayRegion(me){return(me.points||0)>=REGION_THRESHOLD&&isRegionLicensed(me.region||me.city||'');}
 function canPlayState(me){return(me.points||0)>=STATE_THRESHOLD&&isStateLicensed(me.country||'');}
+function canPlayContinent(me){return(me.points||0)>=CONTINENT_THRESHOLD&&isContinentLicensed(me.continent||me.country||'');}
 function canPlayGlobal(me){return(me.points||0)>=GLOBAL_THRESHOLD&&isGlobalLicensed();}
+
+function isContinentLicensed(n){return isLicensed('hps:licensed_continents',n);}
+
+function countryToContinent(country){
+  const sk=['Slovensko','Česko','Rakúsko','Nemecko','Poľsko','Maďarsko'];
+  if(sk.includes(country)||country.startsWith('SK')||country.startsWith('CZ')||
+     country.startsWith('AT')||country.startsWith('DE')||country.startsWith('PL')||
+     country.startsWith('HU')) return 'Európa';
+  return 'Iný kontinent';
+}
 function pct(val,max){return Math.min(100,Math.round((val/max)*100));}
 function isAdmin(me){return me&&me.email===ADMIN_EMAIL;}
 
@@ -517,6 +530,20 @@ function Err({m}){return m?R('div',{style:S.err},m):null;}
 function Ok({m}){return m?R('div',{style:S.ok},m):null;}
 function Bk({to,set,l}){return R(Btn,{onClick:()=>set(to),v:'m',s:{marginBottom:'1.5rem',fontSize:'.7rem',padding:'.45rem .85rem'}},'← '+l);}
 function Divider(){return R('div',{style:{borderTop:'1px solid rgba(250,245,239,0.1)',margin:'1.25rem 0'}});}
+function FoggedList({children,locked,lockMsg}){
+  if(!locked) return R('div',null,...(Array.isArray(children)?children:[children]));
+  return R('div',{style:S.fogWrap},
+    R('div',{style:S.fog},...(Array.isArray(children)?children:[children])),
+    R('div',{style:S.fogOverlay},
+      R('div',{style:{textAlign:'center'}},
+        R('div',{style:{...S.fogLabel,marginBottom:'.3rem'}},'🔒 Uzamknuté'),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.25)'}},lockMsg||'Odomkni túto úroveň')
+      )
+    )
+  );
+}
+
 function RankBadge({i}){
   const extra=i===0?{background:'#B8882A',borderColor:'#B8882A',color:'#1C1711',fontWeight:500}
     :i===1?{background:'rgba(200,200,200,0.18)'}
@@ -589,6 +616,8 @@ function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange}){
       lockMsg:pts<REGION_THRESHOLD?'Potrebuješ '+REGION_THRESHOLD+' interakcií':'Kraj nemá licenciu'},
     {id:'state', label:'Štát',    sub:'+ štát',   locked:!canPlayState(me),
       lockMsg:pts<STATE_THRESHOLD?'Potrebuješ '+STATE_THRESHOLD+' interakcií':'Štát nemá licenciu'},
+    {id:'continent',label:'Kontinent',sub:'+ kontinent',locked:!canPlayContinent(me),
+      lockMsg:pts<CONTINENT_THRESHOLD?'Potrebuješ '+CONTINENT_THRESHOLD+' interakcií':'Kontinent nemá licenciu'},
     {id:'global',label:'Svet',    sub:'+ svet',   locked:!canPlayGlobal(me),
       lockMsg:pts<GLOBAL_THRESHOLD?'Potrebuješ '+GLOBAL_THRESHOLD+' interakcií':'Nie je odomknuté'},
   ];
@@ -662,17 +691,92 @@ function LevelProgress({me,onShop}){
 
 // ── City/Level Shop ───────────────────────────────────────────
 function CityShop({me,onBack}){
+  const[shopTab,setShopTab]=useState('city');
+
+  const CONTACT_EMAIL='filip.halecka@gmail.com';
+
+  const tiers={
+    city:[
+      {label:'Obec / Malé mesto',sub:'do 5 000 obyvateľov',price:'49 €/rok',color:'#B8882A'},
+      {label:'Stredné mesto',sub:'5 000 – 50 000 obyvateľov',price:'149 €/rok',color:'#B8882A'},
+      {label:'Veľké mesto',sub:'50 000+',price:'399 €/rok',color:'#B8882A'},
+    ],
+    region:[
+      {label:'Kraj / Región',sub:'Krajský rebríček pre všetkých hráčov z kraja',price:'299 €/rok',color:'#B8882A'},
+    ],
+    state:[
+      {label:'Štátna licencia',sub:'Štátny rebríček a národná kampaň',price:'999 €/rok',color:'#B8882A'},
+    ],
+    firm:[
+      {label:'Malá firma',sub:'do 20 zamestnancov',price:'99 €/rok',color:'#C4603A'},
+      {label:'Stredná firma',sub:'20 – 100 zamestnancov',price:'299 €/rok',color:'#C4603A'},
+      {label:'Veľká firma',sub:'100+ zamestnancov',price:'699 €/rok',color:'#C4603A'},
+    ],
+    school:[
+      {label:'Základná škola',sub:'Triedy, skupiny žiakov, školský rebríček',price:'49 €/rok',color:'#6B8A3A'},
+      {label:'Stredná škola',sub:'Triedy, krúžky, maturanti',price:'99 €/rok',color:'#6B8A3A'},
+      {label:'Vysoká škola / Univerzita',sub:'Fakulty, ročníky, študentské skupiny',price:'199 €/rok',color:'#6B8A3A'},
+    ],
+  };
+
+  const tabs=[
+    {id:'city',label:'Mesto'},
+    {id:'region',label:'Kraj'},
+    {id:'state',label:'Štát'},
+    {id:'firm',label:'Firma'},
+    {id:'school',label:'Škola'},
+  ];
+
+  function contactLink(tier){
+    const subject=encodeURIComponent('Záujem o licenciu: '+tier.label);
+    const body=encodeURIComponent('Dobrý deň,\n\nMám záujem o licenciu "'+tier.label+'" ('+tier.price+').\n\nMeno / organizácia:\nKontakt:\n\nĎakujem,');
+    return 'mailto:'+CONTACT_EMAIL+'?subject='+subject+'&body='+body;
+  }
+
+  const currentTiers=tiers[shopTab]||[];
+
   return R('div',null,
     R(Bk,{to:'home',set:onBack,l:'Späť'}),
-    R('div',{style:S.eye},'Licencie úrovní'),
-    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Čoskoro ',R('em',{style:S.hEm},'dostupné')),
-    R('div',{style:{...S.card}},
-      R('div',{style:{fontSize:'.9rem',color:'rgba(250,245,239,0.6)',lineHeight:1.7}},
-        'Mestské, krajské a štátne licencie budú dostupné čoskoro. Zatiaľ kontaktuj nás priamo na ',
-        R('strong',null,'filip.halecka@gmail.com'),
-        ' ak chceš odomknúť svoju oblasť.'
-      )
-    )
+    R('div',{style:S.eye},'E-shop · licencie'),
+    R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Odomkni ',R('em',{style:S.hEm},'svoju úroveň')),
+    R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
+      'Jedna licencia odomkne úroveň pre všetkých hráčov z danej oblasti alebo organizácie.'),
+
+    // Tabs
+    R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.5rem',flexWrap:'wrap'}},
+      tabs.map(t=>R('button',{key:t.id,onClick:()=>setShopTab(t.id),
+        style:shopTab===t.id?S.tabA:S.tab},t.label))
+    ),
+
+    // Tier cards
+    currentTiers.map((tier,i)=>R('div',{key:i,style:{
+      border:'1px solid rgba(250,245,239,0.12)',
+      padding:'1.25rem 1.5rem',marginBottom:'.75rem',
+      background:'rgba(250,245,239,0.04)'}},
+      R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1rem'}},
+        R('div',null,
+          R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,
+            color:'#FAF5EF',fontSize:'.95rem',marginBottom:'.25rem'}},tier.label),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+            color:'rgba(250,245,239,0.35)'}},tier.sub)
+        ),
+        R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+          fontSize:'1.8rem',fontWeight:600,color:tier.color,
+          lineHeight:1,flexShrink:0}},tier.price)
+      ),
+      R('a',{href:contactLink(tier),style:{
+        display:'block',textAlign:'center',
+        fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:600,
+        letterSpacing:'.08em',textTransform:'uppercase',
+        color:'#FAF5EF',background:'#8B2E14',
+        padding:'.75rem',textDecoration:'none'}},
+        'Mám záujem → email')
+    )),
+
+    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+      color:'rgba(250,245,239,0.2)',lineHeight:1.7,marginTop:'1rem',textAlign:'center'}},
+      'Po kliknutí sa otvorí emailový klient s predvyplnenou správou.',R('br',null),
+      'Platobný systém bude dostupný čoskoro.')
   );
 }
 
@@ -829,7 +933,7 @@ function App(){
       if(USE_FIREBASE){
         const res=await AUTH.signUp(email.trim(),pw);
         const myCode=res.localId.substr(0,6).toUpperCase();
-        const refBonus=referralCode.trim()?10:0;
+        const refBonus=referralCode.trim()?5:0;
         const profile={uid:res.localId,email:email.trim(),nickname:nick.trim(),
           city:city.trim(),region:country,country:regionToCountry(country),
           teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
@@ -852,7 +956,7 @@ function App(){
         const pl=lsGet('hps:players')||{};
         const uid='u_'+Date.now();
         const myCode=uid.substr(0,6).toUpperCase();
-        const refBonus=referralCode.trim()?10:0;
+        const refBonus=referralCode.trim()?5:0;
         const profile={uid,email:email.trim(),nickname:nick.trim(),
           city:city.trim(),region:country,country:regionToCountry(country),
           teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
@@ -991,6 +1095,7 @@ function App(){
         {thresh:cityThreshold(me.uid),msg:'Mestská úroveň odomknutá! 🏙️'},
         {thresh:REGION_THRESHOLD,msg:'Krajská úroveň odomknutá! 🗺️'},
         {thresh:STATE_THRESHOLD,msg:'Štátna úroveň odomknutá! 🇸🇰'},
+        {thresh:CONTINENT_THRESHOLD,msg:'Kontinentálna úroveň odomknutá! 🌍'},
         {thresh:GLOBAL_THRESHOLD,msg:'Globálna úroveň odomknutá! 🌍'},
       ];
       const milestone=milestones.find(m=>prevPts<m.thresh&&(prevPts+1)>=m.thresh);
@@ -1670,6 +1775,35 @@ function App(){
       R('div',{style:S.stat},R('div',{style:S.statN},myActiveTeam?myActiveTeam.points||0:'—'),R('div',{style:S.statL},'Malá skupina')),
       R('div',{style:S.stat},R('div',{style:S.statN},myTeams.length||0),R('div',{style:S.statL},'Moje skupiny'))
     ),
+    // World frame — always visible
+    R('div',{style:{
+      background:'linear-gradient(135deg,rgba(184,136,42,0.06) 0%,rgba(139,46,20,0.06) 100%)',
+      border:'1px solid rgba(184,136,42,0.2)',
+      padding:'.85rem 1.25rem',marginBottom:'.75rem',
+      display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem'}},
+      R('div',{style:{flex:1}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+          letterSpacing:'.15em',textTransform:'uppercase',
+          color:'rgba(184,136,42,0.6)',marginBottom:'.15rem'}},'Svet · cieľ 50 % populácie'),
+        R('div',{style:{
+          height:'3px',background:'rgba(250,245,239,0.08)',
+          borderRadius:'2px',margin:'.3rem 0'}},
+          R('div',{style:{
+            height:'100%',background:'#B8882A',borderRadius:'2px',
+            width:Math.min(100,globalStats.pct/50*100)+'%'}})
+        ),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.3)'}},
+          globalStats.count.toLocaleString('sk-SK')+' hráčov · '+
+          globalStats.missing.toLocaleString('sk-SK')+' ľudí do cieľa')
+      ),
+      R('div',{style:{
+        fontFamily:"'Cormorant Garamond',Georgia,serif",
+        fontSize:'1.6rem',fontWeight:600,color:'#B8882A',
+        lineHeight:1,flexShrink:0}},
+        globalStats.pctDisplay+'%')
+    ),
+
     // Cascade
     R('div',{style:{...S.card,marginBottom:'1.25rem'}},
       R('div',{style:{...S.lbl,marginBottom:'.6rem'}},'Postup'),
@@ -1877,14 +2011,16 @@ myBigGroupList.length===0
   // ══ REBRÍČEK ═════════════════════════════════════════════
   if(scr==='lb'){
     // Geo leaderboards derived from players
-    const cityMap={},regionMap={},stateMap={},globalTotal={pts:0,players:0};
+    const cityMap={},regionMap={},stateMap={},continentMap={},globalTotal={pts:0,players:0};
     Object.values(players).forEach(p=>{
       if(p.city){const k=p.city;cityMap[k]=(cityMap[k]||{name:k,points:0,players:0});cityMap[k].points+=p.points||0;cityMap[k].players++;}
       if(p.region||p.city){const k=p.region||p.city;regionMap[k]=(regionMap[k]||{name:k,points:0,players:0});regionMap[k].points+=p.points||0;regionMap[k].players++;}
       if(p.country){const k=p.country;stateMap[k]=(stateMap[k]||{name:k,points:0,players:0});stateMap[k].points+=p.points||0;stateMap[k].players++;}
       globalTotal.pts+=p.points||0;globalTotal.players++;
+      if(p.country){const cont=countryToContinent(p.country);continentMap[cont]=(continentMap[cont]||{name:cont,points:0,players:0});continentMap[cont].points+=(p.points||0);continentMap[cont].players++;}
     });
     const sCities=Object.values(cityMap).sort((a,b)=>b.points-a.points);
+    const sContinents=Object.values(continentMap).sort((a,b)=>b.points-a.points);
     const sRegions=Object.values(regionMap).sort((a,b)=>b.points-a.points);
     const sStates=Object.values(stateMap).sort((a,b)=>b.points-a.points);
 
@@ -1892,6 +2028,7 @@ myBigGroupList.length===0
       {id:'city',label:'Mestá'},
       {id:'region',label:'Kraje'},
       {id:'state',label:'Štáty'},
+      {id:'continent',label:'Kontinent'},
       {id:'global',label:'Svet'},
     ];
     const groupTabs=[
@@ -1980,18 +2117,35 @@ myBigGroupList.length===0
           R('span',{style:S.pt},bg.points||0)))),
 
       // CITIES
-      lbTab==='city'&&(sCities.length===0?emptyRow('Žiadne mestá ešte.')
+      lbTab==='city'&&R(FoggedList,{locked:!canPlayCity(me),lockMsg:'Potrebuješ '+cityThreshold(me.uid)+' interakcií'},
+        sCities.length===0?emptyRow('Žiadne mestá ešte.')
         :sCities.map((item,i)=>geoRow(item,i,me.city))),
 
       // REGIONS
-      lbTab==='region'&&(sRegions.length===0?emptyRow('Žiadne kraje ešte.')
+      lbTab==='region'&&R(FoggedList,{locked:!canPlayRegion(me),lockMsg:'Potrebuješ '+REGION_THRESHOLD+' interakcií'},
+        sRegions.length===0?emptyRow('Žiadne kraje ešte.')
         :sRegions.map((item,i)=>geoRow(item,i,me.region||me.city))),
 
       // STATES
-      lbTab==='state'&&(sStates.length===0?emptyRow('Žiadne štáty ešte.')
+      lbTab==='state'&&R(FoggedList,{locked:!canPlayState(me),lockMsg:'Potrebuješ '+STATE_THRESHOLD+' interakcií'},
+        sStates.length===0?emptyRow('Žiadne štáty ešte.')
         :sStates.map((item,i)=>geoRow(item,i,me.country))),
 
       // GLOBAL
+      lbTab==='continent'&&R(FoggedList,{
+        locked:!canPlayContinent(me),
+        lockMsg:'Potrebuješ '+CONTINENT_THRESHOLD+' interakcií'},
+        sContinents.length===0?emptyRow('Žiadne kontinenty ešte.')
+          :sContinents.map((c,i)=>R('div',{key:c.name,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
+            R(RankBadge,{i}),
+            R('div',{style:{flex:1}},
+              R('div',{style:{color:'rgba(250,245,239,0.85)',fontWeight:500}},c.name),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},
+                c.players+' hráčov')
+            ),
+            R('span',{style:S.pt},Math.round(c.points))))
+      ),
+
       lbTab==='global'&&R('div',null,
         R('div',{style:{...S.cardGold,textAlign:'center',padding:'2rem'}},
           // World population 8.3 billion (UN 2026)
