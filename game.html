@@ -101,6 +101,64 @@
 // ║  2. Realtime Database → Create → test mode → europe-west1   ║
 // ║  3. Project Settings → Web → apiKey + databaseURL           ║
 // ╚══════════════════════════════════════════════════════════════╝
+// ── i18n ──────────────────────────────────────────────────────
+const LANG_KEY='hps:lang';
+function getLang(){
+  return localStorage.getItem(LANG_KEY)||
+    ((navigator.language||'').toLowerCase().startsWith('sk')||
+     (navigator.language||'').toLowerCase().startsWith('cs')?'sk':'en');
+}
+function setLang(l){localStorage.setItem(LANG_KEY,l);window.location.reload();}
+
+const T={
+  sk:{
+    appName:t('appName'),
+    home:'Domov', teams:'Skupiny', leaderboard:'Rebríček', log:'Zaznamenať',
+    hello:t('hello'), points:t('points'), myCode:'Tvoj kód',
+    record:'Zaznamenať stretnutie',
+    bridgingTitle:t('bridgingTitle'),
+    bondingTitle:t('bondingTitle'),
+    bridgingBtn:t('bridgingBtn'),
+    bondingBtn:t('bondingBtn'),
+    bridgingLabel:'Bod — zoznámenie',
+    bondingLabel:'Bod — pestovanie vzťahov',
+    note:'Pár slov o stretnutí s cudzincom',
+    noteB:'Čo si urobil a pre koho?',
+    levelLabel:t('levelLabel'),
+    register:'Registrovať sa', login:'Prihlásiť sa',
+    logout:'Odhlásiť sa', back:'Späť',
+    create:'Vytvoriť', join:'Pripojiť sa',
+    save:'Uložiť', cancel:'Zrušiť',
+    shop:t('shop'), play:'Hrať',
+    worldGoal:t('worldGoal'),
+    worldPlayers:'hráčov · chýba do cieľa',
+  },
+  en:{
+    appName:'Joy of Living',
+    home:'Home', teams:'Groups', leaderboard:'Leaderboard', log:'Record',
+    hello:'Hello', points:'points', myCode:'Your code',
+    record:'Record a meeting',
+    bridgingTitle:'Who did you meet today?',
+    bondingTitle:'What good did you do for someone close today?',
+    bridgingBtn:'🤝 Record (+1 point)',
+    bondingBtn:'💛 Record (+1 point)',
+    bridgingLabel:'Point — new connection',
+    bondingLabel:'Point — nurturing bonds',
+    note:'A few words about the meeting',
+    noteB:'What did you do and for whom?',
+    levelLabel:'Playing for level',
+    register:'Register', login:'Log in',
+    logout:'Log out', back:'Back',
+    create:'Create', join:'Join',
+    save:'Save', cancel:'Cancel',
+    shop:'🏙️ Shop', play:'Play',
+    worldGoal:'World · goal 50% of population',
+    worldPlayers:'players · still needed for goal',
+  }
+};
+
+function t(key){const l=getLang();return (T[l]&&T[l][key])||T.sk[key]||key;}
+
 const FB_API_KEY   = 'AIzaSyB2SGGL1JE7b60WPGU9nrWOAJwZ_zbT7Ao';
 const FB_DB_URL    = 'https://hra-proti-samote-default-rtdb.europe-west1.firebasedatabase.app';
 const USE_FIREBASE = FB_API_KEY !== 'VLOZ_API_KEY';
@@ -682,7 +740,7 @@ function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange,lic
   ];
 
   return R('div',null,
-    R(Lbl,{c:'Hrám za úroveň'}),
+    R(Lbl,{c:t('levelLabel')}),
     R('div',{style:{display:'flex',gap:'.4rem',flexWrap:'wrap',marginBottom:'1rem'}},
       levels.map(lv=>R('div',{key:lv.id,
         style:lv.locked?S.lvlBtnLock:selected===lv.id?S.lvlBtnA:S.lvlBtn,
@@ -795,7 +853,7 @@ function CityShop({me,onBack}){
   const currentTiers=tiers[shopTab]||[];
 
   return R('div',null,
-    R(Bk,{to:'home',set:onBack,l:'Späť'}),
+    R(Bk,{to:'home',set:onBack,l:t('back')}),
     R('div',{style:S.eye},'E-shop · licencie'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Odomkni ',R('em',{style:S.hEm},'svoju úroveň')),
     R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
@@ -867,6 +925,7 @@ function App(){
   // game
   const[note,setNote]=useState('');
   const[ne,setNe]=useState('');
+  const[activeTask,setActiveTask]=useState(null);
   const[playLevel,setPlayLevel]=useState('solo');
   const[activeTeamId,setActiveTeamId]=useState(null);
 
@@ -1147,13 +1206,31 @@ function App(){
   }
 
   // ── ENCOUNTER ─────────────────────────────────────────────
-  async function doEncounter(){
+  // Task types: 'bonding1' (1pt), 'bonding2' (2pt), 'bridging' (3pt)
+  function getTaskState(playerData){
+    const enc = playerData.encounters || [];
+    // Count since last bridging
+    let bonding1Since = 0, bonding2Since = 0;
+    for(let i = enc.length-1; i >= 0; i--){
+      if(enc[i].taskType === 'bridging') break;
+      if(enc[i].taskType === 'bonding1') bonding1Since++;
+      if(enc[i].taskType === 'bonding2') bonding2Since++;
+    }
+    return {
+      bonding1Available: bonding1Since < 3,  // max 3x before bridging required
+      bonding2Available: bonding2Since < 2,  // max 2x before bridging required
+      bonding1Count: bonding1Since,
+      bonding2Count: bonding2Since,
+    };
+  }
+
+  async function doEncounter(taskType, pts){
     if(!note.trim()){setNe('Napíš aspoň pár slov.');return;}
     setBusy(true);
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
       const uid=me.uid;
-      const encTypeSaved=((pl[uid].points||0)+1)%2===0?'bonding':'bridging';
+      const encTypeSaved=taskType||'bridging';
       const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
         teamId:activeTeamId||null,city:me.city||'',country:me.country||''};
       const prevPts=pl[uid].points||0;
@@ -1460,7 +1537,7 @@ function App(){
   // ══ SPECIAL SCREENS ══════════════════════════════════════
   if(scr==='cityshop')return R(CityShop,{me,onBack:setScr});
   if(scr==='join_bg_direct')return R('div',null,
-    R(Bk,{to:'team',set:setScr,l:'Späť'}),
+    R(Bk,{to:'team',set:setScr,l:t('back')}),
     R('div',{style:S.eye},'Pripojiť sa ku veľkej skupine'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Zadaj ',R('em',{style:S.hEm},'kód skupiny')),
     R('div',{style:S.card},
@@ -1496,7 +1573,7 @@ function App(){
     const children=myBg?getChildren(myBg.id):[];
 
     return R('div',null,
-      R(Bk,{to:'team',set:setScr,l:'Späť na skupiny'}),
+      R(Bk,{to:'team',set:setScr,l:t('back')}),
       R(Fl,{msg:flash}),
       R('div',{style:S.eye},'Veľká skupina'),
       R('h3',{style:{...S.h,fontSize:'1.6rem'}},team?team.name:'Tím'),
@@ -1647,7 +1724,7 @@ function App(){
   if(scr&&scr.startsWith('manage_bg_')){
     const bgId=scr.replace('manage_bg_','');
     const bg=bigGroups[bgId];
-    if(!bg) return R('div',null,R(Bk,{to:'team',set:setScr,l:'Späť'}),R('div',{style:S.err},'Skupina nenájdená.'));
+    if(!bg) return R('div',null,R(Bk,{to:'team',set:setScr,l:t('back')}),R('div',{style:S.err},'Skupina nenájdená.'));
 
     const isFounder=bg.founderId===me.uid;
     const isMember=(bg.members||[]).includes(me.uid)||
@@ -1675,7 +1752,7 @@ function App(){
     ];
 
     return R('div',null,
-      R(Bk,{to:'team',set:setScr,l:'Späť'}),
+      R(Bk,{to:'team',set:setScr,l:t('back')}),
       R(Fl,{msg:flash}),
       R('div',{style:S.eye},'Správa skupiny'),
       R('h3',{style:{...S.h,fontSize:'1.6rem'}},bg.name),
@@ -1856,116 +1933,203 @@ function App(){
   }
 
   // ══ HOME ═════════════════════════════════════════════════
-  if(scr==='home')return R('div',null,
-    R(Fl,{msg:flash}),
-    R('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'1.5rem'}},
-      R('div',null,
-        R('div',{style:{...S.eye,marginBottom:'.2rem'}},'Ahoj'),
-        R('h3',{style:{...S.h,fontSize:'2rem',marginBottom:'.2rem'}},me.nickname),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)',marginBottom:'.1rem'}},
-          me.city+(me.country?', '+me.country:'')),
-        me.referralCode&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-          color:'rgba(184,136,42,0.6)',marginBottom:'.25rem',letterSpacing:'.1em'}},
-          'Tvoj kód: ',R('strong',{style:{color:'#B8882A'}},me.referralCode)),
-        myTeams.length>0&&R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.3rem'}},
-          myTeams.map(t=>R('span',{key:t.id,style:{
-            ...S.badgeA,cursor:'pointer',
-            ...(activeTeamId!==t.id?{background:'rgba(139,46,20,0.4)'}:{})},
-            onClick:()=>setActiveTeamId(t.id),title:'Klikni pre výber'},t.name))
+  if(scr==='home'){
+    // Top 3 leaderboard preview for current level
+    const lbPreview=(()=>{
+      if(playLevel==='team'&&myActiveTeam){
+        const sorted=Object.values(teams).sort((a,b)=>(b.points||0)-(a.points||0));
+        return {label:'Malé skupiny',items:sorted.slice(0,3).map((t,i)=>({rank:i+1,name:t.name,pts:t.points||0,isMe:t.id===activeTeamId}))};
+      }
+      const sorted=sPlayers.slice(0,3);
+      return {label:'Jednotlivci',items:sorted.map((p,i)=>({rank:i+1,name:p.nickname,pts:p.points||0,isMe:p.uid===me.uid}))};
+    })();
+
+    // Task cards
+    const tasks=[
+      {
+        id:'bonding1',
+        pts:1,
+        emoji:'💛',
+        title:'Urob dobro pre blízkeho',
+        desc:'Pomôž niekomu, koho poznáš — priateľovi, susedovi, kolegovi.',
+        available: taskState.bonding1Available,
+        lockMsg: taskState.bonding1Available ? null : 'Najprv sa zoznám s niekým novým (úloha 3)',
+        count: taskState.bonding1Count,
+        max: 3,
+        color:'#B8882A',
+        colorBg:'rgba(184,136,42,0.08)',
+        colorBorder:'rgba(184,136,42,0.25)',
+      },
+      {
+        id:'bonding2',
+        pts:2,
+        emoji:'🤜',
+        title:'Prehĺb existujúci vzťah',
+        desc:'Stráv čas s niekým, koho poznáš, ale nie dobre. Spoznaj ho lepšie.',
+        available: taskState.bonding2Available,
+        lockMsg: taskState.bonding2Available ? null : 'Najprv sa zoznám s niekým novým (úloha 3)',
+        count: taskState.bonding2Count,
+        max: 2,
+        color:'#C4603A',
+        colorBg:'rgba(196,96,58,0.08)',
+        colorBorder:'rgba(196,96,58,0.25)',
+      },
+      {
+        id:'bridging',
+        pts:3,
+        emoji:'🤝',
+        title:'Zoznám sa s niekým novým',
+        desc:'Oslovi cudzinca. Vymeňte si kontakty alebo aspoň mená.',
+        available: true,
+        lockMsg: null,
+        count: null,
+        max: null,
+        color:'#8B2E14',
+        colorBg:'rgba(139,46,20,0.08)',
+        colorBorder:'rgba(139,46,20,0.35)',
+      },
+    ];
+
+    return R('div',null,
+      R(Fl,{msg:flash}),
+
+      // ── Header ──
+      R('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'1.25rem'}},
+        R('div',null,
+          R('div',{style:{...S.eye,marginBottom:'.15rem'}},t('hello')),
+          R('h3',{style:{...S.h,fontSize:'2rem',marginBottom:'.1rem'}},me.nickname),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)'}},
+            me.city+(me.country?', '+me.country:'')),
+          me.referralCode&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+            color:'rgba(184,136,42,0.55)',letterSpacing:'.1em'}},
+            t('myCode')+': ',R('strong',{style:{color:'#B8882A'}},me.referralCode))
+        ),
+        R('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'.4rem'}},
+          R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+            fontSize:'2.8rem',fontWeight:600,color:'#FAF5EF',lineHeight:1}},
+            me.points||0),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+            color:'rgba(250,245,239,0.3)',letterSpacing:'.1em',textTransform:'uppercase'}},
+            t('points')),
+          isAdmin(me)&&R(Btn,{onClick:()=>window.location.href='admin.html',v:'m',
+            s:{fontSize:'.6rem',padding:'.3rem .7rem',borderColor:'rgba(184,136,42,0.3)',color:'#B8882A'}},'Admin'),
+          R('button',{
+            onClick:()=>setLang(getLang()==='sk'?'en':'sk'),
+            style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+              padding:'.3rem .6rem',background:'rgba(250,245,239,0.06)',
+              border:'1px solid rgba(250,245,239,0.15)',color:'rgba(250,245,239,0.45)',
+              cursor:'pointer'}},
+            getLang()==='sk'?'EN':'SK'),
+          R(Btn,{onClick:doLogout,v:'m',s:{padding:'.3rem .7rem',fontSize:'.6rem'}},'↩')
         )
       ),
-      R('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'.5rem'}},
-        isAdmin(me)&&R(Btn,{onClick:()=>window.location.href='admin.html',v:'m',
-          s:{fontSize:'.6rem',padding:'.3rem .7rem',borderColor:'rgba(184,136,42,0.4)',color:'#B8882A'}},'⚙ Admin'),
-        R('div',{style:{display:'flex',gap:'.4rem',alignItems:'center'}},
-          fbBadge,
-          R(Btn,{onClick:doLogout,v:'m',s:{padding:'.3rem .7rem',fontSize:'.6rem'}},'Odhlásiť')))
-    ),
-    R('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'.75rem',marginBottom:'1.5rem'}},
-      R('div',{style:S.stat},R('div',{style:S.statN},me.points||0),R('div',{style:S.statL},'Moje body')),
-      R('div',{style:S.stat},R('div',{style:S.statN},myActiveTeam?myActiveTeam.points||0:'—'),R('div',{style:S.statL},'Malá skupina')),
-      R('div',{style:S.stat},R('div',{style:S.statN},myTeams.length||0),R('div',{style:S.statL},'Moje skupiny'))
-    ),
-    // World frame — always visible
-    R('div',{style:{
-      background:'linear-gradient(135deg,rgba(184,136,42,0.06) 0%,rgba(139,46,20,0.06) 100%)',
-      border:'1px solid rgba(184,136,42,0.2)',
-      padding:'.85rem 1.25rem',marginBottom:'.75rem',
-      display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem'}},
-      R('div',{style:{flex:1}},
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
-          letterSpacing:'.15em',textTransform:'uppercase',
-          color:'rgba(184,136,42,0.6)',marginBottom:'.15rem'}},'Svet · cieľ 50 % populácie'),
-        R('div',{style:{
-          height:'3px',background:'rgba(250,245,239,0.08)',
-          borderRadius:'2px',margin:'.3rem 0'}},
-          R('div',{style:{
-            height:'100%',background:'#B8882A',borderRadius:'2px',
-            width:Math.min(100,globalStats.pct/50*100)+'%'}})
-        ),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-          color:'rgba(250,245,239,0.3)'}},
-          globalStats.count.toLocaleString()+' hráčov · '+
-          globalStats.missing.toLocaleString()+' ľudí do cieľa')
-      ),
+
+      // ── World banner ──
       R('div',{style:{
-        fontFamily:"'Cormorant Garamond',Georgia,serif",
-        fontSize:'1.6rem',fontWeight:600,color:'#B8882A',
-        lineHeight:1,flexShrink:0}},
-        globalStats.pctDisplay+'%')
-    ),
+        background:'linear-gradient(135deg,rgba(184,136,42,0.06) 0%,rgba(139,46,20,0.06) 100%)',
+        border:'1px solid rgba(184,136,42,0.15)',
+        padding:'.65rem 1rem',marginBottom:'1.25rem',
+        display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem'}},
+        R('div',{style:{flex:1}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+            letterSpacing:'.12em',textTransform:'uppercase',
+            color:'rgba(184,136,42,0.55)',marginBottom:'.25rem'}},t('worldGoal')),
+          R('div',{style:{height:'3px',background:'rgba(250,245,239,0.07)',borderRadius:'2px'}},
+            R('div',{style:{height:'100%',background:'#B8882A',borderRadius:'2px',
+              width:Math.min(100,globalStats.pct/50*100)+'%'}})
+          ),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+            color:'rgba(250,245,239,0.25)',marginTop:'.25rem'}},
+            globalStats.count.toLocaleString()+' / '+globalStats.missing.toLocaleString()+' '+t('worldPlayers'))
+        ),
+        R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+          fontSize:'1.4rem',fontWeight:600,color:'#B8882A',lineHeight:1,flexShrink:0}},
+          globalStats.pctDisplay+'%')
+      ),
 
-    // Cascade
-    R('div',{style:{...S.card,marginBottom:'1.25rem'}},
-      R('div',{style:{...S.lbl,marginBottom:'.6rem'}},'Postup'),
-      R('div',{style:S.cascade},
-        R('div',{style:S.cna},'Solo'),
-        R('div',{style:S.arr},'→'),
-        myTeams.length>0?R('div',{style:S.cna},myActiveTeam?myActiveTeam.name:'Malá sk.')
-          :R('div',{style:{...S.cn,cursor:'pointer'},onClick:()=>setScr('team')},'+ Malá sk.'),
-        R('div',{style:{...S.arr,opacity:.3}},'→'),
-        canPlayCity(me)?R('div',{style:S.cna},'Mesto')
-          :R('div',{style:{...S.cnlock,cursor:'pointer'},onClick:()=>setScr('cityshop')},
-              'Mesto '+(me.points||0)+'/'+cityThreshold(me.uid)),
-        R('div',{style:{...S.arr,opacity:.25}},'→'),
-        canPlayRegion(me)?R('div',{style:S.cna},'Kraj')
-          :R('div',{style:{...S.cn,opacity:.5}},'Kraj'),
-        R('div',{style:{...S.arr,opacity:.2}},'→'),
-        R('div',{style:{...S.cn,opacity:.4}},'Štát'),
-        R('div',{style:{...S.arr,opacity:.15}},'→'),
-        R('div',{style:{...S.cn,opacity:.3}},'Svet')
+      // ── Task cards ──
+      R('div',{style:{...S.lbl,marginBottom:'.75rem'}},'Čo môžeš urobiť teraz'),
+      R('div',{style:{display:'flex',flexDirection:'column',gap:'.5rem',marginBottom:'1.25rem'}},
+        tasks.map(task=>R('div',{key:task.id,style:{
+          border:'1px solid '+(task.available?task.colorBorder:'rgba(250,245,239,0.07)'),
+          background:task.available?task.colorBg:'rgba(250,245,239,0.02)',
+          padding:'1rem 1.25rem',
+          opacity:task.available?1:0.5,
+          cursor:task.available?'pointer':'default',
+          transition:'opacity .2s'},
+          onClick:task.available?()=>{setNote('');setActiveTask(task);setScr('log');}:null},
+          R('div',{style:{display:'flex',alignItems:'flex-start',gap:'.75rem'}},
+            R('div',{style:{fontSize:'1.4rem',lineHeight:1,flexShrink:0}},task.emoji),
+            R('div',{style:{flex:1}},
+              R('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'.2rem'}},
+                R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,
+                  color:task.available?'#FAF5EF':'rgba(250,245,239,0.4)',fontSize:'.85rem'}},
+                  task.title),
+                R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+                  fontSize:'1.4rem',fontWeight:600,
+                  color:task.available?task.color:'rgba(250,245,239,0.2)',lineHeight:1}},
+                  '+'+task.pts)
+              ),
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                color:'rgba(250,245,239,0.45)',lineHeight:1.5}},
+                task.available?task.desc:('🔒 '+task.lockMsg)),
+              task.max&&task.available&&R('div',{style:{
+                display:'flex',gap:'.2rem',marginTop:'.5rem'}},
+                Array.from({length:task.max},(_,i)=>R('div',{key:i,style:{
+                  width:'18px',height:'3px',borderRadius:'2px',
+                  background:i<task.count?task.color:'rgba(250,245,239,0.12)'}}))
+              )
+            )
+          )
+        ))
+      ),
+
+      // ── Leaderboard preview ──
+      R('div',{style:{...S.card,marginBottom:'1.25rem',padding:'1rem 1.25rem',cursor:'pointer'},
+        onClick:()=>setScr('lb')},
+        R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.75rem'}},
+          R('div',{style:S.lbl},lbPreview.label),
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+            color:'rgba(250,245,239,0.3)',letterSpacing:'.08em'}},'Rebríček →')
+        ),
+        lbPreview.items.length===0
+          ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+              color:'rgba(250,245,239,0.2)'}},'Zatiaľ žiadni hráči.')
+          :lbPreview.items.map(item=>R('div',{key:item.rank,style:{
+              display:'flex',alignItems:'center',gap:'.75rem',
+              padding:'.4rem 0',
+              borderBottom:'1px solid rgba(250,245,239,0.05)'}},
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+              color:'rgba(250,245,239,0.25)',width:'1.2rem',textAlign:'right',flexShrink:0}},
+              item.rank),
+            R('div',{style:{flex:1,fontFamily:"'Syne',sans-serif",fontSize:'.8rem',
+              color:item.isMe?'#FAF5EF':'rgba(250,245,239,0.6)',fontWeight:item.isMe?500:400}},
+              item.name,item.isMe&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.5rem'}},'ty')),
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
+              color:item.isMe?'#B8882A':'rgba(250,245,239,0.35)',fontWeight:500}},
+              item.pts)
+          ))
+      ),
+
+      // ── Level progress (collapsed) ──
+      R(LevelProgress,{me,onShop:()=>setScr('cityshop'),licensed}),
+
+      // ── Bottom actions ──
+      R('div',{style:{display:'flex',gap:'.5rem',marginBottom:'.75rem'}},
+        R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},
+          myTeams.length>0?'Skupiny':'+ Skupina'),
+        R(Btn,{onClick:()=>setScr('cityshop'),v:'m',s:{flex:1}},t('shop'))
       )
-    ),
-    R(LevelProgress,{me,onShop:()=>setScr('cityshop'),licensed}),
-    R(Btn,{onClick:()=>setScr('log'),v:'p',full:true,s:{padding:'1rem',fontSize:'1rem',marginBottom:'.75rem'}},
-      '+ Zaznamenať stretnutie'),
-    R('div',{style:{display:'flex',gap:'.75rem',marginBottom:'.75rem'}},
-      R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},myTeams.length>0?'Moje skupiny':'Vytvoriť skupinu'),
-      R(Btn,{onClick:()=>setScr('lb'),v:'m',s:{flex:1}},'Rebríček'),
-      R(Btn,{onClick:()=>setScr('cityshop'),v:'m',s:{flex:1}},'🏙️ E-shop')
-    ),
-    
-    (me.encounters||[]).length>0&&R('div',null,
-      R('div',{style:{...S.lbl,marginBottom:'1rem'}},'Posledné stretnutia'),
-      (me.encounters||[]).slice(0,5).map((e,i)=>R('div',{key:i,style:{
-        padding:'.7rem 0',borderBottom:'1px solid rgba(250,245,239,0.06)',
-        fontSize:'.85rem',color:'rgba(250,245,239,0.72)'}},
-        R('div',null,e.note),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.28)',marginTop:'.2rem'}},
-          fmtDate(e.date),e.level&&e.level!=='solo'&&R('span',{style:{marginLeft:'.5rem',color:'#C4603A'}},'· '+e.level))))
-    )
-  );
-
+    );
+  }
   // ══ LOG ══════════════════════════════════════════════════
   if(scr==='log'){
-    // Auto-determine type: odd points = bridging, even = bonding
-    const nextPts=(me.points||0)+1;
-    const encType=nextPts%2===0?'bonding':'bridging';
-    const isBonding=encType==='bonding';
+    const task=activeTask||{id:'bridging',pts:3,emoji:'🤝',title:'Nové zoznámenie',color:'#8B2E14'};
+    const isBonding=task.id!=='bridging';
     const bondingHint=BONDING_HINTS[playLevel]||BONDING_HINTS.solo;
 
     return R('div',null,
-    R(Bk,{to:'home',set:setScr,l:'Späť'}),
+    R(Bk,{to:'home',set:setScr,l:t('back')}),
 
     // Header card showing what type this encounter is
     R('div',{style:{
@@ -1984,11 +2148,9 @@ function App(){
       )
     ),
 
-    R('div',{style:S.eye},'Nové stretnutie'),
+    R('div',{style:S.eye},'Zaznamenaj'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},
-      isBonding
-        ?R('span',null,'Čo dobré si dnes ',R('em',{style:{...S.hEm,color:'#B8882A'}},'urobil pre niekoho blízkeho?'))
-        :R('span',null,'Koho nového si dnes ',R('em',{style:S.hEm},'spoznal?'))
+      R('em',{style:{...S.hEm,color:task.color||'#C4603A'}},task.title)
     ),
     R('div',{style:S.card},
       R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeams,activeTeamId,onTeamChange:setActiveTeamId,licensed}),
@@ -2006,9 +2168,9 @@ function App(){
         (playLevel==='team'||playLevel==='city')&&myActiveTeam&&R('span',{style:S.badgeG},'+1 · '+myActiveTeam.name),
         playLevel==='city'&&R('span',{style:S.badgeG},'+1 · '+me.city)
       ),
-      R(Btn,{onClick:doEncounter,v:isBonding?'g':'p',full:true,busy,
+      R(Btn,{onClick:()=>doEncounter(task.id,task.pts),v:isBonding?'g':'p',full:true,busy,
         s:{padding:'1rem'}},
-        isBonding?'💛 Zaznamenať (+1 bod)':'🤝 Zaznamenať (+1 bod)')
+        isBonding?t('bondingBtn'):t('bridgingBtn'))
     )
   );}
 
@@ -2020,7 +2182,7 @@ function App(){
     ((me.bigGroupIds)||[]).forEach(id=>myBgIds.add(id));
     const myBigGroupList=[...myBgIds].map(id=>bigGroups[id]).filter(Boolean);
     return R('div',null,
-    R(Bk,{to:'home',set:setScr,l:'Späť'}),
+    R(Bk,{to:'home',set:setScr,l:t('back')}),
     R(Fl,{msg:flash}),
     R('div',{style:S.eye},'Moje skupiny'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Malé ',R('em',{style:S.hEm},'skupiny')),
@@ -2163,7 +2325,7 @@ myBigGroupList.length===0
     );
 
     return R('div',null,
-      R(Bk,{to:'home',set:setScr,l:'Späť'}),
+      R(Bk,{to:'home',set:setScr,l:t('back')}),
       R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.5rem'}},
         R('div',{style:S.eye},'Rebríček'),fbBadge),
       R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Kto ',R('em',{style:S.hEm},'vedie?')),
