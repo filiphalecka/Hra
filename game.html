@@ -2128,9 +2128,10 @@ function App(){
   }
   // ══ LOG ══════════════════════════════════════════════════
   if(scr==='log'){
-    const task=activeTask||{id:'bridging',pts:3,emoji:'🤝',title:'Nové zoznámenie',color:'#8B2E14'};
+    const task=activeTask||{id:'bridging',pts:3,emoji:'🤝',title:t('bridgingTitle'),color:'#8B2E14'};
     const isBonding=task.id!=='bridging';
     const bondingHint=BONDING_HINTS[playLevel]||BONDING_HINTS.solo;
+    const nextPts=(me.points||0)+task.pts;
 
     return R('div',null,
     R(Bk,{to:'home',set:setScr,l:t('back')}),
@@ -2159,11 +2160,9 @@ function App(){
     R('div',{style:S.card},
       R(LevelPicker,{selected:playLevel,onSelect:setPlayLevel,me,myTeams,activeTeamId,onTeamChange:setActiveTeamId,licensed}),
       R(Divider,null),
-      R(Lbl,{c:isBonding?'Čo si urobil a pre koho?':'Pár slov o stretnutí'}),
+      R(Lbl,{c:isBonding?t('noteLabelB'):t('noteLabel')}),
       R('textarea',{rows:4,value:note,onChange:e=>setNote(e.target.value),
-        placeholder:isBonding
-          ?'napr. „Pomohol som susedovi, zavolal som kamarátovi, urobil som niečo pre rodinu…"'
-          :'napr. „Oslovil som chlapíka v kaviarni, hovoril o opravovaní starých motoriek…"',
+        placeholder:isBonding?t('notePHB'):t('notePH'),
         style:{...S.inp,resize:'vertical',lineHeight:1.6}}),
       ne&&R(Err,{m:ne}),
       R('div',{style:{display:'flex',gap:'.5rem',flexWrap:'wrap',margin:'.75rem 0'}},
