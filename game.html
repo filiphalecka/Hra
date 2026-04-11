@@ -1213,9 +1213,9 @@ function App(){
     // Count since last bridging
     let bonding1Since = 0, bonding2Since = 0;
     for(let i = enc.length-1; i >= 0; i--){
-      if(enc[i].taskType === 'bridging') break;
-      if(enc[i].taskType === 'bonding1') bonding1Since++;
-      if(enc[i].taskType === 'bonding2') bonding2Since++;
+      if(enc[i].type === 'bridging') break;
+      if(enc[i].type === 'bonding1') bonding1Since++;
+      if(enc[i].type === 'bonding2') bonding2Since++;
     }
     return {
       bonding1Available: bonding1Since < 3,  // max 3x before bridging required
@@ -2075,8 +2075,12 @@ function App(){
                   '+'+task.pts)
               ),
               R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
-                color:'rgba(250,245,239,0.45)',lineHeight:1.5}},
-                task.available?task.desc:('🔒 '+task.lockMsg)),
+                color:task.available?'rgba(250,245,239,0.45)':'rgba(250,245,239,0.25)',
+                lineHeight:1.5}},
+                task.available?task.desc:task.desc),
+              !task.available&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:'rgba(196,96,58,0.6)',marginTop:'.2rem'}},
+                '🔒 '+task.lockMsg),
               task.max&&task.available&&R('div',{style:{
                 display:'flex',gap:'.2rem',marginTop:'.5rem'}},
                 Array.from({length:task.max},(_,i)=>R('div',{key:i,style:{
