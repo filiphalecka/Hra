@@ -112,25 +112,25 @@ function setLang(l){localStorage.setItem(LANG_KEY,l);window.location.reload();}
 
 const T={
   sk:{
-    appName:t('appName'),
+    appName:'Hra na radosť zo života',
     home:'Domov', teams:'Skupiny', leaderboard:'Rebríček', log:'Zaznamenať',
-    hello:t('hello'), points:t('points'), myCode:'Tvoj kód',
+    hello:'Ahoj', points:'bodov', myCode:'Tvoj kód',
     record:'Zaznamenať stretnutie',
-    bridgingTitle:t('bridgingTitle'),
-    bondingTitle:t('bondingTitle'),
-    bridgingBtn:t('bridgingBtn'),
-    bondingBtn:t('bondingBtn'),
+    bridgingTitle:'Koho nového si dnes spoznal?',
+    bondingTitle:'Čo dobré si dnes urobil pre niekoho blízkeho?',
+    bridgingBtn:'🤝 Zaznamenať (+1 bod)',
+    bondingBtn:'💛 Zaznamenať (+1 bod)',
     bridgingLabel:'Bod — zoznámenie',
     bondingLabel:'Bod — pestovanie vzťahov',
-    note:'Pár slov o stretnutí s cudzincom',
+    note:'Pár slov o stretnutí',
     noteB:'Čo si urobil a pre koho?',
-    levelLabel:t('levelLabel'),
+    levelLabel:'Hrám za úroveň',
     register:'Registrovať sa', login:'Prihlásiť sa',
     logout:'Odhlásiť sa', back:'Späť',
     create:'Vytvoriť', join:'Pripojiť sa',
     save:'Uložiť', cancel:'Zrušiť',
-    shop:t('shop'), play:'Hrať',
-    worldGoal:t('worldGoal'),
+    shop:'🏙️ E-shop', play:'Hrať',
+    worldGoal:'Svet · cieľ 50 % populácie',
     worldPlayers:'hráčov · chýba do cieľa',
   },
   en:{
@@ -156,6 +156,7 @@ const T={
     worldPlayers:'players · still needed for goal',
   }
 };
+
 
 function t(key){const l=getLang();return (T[l]&&T[l][key])||T.sk[key]||key;}
 
