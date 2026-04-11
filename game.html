@@ -1235,6 +1235,17 @@ function App(){
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
       const uid=me.uid;
       const encTypeSaved=taskType||'bridging';
+
+      // ── Server-side threshold check ──────────────────────
+      if(encTypeSaved!=='bridging'){
+        const freshState=getTaskState(pl[uid]||{});
+        if(encTypeSaved==='bonding1'&&!freshState.bonding1Available){
+          setNe('Najprv sa zoznám s niekým novým.');setBusy(false);return;
+        }
+        if(encTypeSaved==='bonding2'&&!freshState.bonding2Available){
+          setNe('Najprv sa zoznám s niekým novým.');setBusy(false);return;
+        }
+      }
       const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
         teamId:activeTeamId||null,city:me.city||'',country:me.country||''};
       const prevPts=pl[uid].points||0;
@@ -2064,7 +2075,7 @@ function App(){
           opacity:task.available?1:0.5,
           cursor:task.available?'pointer':'default',
           transition:'opacity .2s'},
-          onClick:task.available?()=>{setNote('');setActiveTask(task);setScr('log');}:null},
+          onClick:(task.available&&!busy)?()=>{setNote('');setActiveTask(task);setScr('log');}:null},
           R('div',{style:{display:'flex',alignItems:'flex-start',gap:'.75rem'}},
             R('div',{style:{fontSize:'1.4rem',lineHeight:1,flexShrink:0}},task.emoji),
             R('div',{style:{flex:1}},
@@ -2184,7 +2195,7 @@ function App(){
       ),
       R(Btn,{onClick:()=>doEncounter(task.id,task.pts),v:isBonding?'g':'p',full:true,busy,
         s:{padding:'1rem'}},
-        isBonding?t('bondingBtn'):t('bridgingBtn'))
+        (task.emoji||'🤝')+' Zaznamenať (+'+task.pts+(task.pts===1?' bod':task.pts<5?' body':' bodov')+')')
     )
   );}
 
