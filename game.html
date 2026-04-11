@@ -1468,6 +1468,9 @@ function App(){
   const sPlayers=Object.values(players).sort((a,b)=>b.points-a.points);
 
   // Global stats — always computed
+  // Task state
+  const taskState=me&&me.uid?getTaskState(me):{bonding1Available:true,bonding2Available:true,bonding1Count:0,bonding2Count:0};
+
   const globalStats=(()=>{
     try{
       const WORLD_POP=8300000000;

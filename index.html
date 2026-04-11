@@ -386,6 +386,7 @@ var TRANSLATIONS = {
     step2invite: '„Snažím sa tento rok spoznať čo najviac rôznych ľudí — lekárov, učiteľov, muzikantov, kohokoľvek. Čo robíš ty?"',
     step2project: '„Je aj výzva kde za takéto stretnutia zbieraš body a súťažíš za svoje mesto — ak ťa to zaujíma, môj kód je..."',
     step2end: 'Niekto rád odpovedá na otázky, niekto rád rozpráva — oboje funguje. A každý koho pozveš ti prinesie bonusové body.',
+    step2body: 'Záleží na tom, koho máš pred sebou. Začni jednoducho — komentár k situácii alebo malá otázka: <em>„Čakáš dlho?"</em> <em>„Si odtiaľto?"</em><br><br>Keď sa rozhovor rozbehne, môžeš pozvať priamo: <em>„Snažím sa tento rok spoznať čo najviac rôznych ľudí — lekárov, učiteľov, muzikantov, kohokoľvek. Čo robíš ty?"</em><br><br>Ak to vyzerá dobre, môžeš ho pozvať aj do projektu: <em>„Je aj výzva kde za takéto stretnutia zbieraš body a súťažíš za svoje mesto — ak ťa to zaujíma, môj kód je..."</em> Každý koho pozveš ti prinesie bonusové body.',
     step3title: 'Zaznamenaj',
     step3text: '<span data-t="step3text">Pár slov do aplikácie o tom, koho si stretol. +1 bod.</span>',
     score1: '+1 bod · individuálny rebríček',
@@ -473,6 +474,7 @@ var TRANSLATIONS = {
     step2invite: '"This year I\'m trying to meet as many different people as possible — doctors, teachers, musicians, anyone. What do you do?"',
     step2project: '"There\'s also a challenge where you earn points for meetings like this and compete for your city — if you\'re interested, my code is..."',
     step2end: 'Some people like answering questions, others like talking — both work. And everyone you invite earns you bonus points.',
+    step2body: "It depends on who you're facing. Start simply — a comment or a small question: <em>\"Waiting long?\"</em> <em>\"Are you from here?\"</em><br><br>When the conversation gets going, invite directly: <em>\"This year I\'m trying to meet as many different people as possible — doctors, teachers, musicians, anyone. What do you do?\"</em><br><br>If it goes well, you can also invite them to the project: <em>\"There\'s a challenge where you earn points for meetings like this and compete for your city — if you\'re interested, my code is...\"</em> Everyone you invite earns you bonus points.",
     step3title: 'Record it',
     step3text: "A few words in the app about who you met. +1 point.",
     score1: "+1 point · individual leaderboard",
@@ -577,9 +579,7 @@ function applyLang(l) {
   setText('[data-t="step1title"]', T.step1title);
   setText('[data-t="step1text"]', T.step1text);
   setText('[data-t="step2title"]', T.step2title);
-  set('[data-t="step2body"]', T.step2q1+' '+T.step2q2+'<br><br>'+
-    'Keď sa rozhovor rozbehne:'.replace('Keď sa rozhovor rozbehne:', l==='en'?'When the conversation gets going:':'Keď sa rozhovor rozbehne:')+
-    ' <em>'+T.step2invite+'</em><br><br>'+T.step2project+'<br><br>'+T.step2end);
+  set('[data-t="step2body"]', T.step2body);
   setText('[data-t="step3title"]', T.step3title);
   setText('[data-t="step3text"]', T.step3text);
   setText('[data-t="score1"]', T.score1);
@@ -644,6 +644,33 @@ function applyLang(l) {
   document.querySelectorAll('[data-t="licBtn"]').forEach(function(el){ el.textContent = T.licBtn; });
   set('[data-t="licNote"]', T.licNote);
 
+  // Licenses — rebuild cards
+  var licCards = document.getElementById('lic-cards');
+  if(licCards){
+    var em = T.licBtn || 'Mám záujem →';
+    var email = 'filip.halecka@gmail.com';
+    function licCard(color, colorBg, catKey, descKey, rows, subjectSK, subjectEN){
+      var subject = encodeURIComponent(l==='en' ? subjectEN : subjectSK);
+      var href = 'mailto:filip.halecka@gmail.com?subject=' + subject;
+      var rowsHtml = '';
+      for(var ri=0; ri<rows.length; ri++){
+        var sep = ri < rows.length-1 ? 'border-bottom:1px solid rgba(250,245,239,.06);' : '';
+        rowsHtml += '<div style="display:flex;justify-content:space-between;padding:.5rem 0;'+sep+'font-size:.85rem;color:rgba(250,245,239,.6);"><span>'+(T[rows[ri][0]]||rows[ri][0])+'</span><span style="color:'+color+';">'+rows[ri][1]+'</span></div>';
+      }
+      return '<div style="border:1px solid rgba(250,245,239,.1);padding:1.75rem;">'+
+        '<div style="font-size:.6rem;letter-spacing:.15em;color:'+color+';text-transform:uppercase;margin-bottom:.75rem;">'+(T[catKey]||catKey)+'</div>'+
+        '<div style="font-size:1.1rem;color:rgba(250,245,239,.9);margin-bottom:1.25rem;line-height:1.6;">'+(T[descKey]||descKey)+'</div>'+
+        '<div style="margin-bottom:1.25rem;">'+rowsHtml+'</div>'+
+        '<a href="'+href+'" style="display:block;text-align:center;background:'+colorBg+';color:#FAF5EF;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.75rem;text-decoration:none;">'+em+'</a>'+
+        '</div>';
+    }
+    licCards.innerHTML =
+      licCard('#B8882A','#8B2E14','licCity','licCityDesc',[['licCity1','49 €/rok'],['licCity2','149 €/rok'],['licCity3','399 €/rok']],'Záujem o licenciu: Mesto','License inquiry: City') +
+      licCard('#6B8A3A','#4A6129','licSchool','licSchoolDesc',[['licSch1','49 €/rok'],['licSch2','99 €/rok'],['licSch3','199 €/rok']],'Záujem o licenciu: Škola','License inquiry: School') +
+      licCard('#C4603A','#8B2E14','licFirm','licFirmDesc',[['licFirm1','99 €/rok'],['licFirm2','299 €/rok'],['licFirm3','699 €/rok']],'Záujem o licenciu: Firma','License inquiry: Company') +
+      licCard('#B8882A','#8B2E14','licRegion','licRegionDesc',[['licReg1','299 €/rok'],['licReg2','999 €/rok']],'Záujem o licenciu: Kraj alebo Štát','License inquiry: Region or Country');
+  }
+
   // Footer
   set('[data-t="footer"]', T.footer);
   setText('[data-t="footerPlay"]', T.footerPlay);
@@ -699,7 +726,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <div class="l">cudzincov čaká na rozhovor s tebou</div>
     </div>
   </div>
-  <a href="game.html" class="hero-cta">Vstúpiť do hry</a>
+  <a href="game.html" class="hero-cta" data-t="heroBtn">Vstúpiť do hry</a>
 </div>
 
 <!-- AKO HRAŤ -->
@@ -823,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function(){
           </div>
           <div class="level-card">
             <div class="level-icon">🗺️</div>
-            <div class="level-name">Krajina</div>
+            <div class="level-name" data-t="lvlState">Štát</div>
             <div class="level-desc">Rebríček krajín</div>
             <span class="level-badge">licencia</span>
           </div>
@@ -862,12 +889,12 @@ document.addEventListener('DOMContentLoaded', function(){
   <div style="max-width:900px;margin:0 auto;padding:0 1.5rem;">
     <span class="section-label" data-t="licLabel">Pre organizácie</span>
     <h2 class="section-title" data-t="licTitle">Licencie a <em>partnerstvá</em></h2>
-    <p style="color:rgba(250,245,239,.55);line-height:1.8;max-width:560px;margin-bottom:3rem;">
+    <p style="color:rgba(250,245,239,.55);line-height:1.8;max-width:560px;margin-bottom:3rem;" data-t="licSub">
       Jedna licencia odomkne úroveň pre všetkých hráčov z danej oblasti alebo organizácie.
       Body sa hráčom pripočítajú spätne od začiatku.
     </p>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;">
+    <div id="lic-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;">
 
       <!-- Mestá -->
       <div style="border:1px solid rgba(250,245,239,.1);padding:1.75rem;">
