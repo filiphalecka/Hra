@@ -1958,200 +1958,252 @@ function App(){
 
   // ══ HOME ═════════════════════════════════════════════════
   if(scr==='home'){
-    // Top 3 leaderboard preview for current level
-    const lbPreview=(()=>{
-      if(playLevel==='team'&&myActiveTeam){
-        const sorted=Object.values(teams).sort((a,b)=>(b.points||0)-(a.points||0));
-        return {label:'Malé skupiny',items:sorted.slice(0,3).map((t,i)=>({rank:i+1,name:t.name,pts:t.points||0,isMe:t.id===activeTeamId}))};
-      }
-      const sorted=sPlayers.slice(0,3);
-      return {label:'Jednotlivci',items:sorted.map((p,i)=>({rank:i+1,name:p.nickname,pts:p.points||0,isMe:p.uid===me.uid}))};
-    })();
 
-    // Task cards
-    const tasks=[
-      {
-        id:'bonding1',
-        pts:1,
-        emoji:'💛',
-        title:'Urob dobro pre blízkeho',
-        desc:'Pomôž niekomu, koho poznáš — priateľovi, susedovi, kolegovi.',
-        available: taskState.bonding1Available,
-        lockMsg: taskState.bonding1Available ? null : 'Najprv sa zoznám s niekým novým (úloha 3)',
-        count: taskState.bonding1Count,
-        max: 3,
-        color:'#B8882A',
-        colorBg:'rgba(184,136,42,0.08)',
-        colorBorder:'rgba(184,136,42,0.25)',
-      },
-      {
-        id:'bonding2',
-        pts:2,
-        emoji:'🤜',
-        title:'Prehĺb existujúci vzťah',
-        desc:'Stráv čas s niekým, koho poznáš, ale nie dobre. Spoznaj ho lepšie.',
-        available: taskState.bonding2Available,
-        lockMsg: taskState.bonding2Available ? null : 'Najprv sa zoznám s niekým novým (úloha 3)',
-        count: taskState.bonding2Count,
-        max: 2,
-        color:'#C4603A',
-        colorBg:'rgba(196,96,58,0.08)',
-        colorBorder:'rgba(196,96,58,0.25)',
-      },
-      {
-        id:'bridging',
-        pts:3,
-        emoji:'🤝',
-        title:'Zoznám sa s niekým novým',
-        desc:'Oslovi cudzinca. Vymeňte si kontakty alebo aspoň mená.',
-        available: true,
-        lockMsg: null,
-        count: null,
-        max: null,
-        color:'#8B2E14',
-        colorBg:'rgba(139,46,20,0.08)',
-        colorBorder:'rgba(139,46,20,0.35)',
-      },
-    ];
+    // ── Leaderboard data ──────────────────────────────────
+    const lbPlayers = sPlayers.slice(0,10);
+    const myRank = sPlayers.findIndex(p=>p.uid===me.uid)+1;
+    const above = sPlayers[myRank-2]||null;
+    const ptsDiff = above?(above.points||0)-(me.points||0):0;
 
-    return R('div',null,
-      R(Fl,{msg:flash}),
+    // ── Task strip state ───────────────────────────────────
+    const b1 = taskState.bonding1Count;
+    const b2 = taskState.bonding2Count;
+    const b1ok = taskState.bonding1Available;
+    const b2ok = taskState.bonding2Available;
 
-      // ── Header ──
-      R('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'1.25rem'}},
-        R('div',null,
-          R('div',{style:{...S.eye,marginBottom:'.15rem'}},t('hello')),
-          R('h3',{style:{...S.h,fontSize:'2rem',marginBottom:'.1rem'}},me.nickname),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.3)'}},
-            me.city+(me.country?', '+me.country:'')),
-          me.referralCode&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-            color:'rgba(184,136,42,0.55)',letterSpacing:'.1em'}},
-            t('myCode')+': ',R('strong',{style:{color:'#B8882A'}},me.referralCode))
-        ),
-        R('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'.4rem'}},
-          R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
-            fontSize:'2.8rem',fontWeight:600,color:'#FAF5EF',lineHeight:1}},
-            me.points||0),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
-            color:'rgba(250,245,239,0.3)',letterSpacing:'.1em',textTransform:'uppercase'}},
-            t('points')),
+    return R('div',{style:{display:'flex',flexDirection:'column',minHeight:'100vh',
+      background:'#0E0B07'}},
+
+      // ══ TOP BAR ═══════════════════════════════════════════
+      R('div',{style:{
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'.75rem 1rem',
+        borderBottom:'1px solid rgba(250,245,239,0.06)'}},
+        R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+          fontSize:'1rem',fontWeight:600,color:'rgba(250,245,239,0.5)',
+          letterSpacing:'.05em'}},t('appName')),
+        R('div',{style:{display:'flex',gap:'.5rem',alignItems:'center'}},
           isAdmin(me)&&R(Btn,{onClick:()=>window.location.href='admin.html',v:'m',
-            s:{fontSize:'.6rem',padding:'.3rem .7rem',borderColor:'rgba(184,136,42,0.3)',color:'#B8882A'}},'Admin'),
-          R('button',{
-            onClick:()=>setLang(getLang()==='sk'?'en':'sk'),
+            s:{fontSize:'.55rem',padding:'.25rem .5rem',borderColor:'rgba(184,136,42,0.3)',
+              color:'#B8882A'}},'Admin'),
+          R('button',{onClick:()=>setLang(getLang()==='sk'?'en':'sk'),
             style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-              padding:'.3rem .6rem',background:'rgba(250,245,239,0.06)',
-              border:'1px solid rgba(250,245,239,0.15)',color:'rgba(250,245,239,0.45)',
-              cursor:'pointer'}},
+              padding:'.3rem .6rem',background:'transparent',
+              border:'1px solid rgba(250,245,239,0.12)',
+              color:'rgba(250,245,239,0.35)',cursor:'pointer'}},
             getLang()==='sk'?'EN':'SK'),
-          R(Btn,{onClick:doLogout,v:'m',s:{padding:'.3rem .7rem',fontSize:'.6rem'}},'↩')
+          R(Btn,{onClick:doLogout,v:'m',s:{padding:'.3rem .6rem',fontSize:'.6rem'}},'↩')
         )
       ),
 
-      // ── World banner ──
+      // ══ MY RANK CARD ══════════════════════════════════════
       R('div',{style:{
-        background:'linear-gradient(135deg,rgba(184,136,42,0.06) 0%,rgba(139,46,20,0.06) 100%)',
-        border:'1px solid rgba(184,136,42,0.15)',
-        padding:'.65rem 1rem',marginBottom:'1.25rem',
-        display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem'}},
-        R('div',{style:{flex:1}},
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
-            letterSpacing:'.12em',textTransform:'uppercase',
-            color:'rgba(184,136,42,0.55)',marginBottom:'.25rem'}},t('worldGoal')),
-          R('div',{style:{height:'3px',background:'rgba(250,245,239,0.07)',borderRadius:'2px'}},
-            R('div',{style:{height:'100%',background:'#B8882A',borderRadius:'2px',
-              width:Math.min(100,globalStats.pct/50*100)+'%'}})
+        margin:'1rem 1rem .5rem',
+        background:'linear-gradient(135deg,rgba(139,46,20,0.18) 0%,rgba(184,136,42,0.12) 100%)',
+        border:'1px solid rgba(184,136,42,0.25)',
+        padding:'1.25rem 1.25rem 1rem'}},
+
+        // Rank + name + points
+        R('div',{style:{display:'flex',alignItems:'flex-start',
+          justifyContent:'space-between',marginBottom:'.75rem'}},
+          R('div',null,
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+              letterSpacing:'.2em',textTransform:'uppercase',
+              color:'rgba(184,136,42,0.6)',marginBottom:'.2rem'}},
+              myRank>0?'#'+myRank+' · '+me.city:'—'),
+            R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+              fontSize:'1.9rem',fontWeight:600,color:'#FAF5EF',lineHeight:1.1}},
+              me.nickname),
+            me.referralCode&&R('div',{style:{fontFamily:"'DM Mono',monospace",
+              fontSize:'.55rem',color:'rgba(184,136,42,0.45)',marginTop:'.2rem'}},
+              t('myCode')+': '+me.referralCode)
           ),
+          R('div',{style:{textAlign:'right'}},
+            R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+              fontSize:'3rem',fontWeight:600,color:'#FAF5EF',lineHeight:1}},
+              me.points||0),
+            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
+              color:'rgba(250,245,239,0.3)',letterSpacing:'.1em',
+              textTransform:'uppercase'}},t('points'))
+          )
+        ),
+
+        // Progress to next rank
+        above&&R('div',null,
+          R('div',{style:{display:'flex',justifyContent:'space-between',
+            fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+            color:'rgba(250,245,239,0.3)',marginBottom:'.3rem'}},
+            R('span',null,'do #'+(myRank-1)+' — '+above.nickname),
+            R('span',{style:{color:'#B8882A'}},'-'+ptsDiff+' b')
+          ),
+          R('div',{style:{height:'2px',background:'rgba(250,245,239,0.07)',
+            borderRadius:'1px'}},
+            R('div',{style:{
+              height:'100%',borderRadius:'1px',
+              background:'linear-gradient(90deg,#8B2E14,#B8882A)',
+              width:Math.max(4,Math.min(100,100-ptsDiff/((above.points||1)/100)))+'%',
+              transition:'width .6s ease'}})
+          )
+        ),
+        !above&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+          color:'rgba(184,136,42,0.5)',marginTop:'.25rem'}},'🏆 Na čele rebríčka')
+      ),
+
+      // ══ LEADERBOARD ═══════════════════════════════════════
+      R('div',{style:{margin:'0 1rem .5rem',
+        border:'1px solid rgba(250,245,239,0.07)',
+        overflow:'hidden'}},
+
+        // Header
+        R('div',{style:{
+          display:'flex',justifyContent:'space-between',alignItems:'center',
+          padding:'.6rem 1rem',
+          borderBottom:'1px solid rgba(250,245,239,0.06)',
+          background:'rgba(250,245,239,0.02)'}},
           R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
-            color:'rgba(250,245,239,0.25)',marginTop:'.25rem'}},
-            globalStats.count.toLocaleString()+' / '+globalStats.missing.toLocaleString()+' '+t('worldPlayers'))
+            letterSpacing:'.15em',textTransform:'uppercase',
+            color:'rgba(250,245,239,0.3)'}},t('leaderboard')),
+          R('div',{style:{display:'flex',gap:'.4rem'}},
+            ['ind','small','big'].map(lvl=>R('button',{key:lvl,
+              onClick:()=>setPlayLevel(lvl),
+              style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
+                padding:'.2rem .5rem',cursor:'pointer',
+                background:playLevel===lvl?'rgba(184,136,42,0.2)':'transparent',
+                border:'1px solid '+(playLevel===lvl?'rgba(184,136,42,0.4)':'rgba(250,245,239,0.08)'),
+                color:playLevel===lvl?'#B8882A':'rgba(250,245,239,0.3)'}},
+              lvl==='ind'?t('ind'):lvl==='small'?t('small'):t('big')))
+          )
+        ),
+
+        // Rows
+        lbPlayers.length===0
+          ?R('div',{style:{padding:'1rem',fontFamily:"'DM Mono',monospace",
+              fontSize:'.7rem',color:'rgba(250,245,239,0.2)',textAlign:'center'}},
+              t('noPlayers'))
+          :lbPlayers.map((p,i)=>{
+            const isMe = p.uid===me.uid;
+            return R('div',{key:p.uid,style:{
+              display:'flex',alignItems:'center',gap:'.75rem',
+              padding:'.55rem 1rem',
+              background:isMe?'rgba(184,136,42,0.08)':'transparent',
+              borderBottom:'1px solid rgba(250,245,239,0.04)',
+              borderLeft:isMe?'2px solid #B8882A':'2px solid transparent',
+              transition:'background .2s'}},
+              // Rank
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                color:isMe?'#B8882A':'rgba(250,245,239,0.2)',
+                width:'1.4rem',textAlign:'right',flexShrink:0}},
+                '#'+(i+1)),
+              // Name
+              R('div',{style:{flex:1,
+                fontFamily:"'Syne',sans-serif",fontSize:'.82rem',
+                color:isMe?'#FAF5EF':'rgba(250,245,239,0.55)',
+                fontWeight:isMe?500:400,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                p.nickname,
+                isMe&&R('span',{style:{fontFamily:"'DM Mono',monospace",
+                  fontSize:'.45rem',color:'#B8882A',
+                  border:'1px solid rgba(184,136,42,0.4)',
+                  padding:'.1rem .3rem',marginLeft:'.4rem',
+                  verticalAlign:'middle',letterSpacing:'.1em'}},'TY')
+              ),
+              // Points
+              R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+                fontSize:'1.1rem',fontWeight:600,flexShrink:0,
+                color:isMe?'#B8882A':'rgba(250,245,239,0.4)'}},
+                p.points||0)
+            );
+          })
+      ),
+
+      // ══ WORLD BANNER ══════════════════════════════════════
+      R('div',{style:{
+        margin:'0 1rem .75rem',
+        padding:'.6rem 1rem',
+        border:'1px solid rgba(184,136,42,0.1)',
+        display:'flex',alignItems:'center',gap:'.75rem'}},
+        R('div',{style:{flex:1}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
+            color:'rgba(184,136,42,0.4)',letterSpacing:'.1em',
+            textTransform:'uppercase',marginBottom:'.2rem'}},t('worldGoal')),
+          R('div',{style:{height:'2px',background:'rgba(250,245,239,0.06)',
+            borderRadius:'1px'}},
+            R('div',{style:{height:'100%',background:'rgba(184,136,42,0.5)',
+              borderRadius:'1px',
+              width:Math.min(100,globalStats.pct/50*100)+'%'}}))
         ),
         R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
-          fontSize:'1.4rem',fontWeight:600,color:'#B8882A',lineHeight:1,flexShrink:0}},
-          globalStats.pctDisplay+'%')
+          fontSize:'1.2rem',fontWeight:600,color:'rgba(184,136,42,0.6)',
+          flexShrink:0}},globalStats.pctDisplay+'%')
       ),
 
-      // ── Task cards ──
-      R('div',{style:{...S.lbl,marginBottom:'.75rem'}},'Čo môžeš urobiť teraz'),
-      R('div',{style:{display:'flex',flexDirection:'column',gap:'.5rem',marginBottom:'1.25rem'}},
-        tasks.map(task=>R('div',{key:task.id,style:{
-          border:'1px solid '+(task.available?task.colorBorder:'rgba(250,245,239,0.07)'),
-          background:task.available?task.colorBg:'rgba(250,245,239,0.02)',
-          padding:'1rem 1.25rem',
-          opacity:task.available?1:0.5,
-          cursor:task.available?'pointer':'default',
-          transition:'opacity .2s'},
-          onClick:(task.available&&!busy)?()=>{setNote('');setActiveTask(task);setScr('log');}:null},
-          R('div',{style:{display:'flex',alignItems:'flex-start',gap:'.75rem'}},
-            R('div',{style:{fontSize:'1.4rem',lineHeight:1,flexShrink:0}},task.emoji),
-            R('div',{style:{flex:1}},
-              R('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'.2rem'}},
-                R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,
-                  color:task.available?'#FAF5EF':'rgba(250,245,239,0.4)',fontSize:'.85rem'}},
-                  task.title),
-                R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
-                  fontSize:'1.4rem',fontWeight:600,
-                  color:task.available?task.color:'rgba(250,245,239,0.2)',lineHeight:1}},
-                  '+'+task.pts)
-              ),
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
-                color:task.available?'rgba(250,245,239,0.45)':'rgba(250,245,239,0.25)',
-                lineHeight:1.5}},
-                task.available?task.desc:task.desc),
-              !task.available&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-                color:'rgba(196,96,58,0.6)',marginTop:'.2rem'}},
-                '🔒 '+task.lockMsg),
-              task.max!=null&&R('div',{style:{
-                display:'flex',gap:'.25rem',marginTop:'.6rem',alignItems:'center'}},
-                Array.from({length:task.max},(_,i)=>R('div',{key:i,style:{
-                  width:'22px',height:'4px',borderRadius:'2px',
-                  background:i<(task.count||0)?task.color:'rgba(250,245,239,0.1)',
-                  transition:'background .3s'}})),
-                R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
-                  color:'rgba(250,245,239,0.3)',marginLeft:'.5rem'}},
-                  (task.count||0)+'/'+task.max)
-              )
-            )
-          )
-        ))
-      ),
+      // ══ TASK STRIP ════════════════════════════════════════
+      R('div',{style:{
+        margin:'0 1rem',
+        border:'1px solid rgba(250,245,239,0.07)',
+        padding:'.75rem 1rem'}},
 
-      // ── Leaderboard preview ──
-      R('div',{style:{...S.card,marginBottom:'1.25rem',padding:'1rem 1.25rem',cursor:'pointer'},
-        onClick:()=>setScr('lb')},
-        R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.75rem'}},
-          R('div',{style:S.lbl},lbPreview.label),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
-            color:'rgba(250,245,239,0.3)',letterSpacing:'.08em'}},'Rebríček →')
-        ),
-        lbPreview.items.length===0
-          ?R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
-              color:'rgba(250,245,239,0.2)'}},'Zatiaľ žiadni hráči.')
-          :lbPreview.items.map(item=>R('div',{key:item.rank,style:{
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
+          letterSpacing:'.15em',textTransform:'uppercase',
+          color:'rgba(250,245,239,0.2)',marginBottom:'.65rem'}},
+          t('whatNow')),
+
+        R('div',{style:{display:'flex',flexDirection:'column',gap:'.4rem'}},
+          // Task row renderer
+          ...[
+            {id:'bonding1',emoji:'💛',pts:1,available:b1ok,count:b1,max:3,
+              color:'#B8882A',title:getLang()==='sk'?'Urob dobro pre blízkeho':'Do good for someone close'},
+            {id:'bonding2',emoji:'🤜',pts:2,available:b2ok,count:b2,max:2,
+              color:'#C4603A',title:getLang()==='sk'?'Prehĺb vzťah':'Deepen a relationship'},
+            {id:'bridging',emoji:'🤝',pts:3,available:true,count:null,max:null,
+              color:'#8B2E14',title:getLang()==='sk'?'Zoznám sa s niekým novým':'Meet someone new'},
+          ].map(task=>R('div',{key:task.id,
+            onClick:task.available?()=>{setNote('');setActiveTask(task);setScr('log');}:null,
+            style:{
               display:'flex',alignItems:'center',gap:'.75rem',
-              padding:'.4rem 0',
-              borderBottom:'1px solid rgba(250,245,239,0.05)'}},
-            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
-              color:'rgba(250,245,239,0.25)',width:'1.2rem',textAlign:'right',flexShrink:0}},
-              item.rank),
-            R('div',{style:{flex:1,fontFamily:"'Syne',sans-serif",fontSize:'.8rem',
-              color:item.isMe?'#FAF5EF':'rgba(250,245,239,0.6)',fontWeight:item.isMe?500:400}},
-              item.name,item.isMe&&R('span',{style:{...S.badgeA,marginLeft:'.5rem',fontSize:'.5rem'}},'ty')),
-            R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
-              color:item.isMe?'#B8882A':'rgba(250,245,239,0.35)',fontWeight:500}},
-              item.pts)
+              padding:'.55rem .75rem',
+              background:task.available?'rgba(250,245,239,0.03)':'transparent',
+              border:'1px solid '+(task.available?'rgba(250,245,239,0.08)':'rgba(250,245,239,0.03)'),
+              opacity:task.available?1:0.4,
+              cursor:task.available?'pointer':'default',
+              transition:'all .15s'}},
+            // Emoji
+            R('div',{style:{fontSize:'1.1rem',flexShrink:0}},task.emoji),
+            // Title
+            R('div',{style:{flex:1,fontFamily:"'Syne',sans-serif",
+              fontSize:'.78rem',
+              color:task.available?'#FAF5EF':'rgba(250,245,239,0.3)'}},
+              task.title),
+            // Progress dots OR points
+            task.max!=null
+              ?R('div',{style:{display:'flex',gap:'.2rem',alignItems:'center',flexShrink:0}},
+                  Array.from({length:task.max},(_,i)=>R('div',{key:i,style:{
+                    width:'8px',height:'8px',borderRadius:'50%',
+                    background:i<task.count?task.color:'rgba(250,245,239,0.1)',
+                    transition:'background .3s'}}))
+                )
+              :R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                  color:'rgba(250,245,239,0.2)',flexShrink:0}},'∞'),
+            // Points badge
+            R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
+              fontSize:'1.1rem',fontWeight:600,flexShrink:0,
+              color:task.available?task.color:'rgba(250,245,239,0.15)',
+              minWidth:'1.5rem',textAlign:'right'}},
+              '+'+task.pts)
           ))
+        )
       ),
 
-      // ── Level progress (collapsed) ──
-      R(LevelProgress,{me,onShop:()=>setScr('cityshop'),licensed}),
-
-      // ── Bottom actions ──
-      R('div',{style:{display:'flex',gap:'.5rem',marginBottom:'.75rem'}},
-        R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1}},
-          myTeams.length>0?'Skupiny':'+ Skupina'),
-        R(Btn,{onClick:()=>setScr('cityshop'),v:'m',s:{flex:1}},t('shop'))
+      // ══ BOTTOM NAV ════════════════════════════════════════
+      R('div',{style:{
+        display:'flex',gap:'.5rem',padding:'.75rem 1rem',marginTop:'auto',
+        borderTop:'1px solid rgba(250,245,239,0.06)'}},
+        R(Btn,{onClick:()=>setScr('team'),v:'s',s:{flex:1,fontSize:'.7rem'}},
+          myTeams.length>0?t('teams'):'+ '+t('teams')),
+        R(LevelProgress,{me,onShop:()=>setScr('cityshop'),licensed,compact:true}),
+        R(Btn,{onClick:()=>setScr('cityshop'),v:'m',s:{flex:1,fontSize:'.7rem'}},t('shop'))
       )
+
     );
   }
   // ══ LOG ══════════════════════════════════════════════════
