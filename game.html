@@ -1100,7 +1100,7 @@ function App(){
           city:city.trim(),region:country,country:regionToCountry(country),
           teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
           referralCode:myCode,
-          referredBy:referralCode.trim()||null};
+          referredBy:referralCode.trim()||null,bonding1Count:0,bonding2Count:0};
         await DB.setPlayer(res.localId,profile);
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
         // Give referrer 5 points
@@ -1123,7 +1123,7 @@ function App(){
           city:city.trim(),region:country,country:regionToCountry(country),
           teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
           referralCode:myCode,
-          referredBy:referralCode.trim()||null};
+          referredBy:referralCode.trim()||null,bonding1Count:0,bonding2Count:0};
         pl[uid]=profile;lsSet('hps:players',pl);
         // Give referrer 5 points
         if(referralCode.trim()){
@@ -1211,20 +1211,15 @@ function App(){
 
   // ── ENCOUNTER ─────────────────────────────────────────────
   // Task types: 'bonding1' (1pt), 'bonding2' (2pt), 'bridging' (3pt)
-  function getTaskState(playerData){
-    const enc = playerData.encounters || [];
-    // Count since last bridging
-    let bonding1Since = 0, bonding2Since = 0;
-    for(let i = enc.length-1; i >= 0; i--){
-      if(enc[i].type === 'bridging') break;
-      if(enc[i].type === 'bonding1') bonding1Since++;
-      if(enc[i].type === 'bonding2') bonding2Since++;
-    }
+  function getTaskState(p){
+    // Read counts directly from player profile
+    const b1 = p.bonding1Count || 0;
+    const b2 = p.bonding2Count || 0;
     return {
-      bonding1Available: bonding1Since < 3,  // max 3x before bridging required
-      bonding2Available: bonding2Since < 2,  // max 2x before bridging required
-      bonding1Count: bonding1Since,
-      bonding2Count: bonding2Since,
+      bonding1Available: b1 < 3,
+      bonding2Available: b2 < 2,
+      bonding1Count: b1,
+      bonding2Count: b2,
     };
   }
 
@@ -1234,23 +1229,31 @@ function App(){
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
       const uid=me.uid;
-      const encTypeSaved=taskType||'bridging';
+      const type=taskType||'bridging';
+      const player=pl[uid]||{};
 
-      // ── Server-side threshold check ──────────────────────
-      if(encTypeSaved!=='bridging'){
-        const freshState=getTaskState(pl[uid]||{});
-        if(encTypeSaved==='bonding1'&&!freshState.bonding1Available){
-          setNe('Najprv sa zoznám s niekým novým.');setBusy(false);return;
-        }
-        if(encTypeSaved==='bonding2'&&!freshState.bonding2Available){
-          setNe('Najprv sa zoznám s niekým novým.');setBusy(false);return;
-        }
-      }
+      // ── Threshold check (fresh from DB) ─────────────────
+      const b1=player.bonding1Count||0;
+      const b2=player.bonding2Count||0;
+      if(type==='bonding1'&&b1>=3){setNe('Najprv sa zoznám s niekým novým.');setBusy(false);return;}
+      if(type==='bonding2'&&b2>=2){setNe('Najprv sa zoznám s niekým novým.');setBusy(false);return;}
+
+      // ── Update counters ──────────────────────────────────
+      let newB1=b1, newB2=b2;
+      if(type==='bridging'){newB1=0;newB2=0;}          // bridging resets both
+      else if(type==='bonding1'){newB1=b1+1;}           // bonding1 increments
+      else if(type==='bonding2'){newB2=b2+1;}           // bonding2 increments
+
+      const encTypeSaved=type;
       const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
         teamId:activeTeamId||null,city:me.city||'',country:me.country||''};
-      const prevPts=pl[uid].points||0;
-      const p={...pl[uid],points:prevPts+(pts||1),encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
+      const prevPts=player.points||0;
+      const p={...player,points:prevPts+(pts||1),encounters:[enc,...(player.encounters||[]).slice(0,49)],bonding1Count:newB1,bonding2Count:newB2};
       await DB.setPlayer(uid,p);
+
+      // Immediately update local state for instant UI response
+      setMe(p);
+      setPlayers(prev=>({...prev,[uid]:p}));
 
       // Cascade — points flow up through all parent biggroups
       if((playLevel==='team'||playLevel==='city')&&activeTeamId&&tm[activeTeamId]){
@@ -1483,7 +1486,10 @@ function App(){
 
   // Global stats — always computed
   // Task state
-  const taskState=(me&&me.uid&&players[me.uid])?getTaskState(players[me.uid]):(me&&me.uid?getTaskState(me):{bonding1Available:true,bonding2Available:true,bonding1Count:0,bonding2Count:0});
+  const taskState=(()=>{
+    const p=players[me&&me.uid]||me||{};
+    return getTaskState(p);
+  })();
 
   const globalStats=(()=>{
     try{
