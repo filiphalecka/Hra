@@ -1235,7 +1235,7 @@ function App(){
       const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
         teamId:activeTeamId||null,city:me.city||'',country:me.country||''};
       const prevPts=pl[uid].points||0;
-      const p={...pl[uid],points:prevPts+1,encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
+      const p={...pl[uid],points:prevPts+(pts||1),encounters:[enc,...(pl[uid].encounters||[]).slice(0,49)]};
       await DB.setPlayer(uid,p);
 
       // Cascade — points flow up through all parent biggroups
@@ -2081,11 +2081,15 @@ function App(){
               !task.available&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
                 color:'rgba(196,96,58,0.6)',marginTop:'.2rem'}},
                 '🔒 '+task.lockMsg),
-              task.max&&task.available&&R('div',{style:{
-                display:'flex',gap:'.2rem',marginTop:'.5rem'}},
+              task.max!=null&&R('div',{style:{
+                display:'flex',gap:'.25rem',marginTop:'.6rem',alignItems:'center'}},
                 Array.from({length:task.max},(_,i)=>R('div',{key:i,style:{
-                  width:'18px',height:'3px',borderRadius:'2px',
-                  background:i<task.count?task.color:'rgba(250,245,239,0.12)'}}))
+                  width:'22px',height:'4px',borderRadius:'2px',
+                  background:i<(task.count||0)?task.color:'rgba(250,245,239,0.1)',
+                  transition:'background .3s'}})),
+                R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+                  color:'rgba(250,245,239,0.3)',marginLeft:'.5rem'}},
+                  (task.count||0)+'/'+task.max)
               )
             )
           )
