@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="i-title">Prečo hrať — Hra na radosť zo života</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0B0907;--ink:#FAF5EF;--ink2:rgba(250,245,239,0.55);
+  --ink3:rgba(250,245,239,0.25);--ink4:rgba(250,245,239,0.08);
+  --gold:#B8882A;--red:#8B2E14;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.8;min-height:100vh;overflow-x:hidden;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.75rem 2rem;background:rgba(11,9,7,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--ink4);}
+.nav-logo{font-family:var(--sans);font-size:.65rem;font-weight:500;color:var(--ink3);letter-spacing:.12em;text-decoration:none;text-transform:uppercase;}
+.nav-right{display:flex;align-items:center;gap:.75rem;}
+#lang-btn{font-family:var(--mono);font-size:.6rem;padding:.3rem .6rem;background:transparent;border:1px solid rgba(250,245,239,0.15);color:rgba(250,245,239,0.4);cursor:pointer;letter-spacing:.08em;}
+.nav-cta{font-family:var(--mono);font-size:.62rem;color:var(--ink);background:var(--red);padding:.4rem 1rem;text-decoration:none;letter-spacing:.08em;transition:background .2s;}
+.nav-cta:hover{background:#C4603A;}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8rem 2rem 4rem;max-width:760px;margin:0 auto;}
+.eyebrow{font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;opacity:0;animation:up .6s .2s forwards;}
+.hero h1{font-family:var(--serif);font-size:clamp(2.8rem,7vw,5rem);font-weight:300;line-height:1.1;margin-bottom:1.5rem;opacity:0;animation:up .7s .35s forwards;}
+.hero h1 em{font-style:italic;color:var(--gold);}
+.hero-sub{font-size:1.05rem;color:var(--ink2);line-height:1.95;max-width:520px;margin:0 auto 3rem;opacity:0;animation:up .7s .5s forwards;}
+
+/* CARDS GRID */
+.cards{max-width:900px;margin:0 auto;padding:0 1.5rem 6rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;background:var(--ink4);}
+.card{background:var(--bg);padding:2rem;text-decoration:none;display:flex;flex-direction:column;gap:.75rem;transition:background .2s;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color, var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.card:hover{background:rgba(250,245,239,0.03);}
+.card:hover::before{transform:scaleX(1);}
+.card-emoji{font-size:1.8rem;line-height:1;margin-bottom:.25rem;}
+.card-label{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--card-color, var(--gold));}
+.card-title{font-family:var(--serif);font-size:1.3rem;font-weight:300;color:var(--ink);line-height:1.25;}
+.card-title em{font-style:italic;}
+.card-desc{font-family:var(--sans);font-size:.82rem;color:var(--ink3);line-height:1.7;}
+.card-arrow{font-family:var(--mono);font-size:.6rem;color:var(--ink4);margin-top:auto;padding-top:.75rem;transition:color .2s;}
+.card:hover .card-arrow{color:var(--card-color, var(--gold));}
+
+/* SECTION DIVIDER */
+.section-label{max-width:900px;margin:0 auto;padding:3rem 1.5rem 1.5rem;font-family:var(--mono);font-size:.55rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);}
+
+/* BOTTOM CTA */
+.bottom{max-width:760px;margin:0 auto;padding:3rem 2rem 6rem;text-align:center;border-top:1px solid var(--ink4);}
+.bottom p{font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--ink2);margin-bottom:2rem;line-height:1.8;}
+.play-btn{display:inline-block;font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--red);padding:1rem 2.5rem;text-decoration:none;transition:background .2s;}
+.play-btn:hover{background:#C4603A;}
+
+@keyframes up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo" id="i-navLogo">Hra proti samote</a>
+  <div class="nav-right">
+    <button id="lang-btn" onclick="setL(getL()==='sk'?'en':'sk')">EN</button>
+    <a href="game.html" class="nav-cta" id="i-navCta">Hrať →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow" id="i-eyebrow">Prečo hrať</div>
+  <h1 id="i-h1">Pre každého<br>existuje <em>dôvod.</em></h1>
+  <p class="hero-sub" id="i-heroSub">
+    Táto hra nie je pre všetkých rovnaká. Záleží na tom, kto si a čo hľadáš.
+    Nájdi svoju perspektívu.
+  </p>
+</section>
+
+<!-- CARDS -->
+<div class="section-label" id="i-sectionLabel">Vyber svoju perspektívu</div>
+<div class="cards">
+
+  <a href="why.html" class="card" style="--card-color:#B8882A;">
+    <div class="card-emoji">👤</div>
+    <div class="card-label" id="i-card1Label">Jednotlivec</div>
+    <div class="card-title" id="i-card1Title">Kedy si naposledy spoznal niekoho <em>skutočne nového?</em></div>
+    <div class="card-desc" id="i-card1Desc">Pre tých, čo hľadajú zmysel, komunitu alebo jednoducho vedia, že sa dá žiť plnšie.</div>
+    <div class="card-arrow" id="i-card1Arrow">Čítať ďalej →</div>
+  </a>
+
+  <a href="why_org.html" class="card" style="--card-color:#4A7C59;">
+    <div class="card-emoji">🏢</div>
+    <div class="card-label" id="i-card2Label">Firma / organizácia</div>
+    <div class="card-title" id="i-card2Title">Čo keď teambuilding nestačí na <em>skutočné prepojenie?</em></div>
+    <div class="card-desc" id="i-card2Desc">Pre zamestnancov aj zamestnávateľov, ktorí vedia, že kultúra sa buduje vzťahmi.</div>
+    <div class="card-arrow" id="i-card2Arrow">Čítať ďalej →</div>
+  </a>
+
+  <a href="why_school.html" class="card" style="--card-color:#3B6FD4;">
+    <div class="card-emoji">🏫</div>
+    <div class="card-label" id="i-card3Label">Škola</div>
+    <div class="card-title" id="i-card3Title">Žiaci sedia v jednej triede. Ale <em>poznajú sa?</em></div>
+    <div class="card-desc" id="i-card3Desc">Pre učiteľov, riaditeľov a žiakov, ktorým záleží na klíme v škole.</div>
+    <div class="card-arrow" id="i-card3Arrow">Čítať ďalej →</div>
+  </a>
+
+  <a href="why_city.html" class="card" style="--card-color:#C4860A;">
+    <div class="card-emoji">🏙️</div>
+    <div class="card-label" id="i-card4Label">Mesto / obec</div>
+    <div class="card-title" id="i-card4Title">Poznajú sa vaši občania <em>navzájom?</em></div>
+    <div class="card-desc" id="i-card4Desc">Pre starostov, samosprávu aj občanov, ktorí chcú budovať skutočnú komunitu.</div>
+    <div class="card-arrow" id="i-card4Arrow">Čítať ďalej →</div>
+  </a>
+
+  <a href="why_community.html" class="card" style="--card-color:#2D6A4F;">
+    <div class="card-emoji">🤝</div>
+    <div class="card-label" id="i-card5Label">Komunita / spolok</div>
+    <div class="card-title" id="i-card5Title">Vaša komunita existuje. <em>Ale kam smeruje?</em></div>
+    <div class="card-desc" id="i-card5Desc">Pre skautské oddiely, farnosti, kluby a NGO, ktoré chcú presiahnuť samé seba.</div>
+    <div class="card-arrow" id="i-card5Arrow">Čítať ďalej →</div>
+  </a>
+
+</div>
+
+<!-- BOTTOM CTA -->
+<div class="bottom">
+  <p id="i-bottomP">Alebo jednoducho začni hrať.<br>Argumenty prídu neskôr.</p>
+  <a href="game.html" class="play-btn" id="i-playBtn">Začni hrať →</a>
+</div>
+
+<script>
+var LK='hps:lang';
+function getL(){return localStorage.getItem(LK)||((navigator.language||'').toLowerCase().match(/^(sk|cs)/)?'sk':'en');}
+function setL(l){localStorage.setItem(LK,l);applyL(l);}
+var T={
+  sk:{
+    title:'Prečo hrať — Hra na radosť zo života',
+    navLogo:'Hra proti samote',
+    navCta:'Hrať →', navCta:'Hrať →',
+    eyebrow:'Prečo hrať',
+    h1:'Pre každého<br>existuje <em>dôvod.</em>',
+    heroSub:'Táto hra nie je pre všetkých rovnaká. Záleží na tom, kto si a čo hľadáš. Nájdi svoju perspektívu.',
+    sectionLabel:'Vyber svoju perspektívu',
+    card1Label:'Jednotlivec',
+    card1Title:'Kedy si naposledy spoznal niekoho <em>skutočne nového?</em>',
+    card1Desc:'Pre tých, čo hľadajú zmysel, komunitu alebo jednoducho vedia, že sa dá žiť plnšie.',
+    card1Arrow:'Čítať ďalej →',
+    card2Label:'Firma / organizácia',
+    card2Title:'Čo keď teambuilding nestačí na <em>skutočné prepojenie?</em>',
+    card2Desc:'Pre zamestnancov aj zamestnávateľov, ktorí vedia, že kultúra sa buduje vzťahmi.',
+    card2Arrow:'Čítať ďalej →',
+    card3Label:'Škola',
+    card3Title:'Žiaci sedia v jednej triede. Ale <em>poznajú sa?</em>',
+    card3Desc:'Pre učiteľov, riaditeľov a žiakov, ktorým záleží na klíme v škole.',
+    card3Arrow:'Čítať ďalej →',
+    card4Label:'Mesto / obec',
+    card4Title:'Poznajú sa vaši občania <em>navzájom?</em>',
+    card4Desc:'Pre starostov, samosprávu aj občanov, ktorí chcú budovať skutočnú komunitu.',
+    card4Arrow:'Čítať ďalej →',
+    card5Label:'Komunita / spolok',
+    card5Title:'Vaša komunita existuje. <em>Ale kam smeruje?</em>',
+    card5Desc:'Pre skautské oddiely, farnosti, kluby a NGO, ktoré chcú presiahnuť samé seba.',
+    card5Arrow:'Čítať ďalej →',
+    bottomP:'Alebo jednoducho začni hrať.<br>Argumenty prídu neskôr.',
+    playBtn:'Začni hrať →',
+  },
+  en:{
+    title:'Why play — Joy of Living',
+    navLogo:'Hra proti samote',
+    navCta:'Play →', navCta:'Play →',
+    eyebrow:'Why play',
+    h1:'For everyone<br>there is a <em>reason.</em>',
+    heroSub:'This game is not the same for everyone. It depends on who you are and what you are looking for. Find your perspective.',
+    sectionLabel:'Choose your perspective',
+    card1Label:'Individual',
+    card1Title:'When did you last meet someone <em>truly new?</em>',
+    card1Desc:'For those looking for meaning, community, or who simply know that life can be lived more fully.',
+    card1Arrow:'Read more →',
+    card2Label:'Company / organisation',
+    card2Title:'What if team-building is not enough for <em>real connection?</em>',
+    card2Desc:'For employees and employers who know that culture is built through relationships.',
+    card2Arrow:'Read more →',
+    card3Label:'School',
+    card3Title:'Students sit in the same classroom. But do they <em>know each other?</em>',
+    card3Desc:'For teachers, headteachers and students who care about school climate.',
+    card3Arrow:'Read more →',
+    card4Label:'City / municipality',
+    card4Title:'Do your citizens <em>know each other?</em>',
+    card4Desc:'For mayors, local government and citizens who want to build a real community.',
+    card4Arrow:'Read more →',
+    card5Label:'Community / club',
+    card5Title:'Your community exists. <em>But where is it headed?</em>',
+    card5Desc:'For scout troops, parishes, clubs and NGOs that want to go beyond themselves.',
+    card5Arrow:'Read more →',
+    bottomP:'Or simply start playing.<br>The reasons will follow.',
+    playBtn:'Start playing →',
+  }
+};
+function si(id,v){var e=document.getElementById(id);if(e)e.innerHTML=v;}
+function applyL(l){
+  var D=T[l]||T.sk;
+  document.documentElement.lang=l;
+  document.title=D.title;
+  Object.keys(D).forEach(function(k){si('i-'+k,D[k]);});
+  var btn=document.getElementById('lang-btn');
+  if(btn)btn.textContent=l==='sk'?'EN':'SK';
+}
+document.addEventListener('DOMContentLoaded',function(){applyL(getL());});
+</script>
+</body>
+</html>

@@ -79,7 +79,7 @@
 
 <nav class="g-nav">
   <a class="g-nav-logo" href="game.html">Hra proti samote</a>
-  <a class="g-nav-back" href="index.html" onclick="history.replaceState(null,'','index.html');return true;">← späť na stránku</a>
+  <a class="g-nav-back" href="index.html" onclick="history.replaceState(null,'','index.html');return true;"><span id="g-back-text">← späť na stránku</span></a>
 </nav>
 
 <main class="g-main">
@@ -132,6 +132,26 @@ const T={
     shop:'🏙️ E-shop', play:'Hrať',
     worldGoal:'Svet · cieľ 50 % populácie',
     worldPlayers:'hráčov · chýba do cieľa',
+    leaderboard:'Rebríček',
+    cities:'Mestá',
+    regions:'Kraje',
+    states:'Štáty',
+    continent:'Kontinent',
+    world:'Svet',
+    myLevels:'Som súčasťou',
+    ind:'Jednotlivci',
+    small:'Malé skupiny',
+    big:'Veľké skupiny',
+    noPlayers:'Zatiaľ žiadni hráči.',
+    teams:'Skupiny',
+    points:'bodov',
+    back:'Späť',
+    myCode:'Tvoj kód',
+    whatNow:'Čo môžeš urobiť teraz',
+    noteLabel:'Pár slov o stretnutí',
+    noteLabelB:'Čo si urobil a pre koho?',
+    notePH:'napr. „Oslovil som chlapíka v kaviarni…"',
+    notePHB:'napr. „Pomohol som susedovi…"',
   },
   en:{
     appName:'Joy of Living',
@@ -154,6 +174,26 @@ const T={
     shop:'🏙️ Shop', play:'Play',
     worldGoal:'World · goal 50% of population',
     worldPlayers:'players · still needed for goal',
+    leaderboard:'Leaderboard',
+    cities:'Cities',
+    regions:'Regions',
+    states:'Countries',
+    continent:'Continent',
+    world:'World',
+    myLevels:'My levels',
+    ind:'Individuals',
+    small:'Small groups',
+    big:'Big groups',
+    noPlayers:'No players yet.',
+    teams:'Groups',
+    points:'points',
+    back:'Back',
+    myCode:'Your code',
+    whatNow:'What you can do now',
+    noteLabel:'A few words about the meeting',
+    noteLabelB:'What did you do and for whom?',
+    notePH:'e.g. "I approached someone in a café…"',
+    notePHB:'e.g. "I helped my neighbour…"',
   }
 };
 
@@ -2049,6 +2089,71 @@ function App(){
           color:'rgba(184,136,42,0.5)',marginTop:'.25rem'}},'🏆 Na čele rebríčka')
       ),
 
+      // ══ SOM SÚČASŤOU ══════════════════════════════════════
+      R('div',{style:{margin:'0 1rem .65rem'}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+          letterSpacing:'.16em',textTransform:'uppercase',
+          color:'rgba(250,245,239,0.25)',marginBottom:'.45rem'}},'Som súčasťou'),
+        R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.3rem'}},
+          // Individual always active
+          R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+            letterSpacing:'.08em',padding:'.22rem .55rem',
+            background:'rgba(184,136,42,0.12)',
+            border:'1px solid rgba(184,136,42,0.35)',
+            color:'#B8882A'}},
+            '👤 Jednotlivec'),
+          // Small groups
+          ...(myTeams.length>0
+            ?myTeams.map(t=>R('span',{key:t.id,style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+              letterSpacing:'.08em',padding:'.22rem .55rem',
+              background:'rgba(184,136,42,0.08)',
+              border:'1px solid rgba(184,136,42,0.25)',
+              color:'#B8882A'}},
+              '👥 '+t.name))
+            :[R('span',{key:'noteam',style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+              letterSpacing:'.08em',padding:'.22rem .55rem',
+              border:'1px dashed rgba(250,245,239,0.1)',
+              color:'rgba(250,245,239,0.2)'}},
+              '👥 Malá skupina 🔒')]),
+          // Big groups
+          ...((()=>{
+            const myBgIds=new Set();
+            myTeams.forEach(t=>{if(t.bigGroupId)myBgIds.add(t.bigGroupId);});
+            (me.bigGroupIds||[]).forEach(id=>myBgIds.add(id));
+            return myBgIds.size>0
+              ?[...myBgIds].map(id=>bigGroups[id]?R('span',{key:id,style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+                  letterSpacing:'.08em',padding:'.22rem .55rem',
+                  background:'rgba(74,124,89,0.1)',
+                  border:'1px solid rgba(74,124,89,0.3)',
+                  color:'#6BAF7A'}},
+                  '🏛 '+(bigGroups[id].name||id)):null).filter(Boolean)
+              :[R('span',{key:'nobig',style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+                letterSpacing:'.08em',padding:'.22rem .55rem',
+                border:'1px dashed rgba(250,245,239,0.1)',
+                color:'rgba(250,245,239,0.2)'}},
+                '🏛 Veľká skupina 🔒')];
+          })()),
+          // Geo levels
+          ...['city','region','state','continent','global'].map(lvl=>{
+            const canPlay={
+              city:canPlayCity(me,licensed),
+              region:canPlayRegion(me,licensed),
+              state:canPlayState(me,licensed),
+              continent:canPlayContinent(me,licensed),
+              global:canPlayGlobal(me,licensed),
+            }[lvl];
+            const labels={city:'🏙️ '+(me.city||'Mesto'),region:'🗺️ '+(me.region||me.city||'Kraj'),
+              state:'🏛️ '+(me.country||'Štát'),continent:'🌍 Európa',global:'🌐 Svet'};
+            return R('span',{key:lvl,style:{fontFamily:"'DM Mono',monospace",fontSize:'.52rem',
+              letterSpacing:'.08em',padding:'.22rem .55rem',
+              ...(canPlay
+                ?{background:'rgba(74,124,89,0.1)',border:'1px solid rgba(74,124,89,0.3)',color:'#6BAF7A'}
+                :{border:'1px dashed rgba(250,245,239,0.08)',color:'rgba(250,245,239,0.18)'})
+            }},labels[lvl]+(canPlay?'':' 🔒'));
+          })
+        )
+      ),
+
       // ══ LEADERBOARD ═══════════════════════════════════════
       R('div',{style:{margin:'0 1rem .5rem',
         border:'1px solid rgba(250,245,239,0.07)',
@@ -2064,14 +2169,14 @@ function App(){
             letterSpacing:'.15em',textTransform:'uppercase',
             color:'rgba(250,245,239,0.3)'}},t('leaderboard')),
           R('div',{style:{display:'flex',gap:'.4rem'}},
-            ['ind','small','big'].map(lvl=>R('button',{key:lvl,
-              onClick:()=>setPlayLevel(lvl),
+            ['ind','small','big','city','region'].map(lvl=>R('button',{key:lvl,
+              onClick:()=>{setLbTab(lvl);setScr('lb');},
               style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
                 padding:'.2rem .5rem',cursor:'pointer',
-                background:playLevel===lvl?'rgba(184,136,42,0.2)':'transparent',
-                border:'1px solid '+(playLevel===lvl?'rgba(184,136,42,0.4)':'rgba(250,245,239,0.08)'),
-                color:playLevel===lvl?'#B8882A':'rgba(250,245,239,0.3)'}},
-              lvl==='ind'?t('ind'):lvl==='small'?t('small'):t('big')))
+                background:lbTab===lvl?'rgba(184,136,42,0.2)':'transparent',
+                border:'1px solid '+(lbTab===lvl?'rgba(184,136,42,0.4)':'rgba(250,245,239,0.08)'),
+                color:lbTab===lvl?'#B8882A':'rgba(250,245,239,0.3)'}},
+              lvl==='ind'?t('ind'):lvl==='small'?t('small'):lvl==='big'?t('big'):lvl==='city'?'Mestá':'Kraje'))
           )
         ),
 
@@ -2561,6 +2666,14 @@ myBigGroupList.length===0
 const root=document.getElementById('game-root');
 if(root)ReactDOM.createRoot(root).render(R(App,null));
 
+
+// Translate static HTML elements
+(function(){
+  var lang = localStorage.getItem('hps:lang') || 
+    ((navigator.language||'').toLowerCase().match(/^(sk|cs)/) ? 'sk' : 'en');
+  var backEl = document.getElementById('g-back-text');
+  if(backEl && lang === 'en') backEl.textContent = '← back to site';
+})();
 </script>
 </body>
 </html>

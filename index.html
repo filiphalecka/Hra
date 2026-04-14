@@ -368,12 +368,14 @@ var TRANSLATIONS = {
     heroTitle: 'Hra, ktorá<br><em>lieči samotu</em>',
     heroSub: 'WHO vyhlásila osamelosť za globálnu zdravotnú krízu. Táto hra je pokus riešiť to systémovo.',
     heroBtn: 'Zapojiť sa →',
+    heroStatNum: '1 z 4',
     heroStat1: 'ľudí na svete trpí osamotenosťou — WHO, 2023',
     heroStat2: 'cudzincov čaká na rozhovor s tebou',
     navJoin: 'Zapojiť sa',
     navProject: 'Projekt',
     navAbout: 'O mne',
     navLicenses: 'Licencie',
+    navWhy: 'Prečo hrať',
     navPlay: 'Hrať',
     howLabel: 'Ako sa zapojiť',
     howTitle: 'Ako sa <em>zapojiť</em>',
@@ -409,6 +411,10 @@ var TRANSLATIONS = {
     teamStep2text: 'Každý bod ide tímu aj každému členovi osobne. Čím viac úrovní máš odomknutých, tým viac rebríčkov sa ti bod pripočíta naraz.',
     score2: '1 bod → všetky odomknuté úrovne',
     cascadeLabel: 'Ako body kaskádujú',
+    cascSoloSub: 'individuálny',
+    cascTeam: 'Tím',
+    cascCity: 'Mesto',
+    cascWorld: 'Svet',
     levelsLabel: 'Úrovne súťaže',
     lvlInd: 'Jednotlivec',
     lvlIndDesc: 'Solo body za každé stretnutie',
@@ -469,12 +475,14 @@ var TRANSLATIONS = {
     heroTitle: 'The game that<br><em>heals loneliness</em>',
     heroSub: 'WHO declared loneliness a global health crisis. This game is an attempt to address it systemically.',
     heroBtn: 'Join now →',
+    heroStatNum: '1 in 4',
     heroStat1: 'people worldwide experience loneliness — WHO, 2023',
     heroStat2: 'strangers waiting to talk to you',
     navJoin: 'Join',
     navProject: 'Project',
     navAbout: 'About',
     navLicenses: 'Licenses',
+    navWhy: 'Why play',
     navPlay: 'Play',
     howLabel: 'How to join',
     howTitle: 'How to <em>join</em>',
@@ -522,6 +530,10 @@ var TRANSLATIONS = {
     teamStep2text: "Every point goes to the team and each member personally. The more levels you have unlocked, the more leaderboards a single point counts towards.",
     score2: "1 point → all unlocked levels",
     cascadeLabel: 'How points cascade',
+    cascSoloSub: 'individual',
+    cascTeam: 'Team',
+    cascCity: 'City',
+    cascWorld: 'World',
     cascSoloSub: 'individual',
     cascTeam: 'Team', cascTeamSub: 'team + solo',
     cascCity: 'City', cascCitySub: 'city + team + solo',
@@ -611,6 +623,7 @@ function applyLang(l) {
   set('#dt-heroTitle', T.heroTitle);
   setText('#dt-heroSub', T.heroSub);
   setText('#dt-heroBtn', T.heroBtn);
+  setText('#dt-heroStatNum', T.heroStatNum);
   setText('#dt-heroStat1', T.heroStat1);
   setText('#dt-heroStat2', T.heroStat2);
 
@@ -629,20 +642,18 @@ function applyLang(l) {
   setText('#dt-task3Title', T.task3Title);
   setText('#dt-task3Text', T.task3Text);
   setText('#dt-task3Score', T.task3Score);
-  setText('#dt-soloMode', T.soloMode);
-  setText('#dt-teamMode', T.teamMode);
-  setText('#dt-step1title', T.step1title);
-  setText('#dt-step1text', T.step1text);
-  setText('#dt-step2title', T.step2title);
-  set('#dt-step2body', T.step2body);
-  setText('#dt-step3title', T.step3title);
-  setText('#dt-step3text', T.step3text);
-  setText('#dt-score1', T.score1);
-  setText('#dt-teamStep1title', T.teamStep1title);
-  setText('#dt-teamStep1text', T.teamStep1text);
-  setText('#dt-teamStep2title', T.teamStep2title);
-  setText('#dt-teamStep2text', T.teamStep2text);
-  setText('#dt-score2', T.score2);
+  setText('#dt-task1Label', T.task1Label);
+  setText('#dt-task1Title', T.task1Title);
+  setText('#dt-task1Text', T.task1Text);
+  setText('#dt-task1Score', T.task1Score);
+  setText('#dt-task2Label', T.task2Label);
+  setText('#dt-task2Title', T.task2Title);
+  setText('#dt-task2Text', T.task2Text);
+  setText('#dt-task2Score', T.task2Score);
+  setText('#dt-task3Label', T.task3Label);
+  setText('#dt-task3Title', T.task3Title);
+  setText('#dt-task3Text', T.task3Text);
+  setText('#dt-task3Score', T.task3Score);
   setText('#dt-cascadeLabel', T.cascadeLabel);
   setText('#dt-cascSoloSub', T.cascSoloSub);
   setText('#dt-cascTeam', T.cascTeam);
@@ -727,17 +738,21 @@ function applyLang(l) {
         '<a href="'+href+'" style="display:block;text-align:center;background:'+colorBg+';color:#FAF5EF;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.75rem;text-decoration:none;">'+em+'</a>'+
         '</div>';
     }
+    var yr = l==='en' ? 'year' : 'rok';
     licCards.innerHTML =
-      licCard('#B8882A','#8B2E14','licCity','licCityDesc',[['licCity1','49 €/rok'],['licCity2','149 €/rok'],['licCity3','399 €/rok']],'Záujem o licenciu: Mesto','License inquiry: City') +
-      licCard('#6B8A3A','#4A6129','licSchool','licSchoolDesc',[['licSch1','49 €/rok'],['licSch2','99 €/rok'],['licSch3','199 €/rok']],'Záujem o licenciu: Škola','License inquiry: School') +
-      licCard('#C4603A','#8B2E14','licFirm','licFirmDesc',[['licFirm1','99 €/rok'],['licFirm2','299 €/rok'],['licFirm3','699 €/rok']],'Záujem o licenciu: Firma','License inquiry: Company') +
-      licCard('#B8882A','#8B2E14','licRegion','licRegionDesc',[['licReg1','299 €/rok'],['licReg2','999 €/rok']],'Záujem o licenciu: Kraj alebo Štát','License inquiry: Region or Country');
+      licCard('#B8882A','#8B2E14','licCity','licCityDesc',[['licCity1','49 €/'+yr],['licCity2','149 €/'+yr],['licCity3','399 €/'+yr]],'Záujem o licenciu: Mesto','License inquiry: City') +
+      licCard('#6B8A3A','#4A6129','licSchool','licSchoolDesc',[['licSch1','49 €/'+yr],['licSch2','99 €/'+yr],['licSch3','199 €/'+yr]],'Záujem o licenciu: Škola','License inquiry: School') +
+      licCard('#C4603A','#8B2E14','licFirm','licFirmDesc',[['licFirm1','99 €/'+yr],['licFirm2','299 €/'+yr],['licFirm3','699 €/'+yr]],'Záujem o licenciu: Firma','License inquiry: Company') +
+      licCard('#B8882A','#8B2E14','licRegion','licRegionDesc',[['licReg1','299 €/'+yr],['licReg2','999 €/'+yr]],'Záujem o licenciu: Kraj alebo Štát','License inquiry: Region or Country');
   }
 
   // Footer
   set('#dt-footer', T.footer);
   setText('#dt-footerPlay', T.footerPlay);
 
+  setText('#dt-footer', T.footer);
+  setText('#dt-footerPlay', T.footerPlay);
+  setText('#dt-navWhy', T.navWhy);
   // Switcher button
   var btn = document.getElementById('lang-switcher');
   if(btn) btn.textContent = l === 'sk' ? 'EN' : 'SK';
@@ -769,6 +784,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <li><a href="#projekt" id="dt-navProject">Projekt</a></li>
     <li><a href="#o-mne" id="dt-navAbout">O mne</a></li>
     <li><a href="#licencie" id="dt-navLicenses">Licencie</a></li>
+    <li><a href="why_index.html" id="dt-navWhy" style="opacity:.65;font-size:.8rem;">Prečo hrať</a></li>
     <li><a href="game.html" class="nav-cta" id="dt-navPlay">Hrať</a></li>
   </ul>
 <button id="lang-switcher" onclick="idxSetLang(idxGetLang()==='sk'?'en':'sk')" style="font-family:'DM Mono',monospace;font-size:.65rem;padding:.35rem .7rem;background:rgba(28,23,17,0.08);border:1px solid rgba(28,23,17,0.15);color:rgba(28,23,17,0.6);cursor:pointer;letter-spacing:.08em;">EN</button>
@@ -781,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function(){
   <p id="dt-heroSub">WHO vyhlásila krízu samoty epidémiou. Táto hra je odpoveďou — získavaš body za každé skutočné spojenie s iným človekom.</p>
   <div class="hero-stats">
     <div class="hero-stat">
-      <div class="n">1 z 4</div>
+      <div class="n" id="dt-heroStatNum">1 z 4</div>
       <div class="l" id="dt-heroStat1">ľudí na svete trpí osamotenosťou — WHO, 2023</div>
     </div>
     <div class="hero-stat">

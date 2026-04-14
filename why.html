@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="i-title">Prečo hrať — Hra na radosť zo života</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0E0B07;--ink:#FAF5EF;--ink2:rgba(250,245,239,0.55);
+  --ink3:rgba(250,245,239,0.25);--ink4:rgba(250,245,239,0.08);
+  --gold:#B8882A;--red:#8B2E14;--orange:#C4603A;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.8;overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.75rem 2rem;background:rgba(14,11,7,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--ink4);}
+.nav-logo{font-family:var(--sans);font-size:.65rem;font-weight:500;color:var(--ink3);letter-spacing:.12em;text-decoration:none;text-transform:uppercase;}
+.nav-cta{font-family:var(--mono);font-size:.62rem;color:var(--ink);background:var(--red);padding:.4rem 1rem;text-decoration:none;letter-spacing:.08em;transition:background .2s;}
+.nav-cta:hover{background:var(--orange);}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:8rem 2rem 5rem;max-width:680px;margin:0 auto;}
+.eyebrow{font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;opacity:0;animation:up .6s .2s forwards;}
+.hero h1{font-family:var(--serif);font-size:clamp(2.6rem,6.5vw,4.5rem);font-weight:300;line-height:1.15;margin-bottom:2rem;opacity:0;animation:up .7s .35s forwards;}
+.hero h1 em{font-style:italic;color:var(--gold);}
+.hero-sub{font-size:1.05rem;color:var(--ink2);line-height:1.95;max-width:520px;opacity:0;animation:up .7s .5s forwards;}
+
+/* QUESTION */
+.q-wrap{max-width:680px;margin:0 auto;padding:5rem 2rem 0;opacity:0;animation:up .7s .65s forwards;}
+.q-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin-bottom:1.25rem;}
+.q-text{font-family:var(--serif);font-size:clamp(1.5rem,3.8vw,2.2rem);font-weight:300;font-style:italic;color:var(--ink);line-height:1.3;margin-bottom:2rem;}
+.opts{display:flex;flex-direction:column;gap:.5rem;}
+.opt{display:flex;align-items:center;gap:1rem;padding:.85rem 1.2rem;border:1px solid var(--ink4);cursor:pointer;transition:all .18s;font-family:var(--sans);font-size:.88rem;color:var(--ink2);background:transparent;text-align:left;width:100%;}
+.opt:hover{border-color:rgba(184,136,42,0.3);color:var(--ink);background:rgba(184,136,42,0.04);}
+.opt.sel{border-color:var(--gold);color:var(--ink);background:rgba(184,136,42,0.07);}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid var(--ink3);transition:all .18s;}
+.opt.sel .dot{background:var(--gold);border-color:var(--gold);}
+
+/* REVEAL */
+.reveal{max-width:680px;margin:0 auto;padding:4rem 2rem 0;display:none;}
+.reveal.on{display:block;}
+.arg{border-left:2px solid rgba(184,136,42,0.25);padding:0 0 3.5rem 2rem;opacity:0;transform:translateY(18px);transition:opacity .5s,transform .5s;display:none;}
+.arg.on{display:block;}
+.arg.vis{opacity:1;transform:none;}
+.arg-tag{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem;}
+.arg h2{font-family:var(--serif);font-size:clamp(1.4rem,3.5vw,1.9rem);font-weight:300;line-height:1.25;margin-bottom:1rem;}
+.arg h2 em{font-style:italic;}
+.arg p{font-size:1rem;color:var(--ink2);line-height:1.9;margin-bottom:1rem;}
+.arg p strong{color:var(--ink);font-weight:400;}
+.arg p em{font-style:italic;color:rgba(184,136,42,0.8);}
+.big-num{font-family:var(--serif);font-size:clamp(2.5rem,6vw,3.8rem);font-weight:300;color:var(--gold);line-height:1;display:block;margin:.5rem 0 .1rem;}
+.big-label{font-family:var(--mono);font-size:.58rem;color:var(--ink3);letter-spacing:.08em;display:block;margin-bottom:1.25rem;}
+sup{font-size:.5rem;color:var(--gold);vertical-align:super;}
+
+/* FOOTNOTES */
+.fns{max-width:680px;margin:2rem auto 0;padding:2rem 2rem 3rem;border-top:1px solid var(--ink4);display:none;}
+.fns.on{display:block;}
+.fns-label{font-family:var(--mono);font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin-bottom:1.25rem;}
+.fn{font-family:var(--mono);font-size:.58rem;color:var(--ink3);line-height:1.8;margin-bottom:.4rem;display:none;}
+.fn.on{display:block;}
+.fn a{color:var(--gold);text-decoration:none;}
+
+/* CTA */
+.cta-wrap{max-width:680px;margin:0 auto;padding:3rem 2rem 6rem;text-align:center;display:none;}
+.cta-wrap.on{display:block;}
+.cta-wrap p{font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--ink2);margin-bottom:2rem;line-height:1.8;}
+.cta-btn{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--red);padding:1rem 2.5rem;text-decoration:none;transition:background .2s;}
+.cta-btn:hover{background:var(--orange);}
+
+@keyframes up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo" id="i-nav-logo">Hra proti samote</a>
+  <button id="lang-btn" onclick="wSetLang(wLang()==='sk'?'en':'sk')" style="font-family:'DM Mono',monospace;font-size:.6rem;padding:.3rem .6rem;background:transparent;border:1px solid rgba(250,245,239,0.15);color:rgba(250,245,239,0.4);cursor:pointer;letter-spacing:.08em;margin-right:.5rem;">EN</button><a href="game.html" class="nav-cta" id="i-nav-cta">Hrať →</a>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow" id="i-eyebrow">Pre koho je táto hra</div>
+  <h1 id="i-h1">Kedy si naposledy<br>spoznal niekoho<br><em>skutočne nového?</em></h1>
+  <p class="hero-sub" id="i-hero-sub">
+    Nie kolegu z práce. Nie kamaráta kamaráta na večierku.
+    Niekoho cudzieho — na ulici, v kaviarni, vo vlaku.
+    Niekoho, koho príbeh si nepoznal.
+  </p>
+</section>
+
+<div class="q-wrap">
+  <div class="q-label" id="i-q-label">Skôr než začneš</div>
+  <div class="q-text" id="i-q-text">Čo ťa sem priviedlo?</div>
+  <div class="opts" id="opts">
+    <button class="opt" data-v="lonely" onclick="pick(this)">
+      <div class="dot"></div>
+      <span id="i-opt-lonely">Niekedy sa cítim sám, aj keď okolo mňa sú ľudia</span>
+    </button>
+    <button class="opt" data-v="meaning" onclick="pick(this)">
+      <div class="dot"></div>
+      <span id="i-opt-meaning">Hľadám niečo zmysluplné — niečo čo ma presahuje</span>
+    </button>
+    <button class="opt" data-v="community" onclick="pick(this)">
+      <div class="dot"></div>
+      <span id="i-opt-community">Záleží mi na komunite, meste, svete okolo mňa</span>
+    </button>
+    <button class="opt" data-v="curious" onclick="pick(this)">
+      <div class="dot"></div>
+      <span id="i-opt-curious">Som zvedavý — zaujímajú ma ľudia a ich príbehy</span>
+    </button>
+    <button class="opt" data-v="health" onclick="pick(this)">
+      <div class="dot"></div>
+      <span id="i-opt-health">Zaujíma ma veda — čo sociálne väzby robia s telom a mysľou</span>
+    </button>
+  </div>
+  <button id="submit-btn" onclick="submit()" style="
+    display:none;
+    margin-top:1.5rem;
+    font-family:'DM Mono',monospace;font-size:.68rem;
+    letter-spacing:.12em;text-transform:uppercase;
+    color:#FAF5EF;background:#8B2E14;
+    border:none;padding:.9rem 2rem;cursor:pointer;
+    transition:background .2s;width:100%;"
+    onmouseover="this.style.background='#C4603A'"
+    onmouseout="this.style.background='#8B2E14'"><span id="i-submit">Zobraziť</span> →
+  </button>
+</div>
+
+<div class="reveal" id="reveal">
+
+  <div class="arg" id="a-lonely">
+    <div class="arg-tag" id="i-tag-lonely">Pre tých, čo sa niekedy cítia sami</div>
+    <h2 id="i-h2-lonely">Osamelosť nie je charakter.<br><em>Je to stav.</em></h2>
+    <p id="i-p1-lonely">Väčšina ľudí si myslí, že sa cítiť sám znamená byť introvert alebo mať niečo "zle". Nie je to tak. Osamelosť je evolučný signál — rovnaký ako hlad. Hovorí: <em>potrebuješ prepojenie.</em></p>
+    <p id="i-p2-lonely"><strong>Ale tu je paradox:</strong> keď sme osamelí, zvyčajne sa stiahneme. Stávame sa opatrnejšími, viac pozorujeme hrozby, menej dôverujeme. Mozog prepne do obranného režimu — a to nás izoluje ešte viac.<sup>1</sup></p>
+    <span class="big-num" id="i-stat-lonely">1 z 4</span>
+    <span class="big-label" id="i-stat-lonely-l">dospelých v Európe sa cíti osamelo pravidelne — WHO, 2023</span>
+    <p id="i-p3-lonely">Hra nie je terapia. Ale je to <em>konkrétna akcia</em> — a konkrétna akcia prerušuje cyklus. Každý človek, ktorého oslovíš, je dôkaz pre tvoj mozog: svet je bezpečný. Ľudia reagujú. Som schopný sa priblížiť.</p>
+  </div>
+
+  <div class="arg" id="a-meaning">
+    <div class="arg-tag" id="i-tag-meaning">Pre tých, čo hľadajú zmysel</div>
+    <h2 id="i-h2-meaning">Najdlhšia štúdia šťastia<br><em>dala jednoznačnú odpoveď.</em></h2>
+    <p id="i-p1-meaning">Od roku 1938 sledujú vedci z Harvardu životy 724 mužov — od štúdentov po vojnových veteránov. Osemdesiat rokov. Štyri generácie výskumníkov.</p>
+    <p id="i-p2-meaning">Záver? <strong>Nie kariéra. Nie peniaze. Nie sláva.</strong> Jediný najspoľahlivejší prediktor dlhého, šťastného a zdravého života bola <em>kvalita vzťahov.</em><sup>2</sup></p>
+    <p id="i-p3-meaning">Nie ich počet — ich hĺbka. A hĺbka sa buduje kontaktom. Opakovaným, zámerným, odvážnym kontaktom s ľuďmi okolo nás — vrátane tých, ktorých ešte nepoznáme.</p>
+  </div>
+
+  <div class="arg" id="a-community">
+    <div class="arg-tag" id="i-tag-community">Pre tých, komu záleží na komunite</div>
+    <h2 id="i-h2-community">Sociálny kapitál nie je<br><em>metafora.</em></h2>
+    <p id="i-p1-community">Robert Putnam strávil desaťročia skúmaním prečo niektoré komunity fungujú a iné nie. Záver: záleží na počte <em>mostov medzi ľuďmi.</em> Nie na inštitúciách, nie na pravidlách — na tom, či sa ľudia poznajú naprieč skupinami.<sup>3</sup></p>
+    <p id="i-p2-community">Každý cudzí človek, ktorého oslovíš, je premostenie. Ty — lekár a ten — vodič. Ty — veriaci a ten — ateista. Ty z centra a ten z predmestia. <strong>Tieto mosty sú tkanivom spoločnosti.</strong></p>
+    <p id="i-p3-community">A mosty sa nestavajú zhora. Stavajú sa jedným podaním ruky naraz.</p>
+  </div>
+
+  <div class="arg" id="a-curious">
+    <div class="arg-tag" id="i-tag-curious">Pre zvedavých</div>
+    <h2 id="i-h2-curious">Každý človek je<br><em>encyklopédia, ktorú si neprečítal.</em></h2>
+    <p id="i-p1-curious">Taxikár, ktorý prešiel päť krajín. Pekárka, ktorá vie všetko o kvasení. Dôchodca, ktorý pamätá prvý počítač v meste. Tínedžer, ktorý vie o hudbe veci, o ktorých netušíš že existujú.</p>
+    <p id="i-p2-curious">Oslovovanie cudzích ľudí je <em>najlacnejší spôsob ako rozšíriť pohľad na svet</em> — lacnejší ako knihy, rýchlejší ako kurzy, a nesmierne osobnejší ako čokoľvek online.</p>
+    <p id="i-p3-curious"><strong>Vedci to nazývajú "slabé väzby".</strong> Paradoxne práve ľudia, ktorých dobre nepoznáme, nám prinášajú najviac nových informácií, príležitostí a perspektív.<sup>4</sup></p>
+  </div>
+
+  <div class="arg" id="a-health">
+    <div class="arg-tag" id="i-tag-health">Pre tých, komu záleží na dátach</div>
+    <h2 id="i-h2-health">Osamelosť zabíja.<br><em>Presne vieme ako.</em></h2>
+    <p id="i-p1-health">Julianne Holt-Lunstad analyzovala 148 štúdií s 308 000 účastníkmi. Záver bol jednoznačný:</p>
+    <span class="big-num" id="i-stat1-health">+29 %</span>
+    <span class="big-label" id="i-stat1-health-l">vyššie riziko kardiovaskulárnych chorôb pri chronickej osamelostilatosti<sup>5</sup></span>
+    <span class="big-num" id="i-stat2-health">+26 %</span>
+    <span class="big-label" id="i-stat2-health-l">vyššie riziko predčasnej smrti oproti sociálne zapojeným ľuďom<sup>5</sup></span>
+    <p id="i-p2-health"><strong>Porovnanie? Rovnaké riziko ako fajčenie 15 cigariet denne.</strong> Väčšie ako obezita alebo fyzická neaktivita.</p>
+    <p id="i-p3-health">Mechanizmus je jasný: sociálna izolácia zvyšuje kortizol, narúša spánok, oslabuje imunitu. <em>Telo potrebuje druhých biologicky</em> — nie len psychologicky.<sup>6</sup> A opačne — každá pozitívna interakcia uvoľňuje oxytocín, znižuje stres a posilňuje imunitný systém. Merateľne. Opakovane potvrdené.</p>
+  </div>
+
+</div>
+
+<div class="fns" id="fns">
+  <div class="fns-label" id="i-fns-label">Zdroje</div>
+  <div class="fn" id="fn1"><sup>1</sup> Cacioppo, J. T. & Hawkley, L. C. (2009). Perceived social isolation and cognition. <em>Trends in Cognitive Sciences, 13(10)</em>, 447–454. <a href="https://doi.org/10.1016/j.tics.2009.06.005" target="_blank">doi.org/10.1016/j.tics.2009.06.005</a></div>
+  <div class="fn" id="fn2"><sup>2</sup> Waldinger, R. & Schulz, M. (2023). <em>The Good Life.</em> Simon & Schuster. Tiež: <a href="https://www.adultdevelopmentstudy.org" target="_blank">adultdevelopmentstudy.org</a></div>
+  <div class="fn" id="fn3"><sup>3</sup> Putnam, R. D. (2000). <em>Bowling Alone: The Collapse and Revival of American Community.</em> Simon & Schuster.</div>
+  <div class="fn" id="fn4"><sup>4</sup> Granovetter, M. S. (1973). The Strength of Weak Ties. <em>American Journal of Sociology, 78(6)</em>, 1360–1380. <a href="https://doi.org/10.1086/225469" target="_blank">doi.org/10.1086/225469</a></div>
+  <div class="fn" id="fn5"><sup>5</sup> Holt-Lunstad, J., Smith, T. B. & Layton, J. B. (2010). Social Relationships and Mortality Risk. <em>PLOS Medicine, 7(7)</em>. <a href="https://doi.org/10.1371/journal.pmed.1000316" target="_blank">doi.org/10.1371/journal.pmed.1000316</a></div>
+  <div class="fn" id="fn6"><sup>6</sup> Uchino, B. N. (2006). Social Support and Health: A Review of Physiological Processes. <em>Journal of Behavioral Medicine, 29(4)</em>, 377–387.</div>
+</div>
+
+<div class="cta-wrap" id="cta">
+  <p id="i-cta-p">Prvý krok je absurdne malý.<br>Jedno slovo. Jeden pohľad. Jedna sekunda odvahy.</p>
+  <a href="game.html" class="cta-btn" id="i-cta-btn">Začni hrať →</a>
+</div>
+
+<script>
+const MAP = {
+  lonely:    { args:['a-lonely'],    fns:['fn1'] },
+  meaning:   { args:['a-meaning'],   fns:['fn2'] },
+  community: { args:['a-community'], fns:['fn3'] },
+  curious:   { args:['a-curious'],   fns:['fn4'] },
+  health:    { args:['a-health'],    fns:['fn5','fn6'] },
+};
+const ALL_ARGS = ['a-lonely','a-meaning','a-community','a-curious','a-health'];
+const ALL_FNS  = ['fn1','fn2','fn3','fn4','fn5','fn6'];
+
+function pick(el){
+  el.classList.toggle('sel');
+  // Show submit button only when something is selected
+  const anySelected = document.querySelectorAll('.opt.sel').length > 0;
+  document.getElementById('submit-btn').style.display = anySelected ? 'block' : 'none';
+}
+
+function submit(){
+  const sel = [...document.querySelectorAll('.opt.sel')].map(e=>e.dataset.v);
+  if(sel.length === 0) return;
+
+  const showArgs = new Set(), showFns = new Set();
+  sel.forEach(v=>{ if(MAP[v]){ MAP[v].args.forEach(a=>showArgs.add(a)); MAP[v].fns.forEach(f=>showFns.add(f)); } });
+
+  // Show sections
+  document.getElementById('reveal').classList.add('on');
+  document.getElementById('fns').classList.toggle('on', showFns.size > 0);
+  document.getElementById('cta').classList.add('on');
+
+  // Show matching args with staggered animation
+  let delay = 0;
+  ALL_ARGS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(showArgs.has(id)){
+      el.classList.add('on');
+      setTimeout(()=>el.classList.add('vis'), delay);
+      delay += 180;
+    } else {
+      el.classList.remove('vis','on');
+    }
+  });
+
+  ALL_FNS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.classList.toggle('on', showFns.has(id));
+  });
+
+  // Hide submit button and lock options
+  document.getElementById('submit-btn').style.display = 'none';
+  document.querySelectorAll('.opt').forEach(o=>{
+    o.style.pointerEvents = 'none';
+    o.style.cursor = 'default';
+  });
+
+  // Scroll to results
+  setTimeout(()=>document.getElementById('reveal').scrollIntoView({behavior:'smooth',block:'start'}), 100);
+}
+</script>
+
+<script>
+// ── i18n ───────────────────────────────────────────────────
+const WHY_LANG_KEY='hps:lang';
+function wLang(){return localStorage.getItem(WHY_LANG_KEY)||((navigator.language||'en').toLowerCase().startsWith('sk')||(navigator.language||'en').toLowerCase().startsWith('cs')?'sk':'en');}
+function wSetLang(l){localStorage.setItem(WHY_LANG_KEY,l);wApply(l);}
+
+const WT={
+  sk:{
+    title:'Prečo hrať — Hra na radosť zo života',
+    navLogo:'Hra proti samote', navCta:'Hrať →',
+    eyebrow:'Pre koho je táto hra',
+    h1:'Kedy si naposledy<br>spoznal niekoho<br><em>skutočne nového?</em>',
+    heroSub:'Nie kolegu z práce. Nie kamaráta kamaráta na večierku. Niekoho cudzieho — na ulici, v kaviarni, vo vlaku. Niekoho, koho príbeh si nepoznal.',
+    qLabel:'Skôr než začneš', qText:'Čo ťa sem priviedlo?',
+    optLonely:'Niekedy sa cítim sám, aj keď okolo mňa sú ľudia',
+    optMeaning:'Hľadám niečo zmysluplné — niečo čo ma presahuje',
+    optCommunity:'Záleží mi na komunite, meste, svete okolo mňa',
+    optCurious:'Som zvedavý — zaujímajú ma ľudia a ich príbehy',
+    optHealth:'Zaujíma ma veda — čo sociálne väzby robia s telom a mysľou',
+    submit:'Zobraziť',
+    fnsLabel:'Zdroje',
+    ctaP:'Prvý krok je absurdne malý.<br>Jedno slovo. Jeden pohľad. Jedna sekunda odvahy.',
+    ctaBtn:'Začni hrať →',
+    backLink:'← Prečo hrať',
+    // Arguments
+    tagLonely:'Pre tých, čo sa niekedy cítia sami',
+    h2Lonely:'Osamelosť nie je charakter.<br><em>Je to stav.</em>',
+    p1Lonely:'Väčšina ľudí si myslí, že sa cítiť sám znamená byť introvert alebo mať niečo "zle". Nie je to tak. Osamelosť je evolučný signál — rovnaký ako hlad. Hovorí: <em>potrebuješ prepojenie.</em>',
+    p2Lonely:'<strong>Ale tu je paradox:</strong> keď sme osamelí, zvyčajne sa stiahneme. Stávame sa opatrnejšími, viac pozorujeme hrozby, menej dôverujeme. Mozog prepne do obranného režimu — a to nás izoluje ešte viac.<sup>1</sup>',
+    statLonely:'1 z 4',
+    statLonelyL:'dospelých v Európe sa cíti osamelo pravidelne — WHO, 2023',
+    p3Lonely:'Hra nie je terapia. Ale je to <em>konkrétna akcia</em> — a konkrétna akcia prerušuje cyklus. Každý človek, ktorého oslovíš, je dôkaz pre tvoj mozog: svet je bezpečný. Ľudia reagujú. Som schopný sa priblížiť.',
+    tagMeaning:'Pre tých, čo hľadajú zmysel',
+    h2Meaning:'Najdlhšia štúdia šťastia<br><em>dala jednoznačnú odpoveď.</em>',
+    p1Meaning:'Od roku 1938 sledujú vedci z Harvardu životy 724 mužov — od štúdentov po vojnových veteránov. Osemdesiat rokov. Štyri generácie výskumníkov.',
+    p2Meaning:'Záver? <strong>Nie kariéra. Nie peniaze. Nie sláva.</strong> Jediný najspoľahlivejší prediktor dlhého, šťastného a zdravého života bola <em>kvalita vzťahov.</em><sup>2</sup>',
+    p3Meaning:'Nie ich počet — ich hĺbka. A hĺbka sa buduje kontaktom. Opakovaným, zámerným, odvážnym kontaktom s ľuďmi okolo nás — vrátane tých, ktorých ešte nepoznáme.',
+    tagCommunity:'Pre tých, komu záleží na komunite',
+    h2Community:'Sociálny kapitál nie je<br><em>metafora.</em>',
+    p1Community:'Robert Putnam strávil desaťročia skúmaním prečo niektoré komunity fungujú a iné nie. Záver: záleží na počte <em>mostov medzi ľuďmi.</em> Nie na inštitúciách, nie na pravidlách — na tom, či sa ľudia poznajú naprieč skupinami.<sup>3</sup>',
+    p2Community:'Každý cudzí človek, ktorého oslovíš, je premostenie. Ty — lekár a ten — vodič. Ty — veriaci a ten — ateista. Ty z centra a ten z predmestia. <strong>Tieto mosty sú tkanivom spoločnosti.</strong>',
+    p3Community:'A mosty sa nestavajú zhora. Stavajú sa jedným podaním ruky naraz.',
+    tagCurious:'Pre zvedavých',
+    h2Curious:'Každý človek je<br><em>encyklopédia, ktorú si neprečítal.</em>',
+    p1Curious:'Taxikár, ktorý prešiel päť krajín. Pekárka, ktorá vie všetko o kvasení. Dôchodca, ktorý pamätá prvý počítač v meste. Tínedžer, ktorý vie o hudbe veci, o ktorých netušíš že existujú.',
+    p2Curious:'Oslovovanie cudzích ľudí je <em>najlacnejší spôsob ako rozšíriť pohľad na svet</em> — lacnejší ako knihy, rýchlejší ako kurzy, a nesmierne osobnejší ako čokoľvek online.',
+    p3Curious:'<strong>Vedci to nazývajú "slabé väzby".</strong> Paradoxne práve ľudia, ktorých dobre nepoznáme, nám prinášajú najviac nových informácií, príležitostí a perspektív.<sup>4</sup>',
+    tagHealth:'Pre tých, komu záleží na dátach',
+    h2Health:'Osamelosť zabíja.<br><em>Presne vieme ako.</em>',
+    p1Health:'Julianne Holt-Lunstad analyzovala 148 štúdií s 308 000 účastníkmi. Záver bol jednoznačný:',
+    stat1Health:'+29 %', stat1HealthL:'vyššie riziko kardiovaskulárnych chorôb pri chronickej osamelostilatosti<sup>5</sup>',
+    stat2Health:'+26 %', stat2HealthL:'vyššie riziko predčasnej smrti oproti sociálne zapojeným ľuďom<sup>5</sup>',
+    p2Health:'<strong>Porovnanie? Rovnaké riziko ako fajčenie 15 cigariet denne.</strong> Väčšie ako obezita alebo fyzická neaktivita.',
+    p3Health:'Mechanizmus je jasný: sociálna izolácia zvyšuje kortizol, narúša spánok, oslabuje imunitu. <em>Telo potrebuje druhých biologicky</em> — nie len psychologicky.<sup>6</sup> A opačne — každá pozitívna interakcia uvoľňuje oxytocín, znižuje stres a posilňuje imunitný systém. Merateľne. Opakovane potvrdené.',
+    fnsTitle:'Zdroje',
+  },
+  en:{
+    title:'Why play — Joy of Living',
+    navLogo:'Hra proti samote', navCta:'Play →',
+    eyebrow:'Who is this game for',
+    h1:'When did you last<br>meet someone<br><em>truly new?</em>',
+    heroSub:'Not a work colleague. Not a friend of a friend at a party. Someone genuinely unknown — on the street, in a café, on a train. Someone whose story you had no idea about.',
+    qLabel:'Before you start', qText:'What brought you here?',
+    optLonely:'I sometimes feel lonely, even when people are around me',
+    optMeaning:'I am looking for something meaningful — something bigger than myself',
+    optCommunity:'I care about my community, my city, the world around me',
+    optCurious:'I am curious — people and their stories fascinate me',
+    optHealth:'I am interested in science — what social bonds do to body and mind',
+    submit:'Show me',
+    fnsLabel:'Sources',
+    ctaP:'The first step is absurdly small.<br>One word. One glance. One second of courage.',
+    ctaBtn:'Start playing →',
+    backLink:'← Why play',
+    tagLonely:'For those who sometimes feel lonely',
+    h2Lonely:'Loneliness is not a character trait.<br><em>It is a state.</em>',
+    p1Lonely:'Most people think feeling lonely means being introverted or having something "wrong" with them. It does not. Loneliness is an evolutionary signal — like hunger. It says: <em>you need connection.</em>',
+    p2Lonely:'<strong>But here is the paradox:</strong> when we are lonely, we tend to withdraw. We become more cautious, more threat-focused, less trusting. The brain switches to defensive mode — which isolates us even further.<sup>1</sup>',
+    statLonely:'1 in 4',
+    statLonelyL:'adults in Europe experience loneliness regularly — WHO, 2023',
+    p3Lonely:'The game is not therapy. But it is a <em>concrete action</em> — and a concrete action breaks the cycle. Every person you approach is proof for your brain: the world is safe. People respond. I can reach out.',
+    tagMeaning:'For those looking for meaning',
+    h2Meaning:'The longest happiness study<br><em>gave one clear answer.</em>',
+    p1Meaning:'Since 1938, Harvard researchers have followed the lives of 724 men — from students to war veterans. Eighty years. Four generations of researchers.',
+    p2Meaning:'The conclusion? <strong>Not career. Not money. Not fame.</strong> The single most reliable predictor of a long, happy and healthy life was <em>the quality of relationships.</em><sup>2</sup>',
+    p3Meaning:'Not their number — their depth. And depth is built through contact. Repeated, intentional, courageous contact with the people around us — including those we have not yet met.',
+    tagCommunity:'For those who care about community',
+    h2Community:'Social capital is not<br><em>a metaphor.</em>',
+    p1Community:'Robert Putnam spent decades studying why some communities thrive and others do not. The conclusion: what matters is the number of <em>bridges between people.</em> Not institutions, not rules — whether people know each other across groups.<sup>3</sup>',
+    p2Community:'Every stranger you approach is a bridge. You — a doctor, them — a driver. You — a believer, them — an atheist. You from the centre, them from the outskirts. <strong>These bridges are the fabric of society.</strong>',
+    p3Community:'And bridges are not built from above. They are built one handshake at a time.',
+    tagCurious:'For the curious',
+    h2Curious:'Every person is<br><em>an encyclopaedia you have not read.</em>',
+    p1Curious:'A taxi driver who has crossed five countries. A baker who knows everything about fermentation. A retired teacher who remembers the first computer in town. A teenager who knows things about music you did not know existed.',
+    p2Curious:'Approaching strangers is the <em>cheapest way to expand your view of the world</em> — cheaper than books, faster than courses, and far more personal than anything online.',
+    p3Curious:'<strong>Scientists call them "weak ties".</strong> Paradoxically, the people we do not know well bring us the most new information, opportunities and perspectives.<sup>4</sup>',
+    tagHealth:'For those who care about data',
+    h2Health:'Loneliness kills.<br><em>We know exactly how.</em>',
+    p1Health:'Julianne Holt-Lunstad analysed 148 studies with 308,000 participants. The conclusion was unambiguous:',
+    stat1Health:'+29%', stat1HealthL:'higher risk of cardiovascular disease with chronic loneliness<sup>5</sup>',
+    stat2Health:'+26%', stat2HealthL:'higher risk of premature death compared to socially connected people<sup>5</sup>',
+    p2Health:'<strong>For comparison? The same risk as smoking 15 cigarettes a day.</strong> Greater than obesity or physical inactivity.',
+    p3Health:'The mechanism is clear: social isolation raises cortisol, disrupts sleep, weakens immunity. <em>The body needs others biologically</em> — not just psychologically.<sup>6</sup> And in reverse — every positive interaction releases oxytocin, reduces stress and strengthens the immune system. Measurably. Repeatedly confirmed.',
+    fnsTitle:'Sources',
+  }
+};
+
+function wSet(id, html){ const el=document.getElementById(id); if(el) el.innerHTML=html; }
+function wTxt(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+
+function wApply(l){
+  const T=WT[l]||WT.sk;
+  document.documentElement.lang=l;
+  document.title=T.title;
+  wSet('i-title',T.title);
+  wTxt('i-nav-logo',T.navLogo);
+  wTxt('i-nav-cta',T.navCta);
+  wTxt('i-eyebrow',T.eyebrow);
+  wSet('i-h1',T.h1);
+  wTxt('i-hero-sub',T.heroSub);
+  wTxt('i-q-label',T.qLabel);
+  wTxt('i-q-text',T.qText);
+  wTxt('i-opt-lonely',T.optLonely);
+  wTxt('i-opt-meaning',T.optMeaning);
+  wTxt('i-opt-community',T.optCommunity);
+  wTxt('i-opt-curious',T.optCurious);
+  wTxt('i-opt-health',T.optHealth);
+  wTxt('i-submit',T.submit);
+  wTxt('i-fns-label',T.fnsLabel);
+  wSet('i-cta-p',T.ctaP);
+  wTxt('i-cta-btn',T.ctaBtn);
+  wTxt('i-back-link',T.backLink);
+
+  // Arguments - lonely
+  wTxt('i-tag-lonely',T.tagLonely); wSet('i-h2-lonely',T.h2Lonely);
+  wSet('i-p1-lonely',T.p1Lonely); wSet('i-p2-lonely',T.p2Lonely);
+  wTxt('i-stat-lonely',T.statLonely); wTxt('i-stat-lonely-l',T.statLonelyL);
+  wSet('i-p3-lonely',T.p3Lonely);
+  // meaning
+  wTxt('i-tag-meaning',T.tagMeaning); wSet('i-h2-meaning',T.h2Meaning);
+  wSet('i-p1-meaning',T.p1Meaning); wSet('i-p2-meaning',T.p2Meaning); wSet('i-p3-meaning',T.p3Meaning);
+  // community
+  wTxt('i-tag-community',T.tagCommunity); wSet('i-h2-community',T.h2Community);
+  wSet('i-p1-community',T.p1Community); wSet('i-p2-community',T.p2Community); wSet('i-p3-community',T.p3Community);
+  // curious
+  wTxt('i-tag-curious',T.tagCurious); wSet('i-h2-curious',T.h2Curious);
+  wSet('i-p1-curious',T.p1Curious); wSet('i-p2-curious',T.p2Curious); wSet('i-p3-curious',T.p3Curious);
+  // health
+  wTxt('i-tag-health',T.tagHealth); wSet('i-h2-health',T.h2Health);
+  wSet('i-p1-health',T.p1Health);
+  wTxt('i-stat1-health',T.stat1Health); wSet('i-stat1-health-l',T.stat1HealthL);
+  wTxt('i-stat2-health',T.stat2Health); wSet('i-stat2-health-l',T.stat2HealthL);
+  wSet('i-p2-health',T.p2Health); wSet('i-p3-health',T.p3Health);
+
+  // Switcher
+  const btn=document.getElementById('lang-btn');
+  if(btn) btn.textContent=l==='sk'?'EN':'SK';
+}
+
+document.addEventListener('DOMContentLoaded',()=>wApply(wLang()));
+</script>
+
+
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);z-index:200;
+  display:flex;align-items:center;gap:1rem;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+  padding:.5rem 1rem;border:1px solid rgba(255,255,255,0.08);">
+  <a href="why_index.html" style="font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,0.4);text-decoration:none;letter-spacing:.08em;border:1px solid rgba(255,255,255,0.15);padding:.25rem .6rem;transition:all .2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.15)'">← Prečo hrať</a>
+  <span style="color:rgba(255,255,255,0.1);font-size:.7rem;">|</span>
+  <a href="why_org.html" style="font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,0.3);text-decoration:none;letter-spacing:.08em;transition:color .2s;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">Firma</a>  <a href="why_school.html" style="font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,0.3);text-decoration:none;letter-spacing:.08em;transition:color .2s;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">Škola</a>  <a href="why_city.html" style="font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,0.3);text-decoration:none;letter-spacing:.08em;transition:color .2s;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">Mesto</a>  <a href="why_community.html" style="font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,0.3);text-decoration:none;letter-spacing:.08em;transition:color .2s;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">Komunita</a>
+</div>
+</body>
+</html>
