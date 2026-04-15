@@ -106,6 +106,7 @@ footer{border-top:1px solid rgba(250,245,239,0.06);padding:1.25rem 1.5rem;
     <button class="tab" onclick="switchTab('big')">Veľké skupiny</button>
     <button class="tab" onclick="switchTab('categories')">Kategórie</button>
     <button class="tab" onclick="switchTab('licenses')">Licencie</button>
+    <button class="tab" onclick="switchTab('funding')">Príspevky</button>
   </div>
 
   <!-- PLAYERS -->
@@ -139,6 +140,27 @@ footer{border-top:1px solid rgba(250,245,239,0.06);padding:1.25rem 1.5rem;
     <div class="divider"></div>
     <div class="lbl" style="margin-bottom:.75rem;">Všetky aktívne kategórie</div>
     <div id="categories-list"></div>
+  </div>
+
+  <!-- FUNDING -->
+  <div id="tab-funding" style="display:none;">
+    <div class="card-gold" style="margin-bottom:1rem;">
+      <div class="lbl" style="margin-bottom:.5rem;">Ako to funguje</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:rgba(250,245,239,.45);line-height:1.8;">
+        Keď hráč klikne "Prispieť", dostaneš e-mail na filip.halecka@gmail.com.<br>
+        Po prijatí platby manuálne aktualizuj sumu nižšie.<br>
+        Keď suma dosiahne cieľ, odomkni mesto v záložke Licencie.
+      </div>
+    </div>
+    <div class="lbl" style="margin-bottom:.75rem;">Aktualizovať príspevky k mestu</div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <input class="inp" style="flex:2;min-width:140px;margin:0;" id="funding-city" placeholder="Názov mesta (napr. prešov)">
+      <input class="inp" style="flex:1;min-width:80px;margin:0;" id="funding-amount" type="number" min="0" placeholder="Suma €" step="1">
+      <input class="inp" style="flex:1;min-width:80px;margin:0;" id="funding-target" type="number" min="1" placeholder="Cieľ € (default 49)" step="1">
+      <button class="btn btn-g" onclick="updateFunding()">Uložiť</button>
+    </div>
+    <div class="lbl" style="margin-bottom:.75rem;">Aktuálne príspevky</div>
+    <div id="funding-list"></div>
   </div>
 
   <!-- LICENSES -->
@@ -222,6 +244,75 @@ function showFlash(msg,error){
   setTimeout(()=>el.style.display='none',3500);
 }
 
+// ── Funding state ─────────────────────────────────────────────
+let allFunding={};
+
+async function loadFunding(){
+  if(USE_FIREBASE){try{allFunding=await dbGet('cities_funding')||{};}catch{allFunding={};}}
+  else{allFunding=lsGet('hps:cities_funding')||{};}
+}
+
+async function updateFunding(){
+  var city=(document.getElementById('funding-city').value||'').trim().toLowerCase();
+  var amount=parseFloat(document.getElementById('funding-amount').value)||0;
+  var target=parseFloat(document.getElementById('funding-target').value)||49;
+  if(!city){showFlash('Zadaj názov mesta.',true);return;}
+  var data={total:amount,target:target,updated:Date.now()};
+
+  // Save funding
+  if(USE_FIREBASE){try{await dbPut('cities_funding/'+city,data);}catch(e){showFlash('Chyba: '+e.message,true);return;}}
+  else{var f=lsGet('hps:cities_funding')||{};f[city]=data;lsSet('hps:cities_funding',f);}
+  allFunding[city]=data;
+
+  // AUTO-UNLOCK: if total >= target, grant city license automatically
+  if(amount>=target){
+    try{
+      var lic;
+      if(USE_FIREBASE){lic=(await dbGet('licensed'))||{};}
+      else{lic=lsGet('hps:licensed')||{};}
+      lic.cities=lic.cities||{};
+      if(!lic.cities[city]){
+        lic.cities[city]=true;
+        if(USE_FIREBASE){await dbPut('licensed',lic);}
+        else{lsSet('hps:licensed',lic);}
+        showFlash('🎉 Mesto "'+city+'" AUTO-ODOMKNUTÉ — cieľ splnený!');
+      }else{
+        showFlash('Príspevky aktualizované ✓ (mesto už má licenciu)');
+      }
+    }catch(e){showFlash('Funding uložený, ale auto-unlock zlyhal: '+e.message,true);}
+  }else{
+    showFlash('Príspevky pre "'+city+'" aktualizované ✓ ('+Math.round(amount/target*100)+'% z cieľa)');
+  }
+
+  document.getElementById('funding-city').value='';
+  document.getElementById('funding-amount').value='';
+  document.getElementById('funding-target').value='';
+  renderFunding();
+  // Refresh licenses tab too
+  if(USE_FIREBASE){try{var lic2=await dbGet('licensed');if(lic2)allLicensed=lic2;}catch{}}
+}
+
+function renderFunding(){
+  var el=document.getElementById('funding-list');if(!el)return;
+  var entries=Object.entries(allFunding).filter(function(kv){return kv[1];});
+  if(!entries.length){el.innerHTML='<div class="empty">Žiadne príspevky.</div>';return;}
+  el.innerHTML=entries.sort(function(a,b){return (b[1].total||0)-(a[1].total||0);}).map(function(kv){
+    var city=kv[0],d=kv[1];
+    var total=d.total||0,target=d.target||49;
+    var pct=Math.min(100,Math.round(total/target*100));
+    return '<div class="row" style="flex-direction:column;align-items:stretch;gap:.5rem;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+      +'<span style="font-weight:500;">'+esc(city)+'</span>'
+      +'<span class="mono" style="font-size:.75rem;color:#B8882A;">'+total+'€ / '+target+'€ ('+pct+'%)</span>'
+      +'</div>'
+      +'<div style="height:4px;background:rgba(250,245,239,.08);border-radius:2px;">'
+      +'<div style="height:100%;background:'+(pct>=100?'#4A7C59':'#B8882A')+';border-radius:2px;width:'+pct+'%;"></div>'
+      +'</div>'
+      +(d.updated?'<div class="mono" style="font-size:.55rem;color:rgba(250,245,239,.25);">Aktualizované: '+new Date(d.updated).toLocaleString('sk-SK')+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
 // ── Load all data ─────────────────────────────────────────
 async function loadAll(){
   if(USE_FIREBASE){
@@ -268,6 +359,7 @@ function renderCurrentTab(){
   else if(currentTab==='big') renderBig();
   else if(currentTab==='categories'){renderPending();renderCategories();}
   else if(currentTab==='licenses') renderLicenses();
+  else if(currentTab==='funding') renderFunding();
 }
 
 // ── PLAYERS ───────────────────────────────────────────────

@@ -355,6 +355,14 @@ const DB={
     if(USE_FIREBASE){try{return(await this._get('cities'))||{};}catch{}}
     return lsGet('hps:licensed_cities')||{};
   },
+  async getCityFunding(){
+    if(USE_FIREBASE){try{return(await this._get('cities_funding'))||{};}catch{}}
+    return lsGet('hps:cities_funding')||{};
+  },
+  async setCityFunding(cityKey,data){
+    if(USE_FIREBASE){try{await this._put('cities_funding/'+cityKey,data);return;}catch(e){console.warn(e);}}
+    const f=lsGet('hps:cities_funding')||{};f[cityKey]=data;lsSet('hps:cities_funding',f);
+  },
   async setPlayer(uid,data){
     if(USE_FIREBASE){try{await this._put('players/'+uid,data);return;}catch(e){console.warn(e);}}
     const p=lsGet('hps:players')||{};p[uid]=data;lsSet('hps:players',p);
@@ -944,6 +952,82 @@ function CityShop({me,onBack}){
 }
 
 
+// ── CITY CROWDFUNDING ROW ─────────────────────────────────────
+const CITY_LICENSE_PRICE = 49;
+const CONTACT_EMAIL = 'filip.halecka@gmail.com';
+
+function CityRow(item, i, me, licensed, cityFunding){
+  var cityKey = item.name.toLowerCase().trim();
+  var hasLicense = !!(licensed && licensed.cities && licensed.cities[cityKey]);
+  var isMyCity = item.name === me.city;
+  var funding = cityFunding[cityKey] || {total:0, target:CITY_LICENSE_PRICE};
+  var contributed = Math.min(funding.total || 0, funding.target || CITY_LICENSE_PRICE);
+  var target = funding.target || CITY_LICENSE_PRICE;
+  var pctFunded = Math.min(100, Math.round(contributed / target * 100));
+  var missing = Math.max(0, target - contributed);
+
+  function makeLink(){
+    var sub = encodeURIComponent('Príspevok k licencii: ' + item.name);
+    var body = encodeURIComponent('Dobrý deň,\n\nChcem prispieť k odomknutiu mesta ' + item.name + ' v hre Hra proti samote.\n\nSuma:  € (min. 1 €)\nMesto: ' + item.name + '\n\nĎakujem,');
+    return 'mailto:' + CONTACT_EMAIL + '?subject=' + sub + '&body=' + body;
+  }
+
+  if(hasLicense){
+    return R('div',{key:item.name,className:'row'},
+      R('div',{className:'row-rank'+(i===0?' r1':'')},i+1),
+      R('div',{className:'row-body'},
+        R('div',{className:'row-name'+(isMyCity?' me':'')}, item.name, isMyCity&&R(YouTag,null)),
+        R('div',{className:'row-sub'},item.players+' hráčov')
+      ),
+      R(Pts,{v:Math.round(item.points),me:isMyCity})
+    );
+  }
+
+  // Unlicensed — show funding bar
+  return R('div',{key:item.name,style:{padding:'.75rem 0',borderBottom:'1px solid rgba(250,245,239,0.05)'}},
+    R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'.5rem'}},
+      R('div',{className:'row-rank'+(i===0?' r1':'')},i+1),
+      R('div',{className:'row-body'},
+        R('div',{className:'row-name'+(isMyCity?' me':'')}, item.name, isMyCity&&R(YouTag,null)),
+        R('div',{className:'row-sub'},item.players+' hráčov')
+      ),
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.9rem',
+        color:'rgba(250,245,239,0.13)',letterSpacing:'.12em',flexShrink:0,userSelect:'none'}},'• • •')
+    ),
+    R('div',{style:{
+      marginLeft:'2.25rem',background:'rgba(250,245,239,0.03)',
+      border:'1px solid rgba(250,245,239,0.07)',padding:'.55rem .75rem',
+    }},
+      R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.35rem'}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
+          letterSpacing:'.09em',textTransform:'uppercase',color:'rgba(250,245,239,0.28)'}},
+          isMyCity ? '🏙️ Tvoje mesto ešte nemá licenciu' : 'Bez licencie'
+        ),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+          color:pctFunded>0?'#B8882A':'rgba(250,245,239,0.2)',fontWeight:500}},
+          contributed+'€ / '+target+'€')
+      ),
+      R('div',{style:{height:'3px',background:'rgba(250,245,239,0.07)',borderRadius:'2px',marginBottom:'.45rem'}},
+        R('div',{style:{height:'100%',borderRadius:'2px',
+          background:pctFunded>=100?'#4A7C59':'#B8882A',
+          width:pctFunded+'%',transition:'width .5s',minWidth:pctFunded>0?'4px':'0'}})
+      ),
+      pctFunded < 100
+        ? R('div',{style:{display:'flex',alignItems:'center',gap:'.65rem'}},
+            R('a',{href:makeLink(),style:{
+              fontFamily:"'DM Mono',monospace",fontSize:'.55rem',letterSpacing:'.08em',
+              textTransform:'uppercase',color:'#FAF5EF',background:'#8B2E14',
+              padding:'.28rem .65rem',textDecoration:'none',display:'inline-block',flexShrink:0,
+            }},'+ Prispieť'),
+            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',color:'rgba(250,245,239,0.2)'}},
+              'chýba '+missing+'€ · min. 1€')
+          )
+        : R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',color:'#4A7C59'}},
+            '✓ Cieľ splnený — mesto sa čoskoro odomkne')
+    )
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────
 function App(){
   const[scr,setScr]=useState('loading');
@@ -996,6 +1080,7 @@ function App(){
   const[bgtab,setBgtab]=useState('create');
 
   const[lbTab,setLbTab]=useState('ind');
+  const[cityFunding,setCityFunding]=useState({});
   const[lbCatFilter,setLbCatFilter]=useState('');
   const offRef=useRef([]);
 
@@ -1010,7 +1095,7 @@ function App(){
           }catch(e){lsSet('hps:session',null);setScr('auth');return;}
         }
         const[pl,tm,bg,cats]=await Promise.all([
-          DB.getPlayers(),DB.getTeams(),DB.getBigGroups(),DB.getCategories()
+          DB.getPlayers(),DB.getTeams(),DB.getBigGroups(),DB.getCategories(),DB.getLicensed(),DB.getCityFunding()
         ]);
         setPlayers(pl);setTeams(tm);setBigGroups(bg);setCategories(cats);
         if(pl[sess.uid]){
@@ -1121,8 +1206,8 @@ function App(){
   }
 
   async function refreshAll(){
-    const[pl,tm,bg]=await Promise.all([DB.getPlayers(),DB.getTeams(),DB.getBigGroups()]);
-    setPlayers(pl);setTeams(tm);setBigGroups(bg);
+    const[pl,tm,bg,lic,cf]=await Promise.all([DB.getPlayers(),DB.getTeams(),DB.getBigGroups(),DB.getLicensed(),DB.getCityFunding()]);
+    setPlayers(pl);setTeams(tm);setBigGroups(bg);setLicensed(lic||{});setCityFunding(cf||{});
     // Refresh me from fresh players data
     const sess=lsGet('hps:session');
     if(sess&&sess.uid&&pl[sess.uid]) setMe(pl[sess.uid]);
@@ -1201,7 +1286,7 @@ function App(){
           setScr('verify');setBusy(false);return;
         }
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
-        const[pl,tm,bg,cats]=await Promise.all([DB.getPlayers(),DB.getTeams(),DB.getBigGroups(),DB.getCategories()]);
+        const[pl,tm,bg,cats]=await Promise.all([DB.getPlayers(),DB.getTeams(),DB.getBigGroups(),DB.getCategories(),DB.getLicensed(),DB.getCityFunding()]);
         setPlayers(pl);setTeams(tm);setBigGroups(bg);setCategories(cats);
         if(pl[res.localId]){
           const p=pl[res.localId];setMe(p);
@@ -2585,9 +2670,8 @@ myBigGroupList.length===0
           R('span',{style:S.pt},bg.points||0)))),
 
       // CITIES
-      lbTab==='city'&&R(FoggedList,{locked:false,lockMsg:''},
-        sCities.length===0?emptyRow('Žiadne mestá ešte.')
-        :sCities.map((item,i)=>geoRow(item,i,me.city))),
+      lbTab==='city'&&(sCities.length===0?emptyRow('Žiadne mestá ešte.')
+        :R('div',null,...sCities.map((item,i)=>CityRow(item,i,me,licensed,cityFunding)))),
 
       // REGIONS
       lbTab==='region'&&R(FoggedList,{locked:(me.points||0)<PLAY_CITY,lockMsg:(me.points||0)+'/'+PLAY_CITY+' bodov na odomknutie'},
