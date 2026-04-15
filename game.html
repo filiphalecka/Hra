@@ -956,6 +956,25 @@ function CityShop({me,onBack}){
 const CITY_LICENSE_PRICE = 49;
 const CONTACT_EMAIL = 'filip.halecka@gmail.com';
 
+// Small inline badge "ty" shown next to current player's city
+function YouTag(){
+  return R('span',{style:{
+    fontFamily:"'DM Mono',monospace",fontSize:'.45rem',
+    color:'#B8882A',border:'1px solid rgba(184,136,42,0.4)',
+    padding:'.1rem .3rem',marginLeft:'.4rem',
+    verticalAlign:'middle',letterSpacing:'.1em'
+  }},'ty');
+}
+
+// Points display for city rows
+function Pts({v, me: isMe}){
+  return R('span',{style:{
+    fontFamily:"'DM Mono',monospace",fontSize:'1.1rem',
+    fontWeight:500,color:isMe?'#B8882A':'rgba(184,136,42,0.45)',
+    flexShrink:0
+  }},v||0);
+}
+
 function CityRow(item, i, me, licensed, cityFunding){
   var cityKey = item.name.toLowerCase().trim();
   var hasLicense = !!(licensed && licensed.cities && licensed.cities[cityKey]);
@@ -966,18 +985,29 @@ function CityRow(item, i, me, licensed, cityFunding){
   var pctFunded = Math.min(100, Math.round(contributed / target * 100));
   var missing = Math.max(0, target - contributed);
 
-  function makeLink(){
+  const makeLink = () => {
     var sub = encodeURIComponent('Príspevok k licencii: ' + item.name);
     var body = encodeURIComponent('Dobrý deň,\n\nChcem prispieť k odomknutiu mesta ' + item.name + ' v hre Hra proti samote.\n\nSuma:  € (min. 1 €)\nMesto: ' + item.name + '\n\nĎakujem,');
     return 'mailto:' + CONTACT_EMAIL + '?subject=' + sub + '&body=' + body;
-  }
+  };
 
   if(hasLicense){
-    return R('div',{key:item.name,className:'row'},
-      R('div',{className:'row-rank'+(i===0?' r1':'')},i+1),
-      R('div',{className:'row-body'},
-        R('div',{className:'row-name'+(isMyCity?' me':'')}, item.name, isMyCity&&R(YouTag,null)),
-        R('div',{className:'row-sub'},item.players+' hráčov')
+    return R('div',{key:item.name,style:{
+      display:'flex',alignItems:'center',gap:'.75rem',padding:'.85rem 0',
+      borderBottom:'1px solid rgba(250,245,239,0.07)',
+      background:isMyCity?'rgba(184,136,42,0.06)':'transparent',
+      borderLeft:isMyCity?'2px solid rgba(184,136,42,0.5)':'2px solid transparent',
+      paddingLeft:isMyCity?'.5rem':0
+    }},
+      R(RankBadge,{i}),
+      R('div',{style:{flex:1}},
+        R('div',{style:{
+          fontFamily:"'Syne',sans-serif",fontSize:'.88rem',
+          fontWeight:isMyCity?500:400,
+          color:isMyCity?'#FAF5EF':'rgba(250,245,239,0.68)'
+        }}, item.name, isMyCity&&R(YouTag,null)),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},item.players+' hráčov')
       ),
       R(Pts,{v:Math.round(item.points),me:isMyCity})
     );
@@ -986,10 +1016,15 @@ function CityRow(item, i, me, licensed, cityFunding){
   // Unlicensed — show funding bar
   return R('div',{key:item.name,style:{padding:'.75rem 0',borderBottom:'1px solid rgba(250,245,239,0.05)'}},
     R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'.5rem'}},
-      R('div',{className:'row-rank'+(i===0?' r1':'')},i+1),
-      R('div',{className:'row-body'},
-        R('div',{className:'row-name'+(isMyCity?' me':'')}, item.name, isMyCity&&R(YouTag,null)),
-        R('div',{className:'row-sub'},item.players+' hráčov')
+      R(RankBadge,{i}),
+      R('div',{style:{flex:1}},
+        R('div',{style:{
+          fontFamily:"'Syne',sans-serif",fontSize:'.88rem',
+          fontWeight:isMyCity?500:400,
+          color:isMyCity?'#FAF5EF':'rgba(250,245,239,0.55)'
+        }}, item.name, isMyCity&&R(YouTag,null)),
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},item.players+' hráčov')
       ),
       R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.9rem',
         color:'rgba(250,245,239,0.13)',letterSpacing:'.12em',flexShrink:0,userSelect:'none'}},'• • •')
