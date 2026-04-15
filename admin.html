@@ -7,59 +7,74 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Syne:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{background:#0E0B07;color:#FAF5EF;font-family:'Syne',sans-serif;min-height:100vh;}
-  .nav{background:#0E0B07;border-bottom:1px solid rgba(250,245,239,0.1);
-    display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.5rem;
-    position:sticky;top:0;z-index:10;}
-  .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:#C4603A;text-decoration:none;}
-  .nav-back{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.1em;color:rgba(250,245,239,0.35);
-    text-decoration:none;text-transform:uppercase;}
-  .main{max-width:800px;margin:0 auto;padding:2rem 1.5rem 4rem;}
-  .card{background:rgba(250,245,239,0.05);border:1px solid rgba(250,245,239,0.1);padding:1.5rem 1.75rem;margin-bottom:1rem;}
-  .card-warn{background:rgba(184,136,42,0.08);border:1px solid rgba(184,136,42,0.3);padding:1.5rem 1.75rem;margin-bottom:1rem;}
-  .card-ok{background:rgba(184,136,42,0.06);border:1px solid rgba(184,136,42,0.25);padding:1.5rem 1.75rem;margin-bottom:1rem;}
-  .eye{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#C4603A;margin-bottom:.75rem;}
-  .h{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;color:#FAF5EF;margin-bottom:1.5rem;line-height:1.1;}
-  .h em{font-style:italic;color:#C4603A;}
-  .lbl{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.15em;color:rgba(250,245,239,.38);text-transform:uppercase;display:block;margin-bottom:.4rem;}
-  .mono{font-family:'DM Mono',monospace;}
-  .row{display:flex;align-items:center;gap:.75rem;padding:.85rem 0;border-bottom:1px solid rgba(250,245,239,0.07);}
-  .badge{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;padding:.2rem .55rem;border:1px solid rgba(250,245,239,0.18);color:rgba(250,245,239,.48);}
-  .badge-warn{font-family:'DM Mono',monospace;font-size:.6rem;padding:.2rem .55rem;background:#B8882A;color:#FAF5EF;}
-  .badge-ok{font-family:'DM Mono',monospace;font-size:.6rem;padding:.2rem .55rem;background:rgba(184,136,42,0.3);color:#FAF5EF;}
-  .btn{padding:.65rem 1.25rem;border:none;font-family:'Syne',sans-serif;font-size:.8rem;font-weight:500;
-    letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-radius:0;}
-  .btn-p{background:#8B2E14;color:#FAF5EF;}
-  .btn-g{background:#B8882A;color:#FAF5EF;}
-  .btn-d{background:rgba(139,46,20,0.25);color:rgba(196,96,58,0.8);border:1px solid rgba(196,96,58,0.25);}
-  .btn-m{background:transparent;color:rgba(250,245,239,.42);border:1px solid rgba(250,245,239,0.14);}
-  .inp{width:100%;padding:.7rem 1rem;border:1px solid rgba(250,245,239,0.18);background:rgba(250,245,239,0.05);
-    font-size:.9rem;color:#FAF5EF;outline:none;font-family:'Syne',sans-serif;border-radius:0;margin-bottom:.75rem;}
-  .tabs{display:flex;border-bottom:1px solid rgba(250,245,239,0.1);margin-bottom:1.5rem;}
-  .tab{padding:.6rem 1rem;font-size:.8rem;cursor:pointer;color:rgba(250,245,239,.38);
-    background:none;border:none;border-bottom:2px solid transparent;font-family:'Syne',sans-serif;}
-  .tab-a{padding:.6rem 1rem;font-size:.8rem;cursor:pointer;color:#FAF5EF;
-    background:none;border:none;border-bottom:2px solid #C4603A;font-family:'Syne',sans-serif;}
-  .stat{background:rgba(250,245,239,0.05);border:1px solid rgba(250,245,239,0.1);padding:1rem 1.25rem;text-align:center;}
-  .stat-n{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:600;color:#C4603A;line-height:1;}
-  .stat-l{font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(250,245,239,.3);letter-spacing:.1em;text-transform:uppercase;margin-top:.25rem;}
-  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1.5rem;}
-  .flash{background:rgba(184,136,42,0.13);border:1px solid rgba(184,136,42,0.28);padding:.75rem 1rem;
-    font-family:'DM Mono',monospace;font-size:.7rem;color:#FAF5EF;letter-spacing:.05em;margin-bottom:1rem;}
-  .divider{border-top:1px solid rgba(250,245,239,0.1);margin:1.25rem 0;}
-  .empty{font-family:'DM Mono',monospace;font-size:.75rem;color:rgba(250,245,239,0.22);padding:2rem 0;text-align:center;}
-  footer{border-top:1px solid rgba(250,245,239,0.08);padding:1.5rem;
-    display:flex;justify-content:space-between;font-family:'DM Mono',monospace;
-    font-size:.65rem;color:rgba(250,245,239,.22);}
-  #access-denied{display:none;padding:3rem 1.5rem;text-align:center;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0B0907;color:#FAF5EF;font-family:'Syne',sans-serif;min-height:100vh;}
+.nav{background:#111009;border-bottom:1px solid rgba(250,245,239,0.08);
+  display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;
+  position:sticky;top:0;z-index:10;}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:#C4603A;text-decoration:none;}
+.nav-back{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;color:rgba(250,245,239,0.35);text-decoration:none;text-transform:uppercase;transition:color .2s;}
+.nav-back:hover{color:rgba(250,245,239,0.7);}
+.main{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+.card{background:rgba(250,245,239,0.05);border:1px solid rgba(250,245,239,0.09);padding:1.25rem 1.5rem;margin-bottom:.75rem;}
+.card-gold{background:rgba(184,136,42,0.07);border:1px solid rgba(184,136,42,0.28);padding:1.25rem 1.5rem;margin-bottom:.75rem;}
+.card-red{background:rgba(139,46,20,0.12);border:1px solid rgba(139,46,20,0.3);padding:1.25rem 1.5rem;margin-bottom:.75rem;}
+.eye{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:#C4603A;margin-bottom:.75rem;}
+.h{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:#FAF5EF;margin-bottom:1.5rem;line-height:1.1;}
+.h em{font-style:italic;color:#C4603A;}
+.lbl{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;color:rgba(250,245,239,.35);text-transform:uppercase;display:block;margin-bottom:.4rem;}
+.mono{font-family:'DM Mono',monospace;}
+.row{display:flex;align-items:center;gap:.75rem;padding:.7rem 0;border-bottom:1px solid rgba(250,245,239,0.06);}
+.row:last-child{border-bottom:none;}
+.badge{font-family:'DM Mono',monospace;font-size:.55rem;padding:.15rem .45rem;border:1px solid rgba(250,245,239,0.18);color:rgba(250,245,239,.45);}
+.badge-warn{font-family:'DM Mono',monospace;font-size:.55rem;padding:.15rem .45rem;background:#B8882A;color:#FAF5EF;}
+.badge-ok{font-family:'DM Mono',monospace;font-size:.55rem;padding:.15rem .45rem;background:rgba(74,124,89,0.3);color:#8BC69A;}
+.badge-off{font-family:'DM Mono',monospace;font-size:.55rem;padding:.15rem .45rem;background:rgba(250,245,239,0.06);color:rgba(250,245,239,.3);}
+.btn{padding:.55rem 1.1rem;border:none;font-family:'DM Mono',monospace;font-size:.62rem;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+.btn-p{background:#8B2E14;color:#FAF5EF;}
+.btn-p:hover{background:#C4603A;}
+.btn-g{background:#B8882A;color:#FAF5EF;}
+.btn-g:hover{background:#d4a040;}
+.btn-d{background:rgba(139,46,20,0.2);color:rgba(196,96,58,0.7);border:1px solid rgba(196,96,58,0.22);}
+.btn-d:hover{background:rgba(139,46,20,0.4);color:#C4603A;border-color:rgba(196,96,58,0.5);}
+.btn-m{background:transparent;color:rgba(250,245,239,.38);border:1px solid rgba(250,245,239,0.12);}
+.btn-m:hover{border-color:rgba(250,245,239,0.3);color:rgba(250,245,239,.7);}
+.btn-sm{padding:.25rem .55rem;font-size:.55rem;}
+.inp{width:100%;padding:.65rem .9rem;border:1px solid rgba(250,245,239,0.15);background:rgba(250,245,239,0.04);
+  font-size:.88rem;color:#FAF5EF;outline:none;font-family:'Syne',sans-serif;border-radius:0;margin-bottom:.65rem;transition:border-color .15s;}
+.inp:focus{border-color:rgba(250,245,239,0.35);}
+.sel{width:100%;padding:.65rem .9rem;border:1px solid rgba(250,245,239,0.15);background:#13100B;
+  font-size:.88rem;color:#FAF5EF;outline:none;font-family:'Syne',sans-serif;border-radius:0;margin-bottom:.65rem;cursor:pointer;}
+.tabs{display:flex;border-bottom:1px solid rgba(250,245,239,0.08);margin-bottom:1.5rem;flex-wrap:wrap;}
+.tab{padding:.55rem .9rem;font-size:.72rem;cursor:pointer;color:rgba(250,245,239,.35);
+  background:none;border:none;border-bottom:2px solid transparent;font-family:'DM Mono',monospace;
+  letter-spacing:.06em;white-space:nowrap;transition:all .15s;}
+.tab.on{color:#FAF5EF;border-bottom-color:#C4603A;}
+.stat{background:rgba(250,245,239,0.04);border:1px solid rgba(250,245,239,0.08);padding:.9rem 1.1rem;text-align:center;}
+.stat-n{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:600;color:#C4603A;line-height:1;}
+.stat-l{font-family:'DM Mono',monospace;font-size:.52rem;color:rgba(250,245,239,.28);letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1.5rem;}
+.flash{background:rgba(184,136,42,0.12);border:1px solid rgba(184,136,42,0.25);padding:.65rem 1rem;
+  font-family:'DM Mono',monospace;font-size:.68rem;color:#FAF5EF;letter-spacing:.04em;margin-bottom:1rem;display:none;}
+.divider{border-top:1px solid rgba(250,245,239,0.08);margin:1.25rem 0;}
+.empty{font-family:'DM Mono',monospace;font-size:.72rem;color:rgba(250,245,239,0.2);padding:2rem 0;text-align:center;}
+.search-row{display:flex;gap:.5rem;margin-bottom:1rem;}
+.search-row .inp{margin:0;flex:1;}
+#access-denied{display:none;padding:4rem 1.5rem;text-align:center;}
+footer{border-top:1px solid rgba(250,245,239,0.06);padding:1.25rem 1.5rem;
+  display:flex;justify-content:space-between;font-family:'DM Mono',monospace;
+  font-size:.6rem;color:rgba(250,245,239,.2);margin-top:2rem;}
 </style>
 </head>
 <body>
 
 <nav class="nav">
   <a class="nav-logo" href="admin.html">Admin Panel</a>
-  <a class="nav-back" href="game.html">← Späť do hry</a>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <span id="admin-badge" style="font-family:'DM Mono',monospace;font-size:.55rem;padding:.2rem .5rem;background:rgba(184,136,42,0.15);border:1px solid rgba(184,136,42,0.3);color:#B8882A;"></span>
+    <a class="nav-back" href="game.html">← Späť do hry</a>
+  </div>
 </nav>
 
 <div id="access-denied">
@@ -71,77 +86,99 @@
 </div>
 
 <main class="main" id="admin-content" style="display:none;">
-  <div id="flash" class="flash" style="display:none;"></div>
+  <div id="flash" class="flash"></div>
 
-  <div class="eye">Admin panel</div>
+  <div class="eye">Admin panel · Hra proti samote</div>
   <h2 class="h">Správa <em>hry</em></h2>
 
-  <!-- Overview stats -->
-  <div class="grid3" id="stats">
+  <!-- Stats -->
+  <div class="grid4" id="stats-grid">
     <div class="stat"><div class="stat-n" id="stat-players">—</div><div class="stat-l">Hráči</div></div>
     <div class="stat"><div class="stat-n" id="stat-teams">—</div><div class="stat-l">Malé skupiny</div></div>
-    <div class="stat"><div class="stat-n" id="stat-biggroups">—</div><div class="stat-l">Veľké skupiny</div></div>
+    <div class="stat"><div class="stat-n" id="stat-big">—</div><div class="stat-l">Veľké skupiny</div></div>
+    <div class="stat"><div class="stat-n" id="stat-pts">—</div><div class="stat-l">Celk. body</div></div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-a" onclick="switchTab('pending')">Čakajúce kategórie</button>
-    <button class="tab" onclick="switchTab('categories')">Všetky kategórie</button>
-    <button class="tab" onclick="switchTab('groups')">Veľké skupiny</button>
-    <button class="tab" onclick="switchTab('players')">Hráči</button>
-  </div>
-
-  <!-- PENDING CATEGORIES -->
-  <div id="tab-pending">
-    <div class="lbl" style="margin-bottom:1rem;">Čakajú na schválenie</div>
-    <div id="pending-list"></div>
-  </div>
-
-  <!-- ALL CATEGORIES -->
-  <div id="tab-categories" style="display:none;">
-    <div class="lbl" style="margin-bottom:1rem;">Všetky aktívne kategórie</div>
-    <div id="categories-list"></div>
-  </div>
-
-  <!-- GROUPS -->
-  <div id="tab-groups" style="display:none;">
-    <div class="lbl" style="margin-bottom:1rem;">Veľké skupiny</div>
-    <div id="groups-list"></div>
+    <button class="tab on" onclick="switchTab('players')">Hráči</button>
+    <button class="tab" onclick="switchTab('teams')">Malé skupiny</button>
+    <button class="tab" onclick="switchTab('big')">Veľké skupiny</button>
+    <button class="tab" onclick="switchTab('categories')">Kategórie</button>
+    <button class="tab" onclick="switchTab('licenses')">Licencie</button>
   </div>
 
   <!-- PLAYERS -->
-  <div id="tab-players" style="display:none;">
-    <div class="lbl" style="margin-bottom:1rem;">Hráči</div>
+  <div id="tab-players">
+    <div class="search-row">
+      <input class="inp" id="search-players" placeholder="Hľadať meno, e-mail, mesto…" oninput="renderPlayers()">
+    </div>
     <div id="players-list"></div>
+  </div>
+
+  <!-- TEAMS -->
+  <div id="tab-teams" style="display:none;">
+    <div class="search-row">
+      <input class="inp" id="search-teams" placeholder="Hľadať názov skupiny…" oninput="renderTeams()">
+    </div>
+    <div id="teams-list"></div>
+  </div>
+
+  <!-- BIG GROUPS -->
+  <div id="tab-big" style="display:none;">
+    <div class="search-row">
+      <input class="inp" id="search-big" placeholder="Hľadať názov…" oninput="renderBig()">
+    </div>
+    <div id="big-list"></div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div id="tab-categories" style="display:none;">
+    <div class="lbl" style="margin-bottom:.75rem;">Čakajú na schválenie</div>
+    <div id="pending-list"></div>
+    <div class="divider"></div>
+    <div class="lbl" style="margin-bottom:.75rem;">Všetky aktívne kategórie</div>
+    <div id="categories-list"></div>
+  </div>
+
+  <!-- LICENSES -->
+  <div id="tab-licenses" style="display:none;">
+    <div class="card-gold">
+      <div class="lbl" style="margin-bottom:.75rem;">Odomknúť geo úroveň (bez platby)</div>
+      <div id="unlock-rows"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="card">
+      <div class="lbl" style="margin-bottom:.75rem;">Aktuálne licencie</div>
+      <div id="licenses-list"></div>
+    </div>
   </div>
 </main>
 
 <footer>
-  <span>Admin · Hra proti samote</span>
+  <span>Admin · Hra proti samote · Beta 2025</span>
   <span id="admin-email-display"></span>
 </footer>
 
 <script>
-// ── Config ────────────────────────────────────────────────────
+// ── Config ───────────────────────────────────────────────
 const FB_API_KEY = 'AIzaSyB2SGGL1JE7b60WPGU9nrWOAJwZ_zbT7Ao';
 const FB_DB_URL  = 'https://hra-proti-samote-default-rtdb.europe-west1.firebasedatabase.app';
 const USE_FIREBASE = FB_API_KEY !== 'VLOZ_API_KEY';
 const ADMIN_EMAIL = 'filip.halecka@gmail.com';
 
-const DEFAULT_CATEGORIES = [
-  { id:'skolstvo', label:'Školstvo',  types:['Trieda','Škola','Univerzita'] },
-  { id:'skauting', label:'Skauting',  types:['Oddiel','Zbor','Oblasť'] },
-  { id:'cirkev',   label:'Cirkev',    types:['Farnosť','Diecéza'] },
-  { id:'sport',    label:'Šport',     types:['Tím','Klub'] },
-  { id:'praca',    label:'Práca',     types:['Oddelenie','Firma'] },
-  { id:'ine',      label:'Iné',       types:[] },
+const DEFAULT_CATEGORIES=[
+  {id:'skolstvo',label:'Školstvo',types:['Trieda','Škola','Univerzita']},
+  {id:'skauting',label:'Skauting',types:['Oddiel','Zbor','Oblasť']},
+  {id:'cirkev',label:'Cirkev',types:['Farnosť','Diecéza']},
+  {id:'sport',label:'Šport',types:['Tím','Klub']},
+  {id:'praca',label:'Práca',types:['Oddelenie','Firma']},
+  {id:'ine',label:'Iné',types:[]},
 ];
 
-// ── localStorage helpers ──────────────────────────────────────
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
-function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
-// ── DB ────────────────────────────────────────────────────────
 function getToken(){const s=lsGet('hps:session');return s?s.idToken:null;}
 async function dbGet(path){
   const tok=getToken();
@@ -150,20 +187,20 @@ async function dbGet(path){
 }
 async function dbPut(path,data){
   const tok=getToken();
-  await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
-    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),
+    {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
 }
 async function dbPatch(path,data){
   const tok=getToken();
-  await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
-    method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),
+    {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
 }
 
-// ── State ─────────────────────────────────────────────────────
-let allPlayers={}, allTeams={}, allBigGroups={}, allCategories={};
-let currentTab='pending';
+// ── State ────────────────────────────────────────────────
+let allPlayers={}, allTeams={}, allBigGroups={}, allCategories={}, allLicensed={};
+let currentTab='players';
 
-// ── Access check ──────────────────────────────────────────────
+// ── Access check ─────────────────────────────────────────
 function checkAccess(){
   const sess=lsGet('hps:session');
   if(!sess||sess.email!==ADMIN_EMAIL){
@@ -172,258 +209,452 @@ function checkAccess(){
   }
   document.getElementById('admin-content').style.display='block';
   document.getElementById('admin-email-display').textContent=sess.email;
+  document.getElementById('admin-badge').textContent=USE_FIREBASE?'Firebase · live':'lokálne · demo';
   return true;
 }
 
-// ── Flash ─────────────────────────────────────────────────────
-function showFlash(msg){
+function showFlash(msg,error){
   const el=document.getElementById('flash');
-  el.textContent=msg;el.style.display='block';
-  setTimeout(()=>el.style.display='none',3000);
+  el.textContent=msg;
+  el.style.display='block';
+  el.style.background=error?'rgba(139,46,20,0.15)':'rgba(184,136,42,0.12)';
+  el.style.borderColor=error?'rgba(196,96,58,0.3)':'rgba(184,136,42,0.25)';
+  setTimeout(()=>el.style.display='none',3500);
 }
 
-// ── Load data ─────────────────────────────────────────────────
+// ── Load all data ─────────────────────────────────────────
 async function loadAll(){
   if(USE_FIREBASE){
     try{
-      const[pl,tm,bg,cats]=await Promise.all([
-        dbGet('players'),dbGet('teams'),dbGet('biggroups'),dbGet('categories')
+      const[pl,tm,bg,cats,lic]=await Promise.all([
+        dbGet('players'),dbGet('teams'),dbGet('biggroups'),dbGet('categories'),dbGet('licensed')
       ]);
-      allPlayers=pl||{};allTeams=tm||{};allBigGroups=bg||{};allCategories=cats||{};
-    }catch(e){console.error(e);}
-  } else {
+      allPlayers=pl||{};allTeams=tm||{};allBigGroups=bg||{};allCategories=cats||{};allLicensed=lic||{};
+    }catch(e){console.error('loadAll error:',e);}
+  }else{
     allPlayers=lsGet('hps:players')||{};
     allTeams=lsGet('hps:teams')||{};
     allBigGroups=lsGet('hps:biggroups')||{};
     allCategories=lsGet('hps:categories')||{};
+    allLicensed=lsGet('hps:licensed')||{};
   }
   updateStats();
   renderCurrentTab();
 }
 
 function updateStats(){
+  const pts=Object.values(allPlayers).reduce((s,p)=>s+(Math.floor(p.points)||0),0);
   document.getElementById('stat-players').textContent=Object.keys(allPlayers).length;
-  document.getElementById('stat-teams').textContent=Object.keys(allTeams).length;
-  document.getElementById('stat-biggroups').textContent=Object.keys(allBigGroups).length;
+  document.getElementById('stat-teams').textContent=Object.keys(allTeams).filter(k=>allTeams[k]).length;
+  document.getElementById('stat-big').textContent=Object.keys(allBigGroups).filter(k=>allBigGroups[k]).length;
+  document.getElementById('stat-pts').textContent=pts.toLocaleString('sk-SK');
 }
 
-// ── Tab switching ─────────────────────────────────────────────
+// ── Tab switching ─────────────────────────────────────────
 function switchTab(tab){
   currentTab=tab;
-  document.querySelectorAll('.tab,.tab-a').forEach(b=>{
-    b.className=b.getAttribute('onclick').includes("'"+tab+"'")?'tab-a':'tab';
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.className='tab'+(b.getAttribute('onclick').includes("'"+tab+"'")?' on':'');
   });
-  ['pending','categories','groups','players'].forEach(t=>{
+  ['players','teams','big','categories','licenses'].forEach(t=>{
     document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
   });
   renderCurrentTab();
 }
 
 function renderCurrentTab(){
-  if(currentTab==='pending') renderPending();
-  else if(currentTab==='categories') renderCategories();
-  else if(currentTab==='groups') renderGroups();
-  else if(currentTab==='players') renderPlayers();
+  if(currentTab==='players') renderPlayers();
+  else if(currentTab==='teams') renderTeams();
+  else if(currentTab==='big') renderBig();
+  else if(currentTab==='categories'){renderPending();renderCategories();}
+  else if(currentTab==='licenses') renderLicenses();
 }
 
-// ── Pending categories ────────────────────────────────────────
+// ── PLAYERS ───────────────────────────────────────────────
+function renderPlayers(){
+  const q=(document.getElementById('search-players')?.value||'').toLowerCase();
+  const players=Object.values(allPlayers)
+    .filter(p=>p)
+    .filter(p=>!q||p.nickname?.toLowerCase().includes(q)||p.email?.toLowerCase().includes(q)||p.city?.toLowerCase().includes(q))
+    .sort((a,b)=>b.points-a.points);
+  const el=document.getElementById('players-list');
+  if(!el)return;
+  if(players.length===0){el.innerHTML='<div class="empty">Žiadni hráči'+(q?' (filter aktívny)':'')+'.</div>';return;}
+  el.innerHTML=players.map(p=>`
+    <div class="row" style="align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.2rem;">
+          <span style="font-weight:500;font-size:.9rem;">${esc(p.nickname||'—')}</span>
+          ${p.referredBy?'<span class="badge">referral</span>':''}
+          ${p.email===ADMIN_EMAIL?'<span class="badge-warn">admin</span>':''}
+        </div>
+        <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.35);line-height:1.7;">
+          ${esc(p.email||'—')} ·
+          ${esc(p.city||'—')}${p.country?', '+esc(p.country):''} ·
+          Kód: ${esc(p.referralCode||'—')}
+          ${p.referredBy?'· Pozvaný: '+esc(p.referredBy):''}
+        </div>
+        <div class="mono" style="font-size:.58rem;color:rgba(250,245,239,.2);">
+          ${(p.teamIds||[]).length} tímov ·
+          b1: ${p.bonding1Count||0}/3 ·
+          b2: ${p.bonding2Count||0}/2 ·
+          ${(p.encounters||[]).length} stretnutí
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:#B8882A;">${Math.floor(p.points||0)}</span>
+        ${p.email!==ADMIN_EMAIL?`<button class="btn btn-d btn-sm" onclick="deletePlayer('${esc(p.uid)}')">✕ Zmazať</button>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deletePlayer(uid){
+  const p=allPlayers[uid];
+  if(!p){showFlash('Hráč nenájdený.',true);return;}
+  if(!confirm('Naozaj zmazať hráča "'+p.nickname+'" ('+p.email+')?\n\nTáto akcia je NEVRATNÁ.'))return;
+  try{
+    if(USE_FIREBASE){
+      // Remove from all teams
+      const tm=await dbGet('teams')||{};
+      for(const[tid,t] of Object.entries(tm)){
+        if(t&&(t.members||[]).includes(uid)){
+          const newMembers=(t.members||[]).filter(m=>m!==uid);
+          await dbPatch('teams/'+tid,{members:newMembers});
+        }
+      }
+      // Remove from all biggroups
+      const bg=await dbGet('biggroups')||{};
+      for(const[bid,b] of Object.entries(bg)){
+        if(b&&(b.members||[]).includes(uid)){
+          const newMembers=(b.members||[]).filter(m=>m!==uid);
+          await dbPatch('biggroups/'+bid,{members:newMembers});
+        }
+      }
+      // Delete player
+      await dbPut('players/'+uid,null);
+    }else{
+      const pl=lsGet('hps:players')||{};
+      delete pl[uid];
+      lsSet('hps:players',pl);
+      const tm=lsGet('hps:teams')||{};
+      Object.values(tm).forEach(t=>{if(t&&t.members)t.members=t.members.filter(m=>m!==uid);});
+      lsSet('hps:teams',tm);
+    }
+    delete allPlayers[uid];
+    updateStats();
+    renderPlayers();
+    showFlash('Hráč "'+p.nickname+'" zmazaný ✓');
+  }catch(e){showFlash('Chyba: '+e.message,true);}
+}
+
+// ── TEAMS ─────────────────────────────────────────────────
+function renderTeams(){
+  const q=(document.getElementById('search-teams')?.value||'').toLowerCase();
+  const teams=Object.values(allTeams)
+    .filter(t=>t)
+    .filter(t=>!q||t.name?.toLowerCase().includes(q)||t.code?.toLowerCase().includes(q))
+    .sort((a,b)=>(b.points||0)-(a.points||0));
+  const el=document.getElementById('teams-list');
+  if(!el)return;
+  if(teams.length===0){el.innerHTML='<div class="empty">Žiadne tímy'+(q?' (filter aktívny)':'')+'.</div>';return;}
+  el.innerHTML=teams.map(tm=>{
+    const founder=allPlayers[tm.founderId];
+    const memberNames=(tm.members||[]).map(uid=>allPlayers[uid]?.nickname||uid).join(', ');
+    const bigGroup=tm.bigGroupId?allBigGroups[tm.bigGroupId]:null;
+    return `
+    <div class="row" style="align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.2rem;">
+          <span style="font-weight:500;font-size:.9rem;">${esc(tm.name||'—')}</span>
+          <span class="badge">Kód: ${esc(tm.code||'—')}</span>
+          ${tm.active===false?'<span class="badge-off">vypnutá</span>':''}
+        </div>
+        <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.35);line-height:1.7;">
+          Zakladateľ: ${founder?esc(founder.nickname):'?'} ·
+          ${(tm.members||[]).length} členov ·
+          ${bigGroup?'↑ '+esc(bigGroup.name):'(bez veľkej skupiny)'}
+        </div>
+        <div class="mono" style="font-size:.56rem;color:rgba(250,245,239,.2);">
+          Členovia: ${esc(memberNames)||'—'}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;color:#B8882A;">${tm.points||0}</span>
+        <button class="btn btn-m btn-sm" onclick="toggleTeam('${esc(tm.id)}')">${tm.active===false?'▶':'⏸'}</button>
+        <button class="btn btn-d btn-sm" onclick="deleteTeam('${esc(tm.id)}')">✕ Zmazať</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleTeam(id){
+  const tm=allTeams[id];if(!tm)return;
+  const newActive=tm.active===false;
+  if(USE_FIREBASE){try{await dbPatch('teams/'+id,{active:newActive});}catch(e){showFlash('Chyba: '+e.message,true);return;}}
+  else{const t=lsGet('hps:teams')||{};if(t[id])t[id].active=newActive;lsSet('hps:teams',t);}
+  allTeams[id].active=newActive;
+  showFlash(newActive?'Skupina zapnutá ✓':'Skupina vypnutá.');
+  renderTeams();
+}
+
+async function deleteTeam(id){
+  const tm=allTeams[id];if(!tm){showFlash('Tím nenájdený.',true);return;}
+  if(!confirm('Naozaj zmazať skupinu "'+tm.name+'"?\n\nMemberom sa odstrání z teamIds.'))return;
+  try{
+    if(USE_FIREBASE){
+      const pl=await dbGet('players')||{};
+      for(const[uid,p] of Object.entries(pl)){
+        if(p&&(p.teamIds||[]).includes(id)){
+          await dbPatch('players/'+uid,{teamIds:(p.teamIds||[]).filter(x=>x!==id)});
+        }
+      }
+      if(tm.bigGroupId){
+        const bg=await dbGet('biggroups')||{};
+        if(bg[tm.bigGroupId]){
+          const newTeamIds=(bg[tm.bigGroupId].teamIds||[]).filter(x=>x!==id);
+          await dbPatch('biggroups/'+tm.bigGroupId,{teamIds:newTeamIds});
+        }
+      }
+      await dbPut('teams/'+id,null);
+    }else{
+      const t=lsGet('hps:teams')||{};delete t[id];lsSet('hps:teams',t);
+      const pl=lsGet('hps:players')||{};
+      Object.values(pl).forEach(p=>{if(p&&p.teamIds)p.teamIds=p.teamIds.filter(x=>x!==id);});
+      lsSet('hps:players',pl);
+    }
+    delete allTeams[id];
+    updateStats();renderTeams();
+    showFlash('Skupina "'+tm.name+'" zmazaná ✓');
+  }catch(e){showFlash('Chyba: '+e.message,true);}
+}
+
+// ── BIG GROUPS ────────────────────────────────────────────
+function renderBig(){
+  const q=(document.getElementById('search-big')?.value||'').toLowerCase();
+  const groups=Object.values(allBigGroups)
+    .filter(g=>g)
+    .filter(g=>!q||g.name?.toLowerCase().includes(q)||g.category?.toLowerCase().includes(g))
+    .sort((a,b)=>(b.points||0)-(a.points||0));
+  const el=document.getElementById('big-list');
+  if(!el)return;
+  if(groups.length===0){el.innerHTML='<div class="empty">Žiadne veľké skupiny'+(q?' (filter aktívny)':'')+'.</div>';return;}
+  el.innerHTML=groups.map(g=>{
+    const founder=allPlayers[g.founderId];
+    const parent=g.parentId?allBigGroups[g.parentId]:null;
+    const teamCount=(g.teamIds||[]).length;
+    return `
+    <div class="row" style="align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.2rem;">
+          <span style="font-weight:500;font-size:.9rem;">${esc(g.name||'—')}</span>
+          <span class="badge">${esc(g.category||'—')}${g.type?' · '+esc(g.type):''}</span>
+          <span class="badge">Kód: ${esc(g.code||'—')}</span>
+          ${g.active===false?'<span class="badge-off">vypnutá</span>':''}
+        </div>
+        <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.35);line-height:1.7;">
+          Zakladateľ: ${founder?esc(founder.nickname):'?'} ·
+          ${teamCount} malých skupín ·
+          ${parent?'↑ '+esc(parent.name):'(top level)'}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;color:#B8882A;">${g.points||0}</span>
+        <button class="btn btn-m btn-sm" onclick="toggleBig('${esc(g.id)}')">${g.active===false?'▶':'⏸'}</button>
+        <button class="btn btn-d btn-sm" onclick="deleteBig('${esc(g.id)}')">✕ Zmazať</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleBig(id){
+  const g=allBigGroups[id];if(!g)return;
+  const na=g.active===false;
+  if(USE_FIREBASE){try{await dbPatch('biggroups/'+id,{active:na});}catch(e){showFlash('Chyba: '+e.message,true);return;}}
+  else{const bg=lsGet('hps:biggroups')||{};if(bg[id])bg[id].active=na;lsSet('hps:biggroups',bg);}
+  allBigGroups[id].active=na;
+  showFlash(na?'Skupina zapnutá ✓':'Skupina vypnutá.');renderBig();
+}
+
+async function deleteBig(id){
+  const g=allBigGroups[id];if(!g){showFlash('Skupina nenájdená.',true);return;}
+  if(!confirm('Naozaj zmazať skupinu "'+g.name+'"?\n\nPodriadené skupiny stratia nadradenú.'))return;
+  try{
+    if(USE_FIREBASE){
+      const bg=await dbGet('biggroups')||{};
+      for(const[gid,gg] of Object.entries(bg)){
+        if(gg&&gg.parentId===id) await dbPatch('biggroups/'+gid,{parentId:null});
+      }
+      const tm=await dbGet('teams')||{};
+      for(const[tid,t] of Object.entries(tm)){
+        if(t&&t.bigGroupId===id) await dbPatch('teams/'+tid,{bigGroupId:null});
+      }
+      await dbPut('biggroups/'+id,null);
+    }else{
+      const bg=lsGet('hps:biggroups')||{};
+      Object.values(bg).forEach(gg=>{if(gg&&gg.parentId===id)gg.parentId=null;});
+      delete bg[id];lsSet('hps:biggroups',bg);
+      const tm=lsGet('hps:teams')||{};
+      Object.values(tm).forEach(t=>{if(t&&t.bigGroupId===id)t.bigGroupId=null;});
+      lsSet('hps:teams',tm);
+    }
+    delete allBigGroups[id];
+    updateStats();renderBig();
+    showFlash('Skupina "'+g.name+'" zmazaná ✓');
+  }catch(e){showFlash('Chyba: '+e.message,true);}
+}
+
+// ── CATEGORIES ────────────────────────────────────────────
 function renderPending(){
-  const pending=Object.values(allCategories).filter(c=>!c.approved);
-  const el=document.getElementById('pending-list');
+  const pending=Object.values(allCategories).filter(c=>c&&!c.approved);
+  const el=document.getElementById('pending-list');if(!el)return;
   if(pending.length===0){el.innerHTML='<div class="empty">Žiadne čakajúce návrhy. 🎉</div>';return;}
   el.innerHTML=pending.map(c=>`
-    <div class="card" id="pend-${c.id}">
+    <div class="card" style="margin-bottom:.65rem;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
         <div>
-          <div style="font-family:'Syne',sans-serif;font-weight:500;font-size:1rem;color:#FAF5EF;margin-bottom:.3rem;">${c.label}</div>
-          <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.35);">
-            Typy: ${c.types&&c.types.length>0?c.types.join(', '):'—'}
-          </div>
-          <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.25);margin-top:.2rem;">
-            Navrhol: ${c.requestedByEmail||'—'} · ${c.ts?new Date(c.ts).toLocaleDateString('sk-SK'):'—'}
+          <div style="font-weight:500;font-size:.95rem;margin-bottom:.25rem;">${esc(c.label)}</div>
+          <div class="mono" style="font-size:.58rem;color:rgba(250,245,239,.35);">
+            Typy: ${c.types&&c.types.length>0?c.types.join(', '):'—'} ·
+            Navrhol: ${esc(c.requestedByEmail||'—')}
           </div>
         </div>
         <span class="badge-warn">čaká</span>
       </div>
       <div style="display:flex;gap:.5rem;">
-        <button class="btn btn-g" onclick="approveCategory('${c.id}')">✓ Schváliť</button>
-        <button class="btn btn-d" onclick="rejectCategory('${c.id}')">✗ Zamietnuť</button>
+        <button class="btn btn-g" onclick="approveCategory('${esc(c.id)}')">✓ Schváliť</button>
+        <button class="btn btn-d" onclick="rejectCategory('${esc(c.id)}')">✗ Zamietnuť</button>
       </div>
+    </div>
+  `).join('');
+}
+
+function renderCategories(){
+  const custom=Object.values(allCategories).filter(c=>c&&c.approved);
+  const all=[...DEFAULT_CATEGORIES.map(c=>({...c,isDefault:true})),...custom.map(c=>({...c,isDefault:false}))];
+  const el=document.getElementById('categories-list');if(!el)return;
+  el.innerHTML=all.map(c=>`
+    <div class="row">
+      <div style="flex:1;">
+        <span style="font-weight:500;">${esc(c.label)}</span>
+        <span class="mono" style="font-size:.58rem;color:rgba(250,245,239,.3);margin-left:.75rem;">${c.types&&c.types.length?c.types.join(' · '):'—'}</span>
+      </div>
+      <span class="${c.isDefault?'badge':'badge-ok'}">${c.isDefault?'zabudovaná':'schválená'}</span>
+      ${!c.isDefault?`<button class="btn btn-d btn-sm" onclick="deleteCategory('${esc(c.id)}')">✕</button>`:''}
     </div>
   `).join('');
 }
 
 async function approveCategory(id){
-  if(!confirm('Schváliť kategóriu?')) return;
-  if(USE_FIREBASE){
-    await dbPatch('categories/'+id,{approved:true});
-  } else {
-    const c=lsGet('hps:categories')||{};if(c[id])c[id].approved=true;lsSet('hps:categories',c);
-  }
-  allCategories[id].approved=true;
-  showFlash('Kategória schválená ✓');
-  renderPending();
+  if(!confirm('Schváliť kategóriu?'))return;
+  if(USE_FIREBASE){try{await dbPatch('categories/'+id,{approved:true});}catch(e){showFlash('Chyba: '+e.message,true);return;}}
+  else{const c=lsGet('hps:categories')||{};if(c[id])c[id].approved=true;lsSet('hps:categories',c);}
+  if(allCategories[id])allCategories[id].approved=true;
+  showFlash('Kategória schválená ✓');renderPending();renderCategories();
 }
-
 async function rejectCategory(id){
-  if(!confirm('Zamietnuť a zmazať návrh?')) return;
-  if(USE_FIREBASE){
-    await dbPut('categories/'+id,null);
-  } else {
-    const c=lsGet('hps:categories')||{};delete c[id];lsSet('hps:categories',c);
-  }
+  if(!confirm('Zamietnuť a zmazať návrh?'))return;
+  if(USE_FIREBASE){try{await dbPut('categories/'+id,null);}catch(e){showFlash('Chyba: '+e.message,true);return;}}
+  else{const c=lsGet('hps:categories')||{};delete c[id];lsSet('hps:categories',c);}
   delete allCategories[id];
-  showFlash('Kategória zamietnutá.');
-  renderPending();
+  showFlash('Kategória zamietnutá.');renderPending();renderCategories();
+}
+async function deleteCategory(id){
+  if(!confirm('Zmazať schválenú kategóriu?'))return;
+  if(USE_FIREBASE){try{await dbPut('categories/'+id,null);}catch(e){showFlash('Chyba: '+e.message,true);return;}}
+  else{const c=lsGet('hps:categories')||{};delete c[id];lsSet('hps:categories',c);}
+  delete allCategories[id];
+  showFlash('Kategória zmazaná.');renderPending();renderCategories();
 }
 
-// ── All categories ────────────────────────────────────────────
-function renderCategories(){
-  const defaults=DEFAULT_CATEGORIES;
-  const custom=Object.values(allCategories).filter(c=>c.approved);
-  const el=document.getElementById('categories-list');
-  const all=[
-    ...defaults.map(c=>({...c,isDefault:true})),
-    ...custom.map(c=>({...c,isDefault:false}))
-  ];
-  el.innerHTML=`
-    <div style="margin-bottom:1rem;">
-      ${all.map(c=>`
-        <div class="row">
-          <div style="flex:1;">
-            <div style="font-weight:500;color:rgba(250,245,239,.88);">${c.label}</div>
-            <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.3);margin-top:.15rem;">
-              ${c.types&&c.types.length>0?c.types.join(' · '):'(bez typov)'}
-            </div>
-          </div>
-          <span class="${c.isDefault?'badge':'badge-ok'}">${c.isDefault?'zabudovaná':'schválená'}</span>
-        </div>
-      `).join('')}
-    </div>
-    <div class="divider"></div>
-    <div class="lbl" style="margin-bottom:.5rem;">Pridať typ do existujúcej kategórie</div>
-    <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
-      <select id="cat-sel" style="flex:1;padding:.6rem .8rem;background:#1a1610;border:1px solid rgba(250,245,239,.18);color:#FAF5EF;font-family:'Syne',sans-serif;font-size:.85rem;">
-        ${defaults.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
-        ${custom.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
-      </select>
-      <input id="new-type" class="inp" placeholder="Nový typ (napr. Gymnázium)" style="flex:1;margin:0;">
-      <button class="btn btn-p" onclick="addTypeToCategory()">Pridať</button>
-    </div>
-  `;
-}
-
-async function addTypeToCategory(){
-  const catId=document.getElementById('cat-sel').value;
-  const newType=document.getElementById('new-type').value.trim();
-  if(!newType){showFlash('Zadaj názov typu.');return;}
-  // Find in defaults or custom
-  const defCat=DEFAULT_CATEGORIES.find(c=>c.id===catId);
-  if(defCat){
-    showFlash('Zabudované kategórie nie je možné upravovať tu. Uprav kód (DEFAULT_CATEGORIES).');
-    return;
+// ── LICENSES ─────────────────────────────────────────────
+function renderLicenses(){
+  var unlockEl=document.getElementById('unlock-rows');
+  if(unlockEl){
+    var items=[
+      {type:'city',label:'Mesto',ph:'napr. prešov'},
+      {type:'region',label:'Kraj',ph:'napr. sk · prešovský kraj'},
+      {type:'state',label:'Štát',ph:'napr. slovensko'},
+      {type:'continent',label:'Kontinent',ph:'napr. európa'},
+      {type:'global',label:'Globálna',ph:''},
+    ];
+    var rows=items.map(function(item){
+      var inputHtml=item.type!=='global'
+        ?'<input class="inp" style="flex:1;margin:0;" id="unlock-'+item.type+'" placeholder="'+item.ph+'">'
+        :'<span style="flex:1;font-family:monospace;font-size:.58rem;color:rgba(250,245,239,.25);">aktivuje globálnu licenciu</span>';
+      return '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem;">'
+        +'<span class="mono" style="font-size:.58rem;color:rgba(250,245,239,.4);width:6.5rem;">'
+        +item.label+'</span>'+inputHtml
+        +'<button class="btn btn-g" data-utype="'+item.type
+        +'" onclick="doUnlock(this.dataset.utype)">Odomknúť</button></div>';
+    });
+    unlockEl.innerHTML=rows.join('');
   }
-  if(allCategories[catId]){
-    const types=[...(allCategories[catId].types||[]),newType];
-    if(USE_FIREBASE) await dbPatch('categories/'+catId,{types});
-    else{const c=lsGet('hps:categories')||{};if(c[catId])c[catId].types=types;lsSet('hps:categories',c);}
-    allCategories[catId].types=types;
-    showFlash('Typ pridaný ✓');
-    renderCategories();
+  var licEl=document.getElementById('licenses-list');
+  if(licEl){
+    var lic=allLicensed;
+    var lines=[];
+    if(lic.cities)Object.entries(lic.cities).forEach(function(kv){if(kv[1])lines.push({type:'Mesto',name:kv[0]});});
+    if(lic.regions)Object.entries(lic.regions).forEach(function(kv){if(kv[1])lines.push({type:'Kraj',name:kv[0]});});
+    if(lic.states)Object.entries(lic.states).forEach(function(kv){if(kv[1])lines.push({type:'Štát',name:kv[0]});});
+    if(lic.continents)Object.entries(lic.continents).forEach(function(kv){if(kv[1])lines.push({type:'Kontinent',name:kv[0]});});
+    if(lic.global)lines.push({type:'Globálna',name:'global'});
+    if(!lines.length){licEl.innerHTML='<div class="empty">Žiadne licencie.</div>';return;}
+    licEl.innerHTML=lines.map(function(l){
+      return '<div class="row"><span class="badge-ok">'+esc(l.type)+'</span>'
+        +'<span style="flex:1;font-family:monospace;font-size:.75rem;padding:0 .5rem;">'+esc(l.name)+'</span>'
+        +'<button class="btn btn-d btn-sm" data-rtype="'+esc(l.type)+'" data-rname="'+esc(l.name)
+        +'" onclick="revokeLicense(this.dataset.rtype,this.dataset.rname)">Odvolať</button></div>';
+    }).join('');
   }
 }
-
-// ── Big groups ────────────────────────────────────────────────
-function renderGroups(){
-  const groups=Object.values(allBigGroups).sort((a,b)=>b.points-a.points);
-  const el=document.getElementById('groups-list');
-  if(groups.length===0){el.innerHTML='<div class="empty">Žiadne veľké skupiny.</div>';return;}
-  el.innerHTML=groups.map(g=>`
-    <div class="row" style="align-items:flex-start;padding:.9rem 0;">
-      <div style="flex:1;">
-        <div style="font-weight:500;color:rgba(250,245,239,.88);margin-bottom:.2rem;">${g.name}
-          ${g.active===false?'<span style="font-family:monospace;font-size:.6rem;background:rgba(184,136,42,0.15);color:#B8882A;margin-left:.5rem;padding:.15rem .45rem;">VYPNUTÁ</span>':''}
-        </div>
-        <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.3);margin-top:.1rem;">
-          ${g.category||'—'}${g.type?' · '+g.type:''} · ${(g.teamIds||[]).length} malých skupín · Kód: ${g.code}
-          ${g.parentId?(' · ↑ nadradená: '+(allBigGroups[g.parentId]?.name||g.parentId)):''}
-        </div>
-      </div>
-      <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;">
-        <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:#B8882A;">${g.points||0}</span>
-        <button class="btn btn-m" style="padding:.3rem .6rem;font-size:.65rem;" onclick="toggleBigGroup('${g.id}')">${g.active===false?'▶ Zapnúť':'⏸ Vypnúť'}</button>
-        <button class="btn btn-d" style="padding:.3rem .6rem;font-size:.65rem;" onclick="deleteBigGroup('${g.id}')">🗑</button>
-      </div>
-    </div>
-  `).join('');
+async function doUnlock(type){
+  const el=document.getElementById('unlock-'+type);
+  const name=type==='global'?'global':(el?el.value.trim().toLowerCase():'');
+  if(type!=='global'&&!name){showFlash('Zadaj názov.',true);return;}
+  try{
+    let lic=allLicensed;
+    if(type==='city'){lic.cities=lic.cities||{};lic.cities[name]=true;}
+    else if(type==='region'){lic.regions=lic.regions||{};lic.regions[name]=true;}
+    else if(type==='state'){lic.states=lic.states||{};lic.states[name]=true;}
+    else if(type==='continent'){lic.continents=lic.continents||{};lic.continents[name]=true;}
+    else if(type==='global'){lic.global=true;}
+    if(USE_FIREBASE){await dbPut('licensed',lic);}
+    else{lsSet('hps:licensed',lic);}
+    allLicensed=lic;
+    if(el)el.value='';
+    showFlash('Odomknuté: '+name+' ✓');
+    renderLicenses();
+  }catch(e){showFlash('Chyba: '+e.message,true);}
 }
 
-// ── BigGroup admin actions ───────────────────────────────────────────────────
-async function toggleBigGroup(id){
-  const cur=allBigGroups[id];if(!cur)return;
-  const newActive=cur.active===false;
-  if(USE_FIREBASE){try{await dbPatch('biggroups/'+id,{active:newActive});}catch(e){showFlash('Chyba: '+e.message);return;}}
-  else{const bg=lsGet('hps:biggroups')||{};if(bg[id])bg[id].active=newActive;lsSet('hps:biggroups',bg);}
-  allBigGroups[id].active=newActive;
-  showFlash(newActive?'Skupina zapnutá ✓':'Skupina vypnutá.');renderGroups();
+async function revokeLicense(type,name){
+  if(!confirm('Odvolať licenciu pre "'+name+'"?'))return;
+  try{
+    const lic=allLicensed;
+    const k=name.toLowerCase().trim();
+    if(type==='Mesto'&&lic.cities)delete lic.cities[k];
+    else if(type==='Kraj'&&lic.regions)delete lic.regions[k];
+    else if(type==='Štát'&&lic.states)delete lic.states[k];
+    else if(type==='Kontinent'&&lic.continents)delete lic.continents[k];
+    else if(type==='Globálna'){lic.global=false;}
+    if(USE_FIREBASE){await dbPut('licensed',lic);}
+    else{lsSet('hps:licensed',lic);}
+    allLicensed=lic;
+    showFlash('Licencia odvolaná ✓');renderLicenses();
+  }catch(e){showFlash('Chyba: '+e.message,true);}
 }
 
-async function deleteBigGroup(id){
-  const name=allBigGroups[id]?.name||id;
-  if(!confirm('Naozaj zmazať skupinu "'+name+'"? Táto akcia je nevratná.'))return;
-  if(USE_FIREBASE){
-    try{
-      const allBg=await dbGet('biggroups')||{};
-      for(const [gid,g] of Object.entries(allBg)){
-        if(g.parentId===id) await dbPatch('biggroups/'+gid,{parentId:null});
-      }
-      const allTm=await dbGet('teams')||{};
-      for(const [tid,t] of Object.entries(allTm)){
-        if(t.bigGroupId===id) await dbPatch('teams/'+tid,{bigGroupId:null});
-      }
-      await dbPut('biggroups/'+id,null);
-    }catch(e){showFlash('Chyba: '+e.message);return;}
-  } else {
-    const bg=lsGet('hps:biggroups')||{};
-    Object.values(bg).forEach(g=>{if(g.parentId===id)g.parentId=null;});
-    delete bg[id];lsSet('hps:biggroups',bg);
-  }
-  delete allBigGroups[id];
-  showFlash('Skupina "'+name+'" zmazaná ✓');
-  await loadAll();
+// ── Helpers ───────────────────────────────────────────────
+function esc(s){
+  if(!s)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Players ───────────────────────────────────────────────────
-function renderPlayers(){
-  const players=Object.values(allPlayers).sort((a,b)=>b.points-a.points);
-  const el=document.getElementById('players-list');
-  if(players.length===0){el.innerHTML='<div class="empty">Žiadni hráči.</div>';return;}
-  el.innerHTML=`
-    <div style="margin-bottom:.5rem;display:grid;grid-template-columns:1fr 1fr 80px 60px;gap:.5rem;">
-      <div class="lbl" style="margin:0;">Prezývka</div>
-      <div class="lbl" style="margin:0;">E-mail / Mesto</div>
-      <div class="lbl" style="margin:0;">Tímy</div>
-      <div class="lbl" style="margin:0;">Body</div>
-    </div>
-    ${players.map(p=>`
-      <div style="display:grid;grid-template-columns:1fr 1fr 80px 60px;gap:.5rem;padding:.6rem 0;border-bottom:1px solid rgba(250,245,239,0.06);">
-        <div style="font-weight:500;color:rgba(250,245,239,.88);font-size:.9rem;">${p.nickname}</div>
-        <div>
-          <div class="mono" style="font-size:.65rem;color:rgba(250,245,239,.4);">${p.email||'—'}</div>
-          <div class="mono" style="font-size:.6rem;color:rgba(250,245,239,.25);">${p.city||''}${p.country?', '+p.country:''}</div>
-        </div>
-        <div class="mono" style="font-size:.7rem;color:rgba(250,245,239,.4);">${(p.teamIds||[]).length}</div>
-        <div class="mono" style="font-size:1rem;font-weight:500;color:#B8882A;">${p.points||0}</div>
-      </div>
-    `).join('')}
-  `;
-}
-
-// ── Init ──────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────
 if(checkAccess()){
   loadAll();
-  // Refresh every 30s
-  setInterval(loadAll, 30000);
+  setInterval(loadAll,30000);
 }
 </script>
 </body>

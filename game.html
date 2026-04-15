@@ -208,6 +208,11 @@ const ADMIN_EMAIL  = 'filip.halecka@gmail.com';
 
 // Thresholds
 const CITY_THRESHOLD      = 50;
+const PLAY_CITY = 50;
+const PLAY_REGION = 100;
+const PLAY_STATE = 150;
+const PLAY_CONTINENT = 175;
+const PLAY_GLOBAL = 200;
 const REGION_THRESHOLD    = 100;
 const STATE_THRESHOLD     = 150;
 const CONTINENT_THRESHOLD = 175;
@@ -2135,12 +2140,13 @@ function App(){
           })()),
           // Geo levels
           ...['city','region','state','continent','global'].map(lvl=>{
+            const pts=(me.points||0);
             const canPlay={
-              city:canPlayCity(me,licensed),
-              region:canPlayRegion(me,licensed),
-              state:canPlayState(me,licensed),
-              continent:canPlayContinent(me,licensed),
-              global:canPlayGlobal(me,licensed),
+              city:pts>=0,
+              region:pts>=PLAY_CITY,
+              state:pts>=PLAY_REGION,
+              continent:pts>=PLAY_STATE,
+              global:pts>=PLAY_CONTINENT,
             }[lvl];
             const labels={city:'🏙️ '+(me.city||'Mesto'),region:'🗺️ '+(me.region||me.city||'Kraj'),
               state:'🏛️ '+(me.country||'Štát'),continent:'🌍 Európa',global:'🌐 Svet'};
@@ -2579,24 +2585,24 @@ myBigGroupList.length===0
           R('span',{style:S.pt},bg.points||0)))),
 
       // CITIES
-      lbTab==='city'&&R(FoggedList,{locked:!canPlayCity(me,licensed),lockMsg:'Potrebuješ '+cityThreshold(me.uid)+' interakcií'},
+      lbTab==='city'&&R(FoggedList,{locked:false,lockMsg:''},
         sCities.length===0?emptyRow('Žiadne mestá ešte.')
         :sCities.map((item,i)=>geoRow(item,i,me.city))),
 
       // REGIONS
-      lbTab==='region'&&R(FoggedList,{locked:!canPlayRegion(me,licensed),lockMsg:'Potrebuješ '+REGION_THRESHOLD+' interakcií'},
+      lbTab==='region'&&R(FoggedList,{locked:(me.points||0)<PLAY_CITY,lockMsg:(me.points||0)+'/'+PLAY_CITY+' bodov na odomknutie'},
         sRegions.length===0?emptyRow('Žiadne kraje ešte.')
         :sRegions.map((item,i)=>geoRow(item,i,me.region||me.city))),
 
       // STATES
-      lbTab==='state'&&R(FoggedList,{locked:!canPlayState(me,licensed),lockMsg:'Potrebuješ '+STATE_THRESHOLD+' interakcií'},
+      lbTab==='state'&&R(FoggedList,{locked:(me.points||0)<PLAY_REGION,lockMsg:(me.points||0)+'/'+PLAY_REGION+' bodov na odomknutie'},
         sStates.length===0?emptyRow('Žiadne štáty ešte.')
         :sStates.map((item,i)=>geoRow(item,i,me.country))),
 
       // GLOBAL
       lbTab==='continent'&&R(FoggedList,{
-        locked:!canPlayContinent(me,licensed),
-        lockMsg:'Potrebuješ '+CONTINENT_THRESHOLD+' interakcií'},
+        locked:(me.points||0)<PLAY_STATE,
+        lockMsg:(me.points||0)+'/'+PLAY_STATE+' bodov na odomknutie'},
         sContinents.length===0?emptyRow('Žiadne kontinenty ešte.')
           :sContinents.map((c,i)=>R('div',{key:c.name,style:{...S.row,borderColor:'rgba(250,245,239,0.07)'}},
             R(RankBadge,{i}),

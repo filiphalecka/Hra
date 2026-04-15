@@ -219,38 +219,7 @@
     text-transform: uppercase;
   }
 
-  /* ── CASCADE ─────────────────────────── */
-  .cascade-wrap {
-    margin-top: 2rem; padding: 1.5rem 1.25rem;
-    background: var(--bg-card); border: 1px solid var(--border);
-    overflow-x: auto;
-  }
-  .cascade-label {
-    font-family: var(--font-mono); font-size: .6rem;
-    letter-spacing: .15em; color: rgba(28,23,17,.35);
-    text-transform: uppercase; margin-bottom: 1rem;
-  }
-  .cascade-row {
-    display: flex; align-items: center; gap: .4rem;
-    flex-wrap: nowrap; min-width: max-content;
-  }
-  .cascade-node {
-    padding: .35rem .7rem; border: 1px solid var(--border);
-    font-family: var(--font-mono); font-size: .65rem;
-    letter-spacing: .06em; color: var(--ink-muted);
-    white-space: nowrap;
-  }
-  .cascade-node.active {
-    border-color: var(--accent); color: var(--accent);
-    background: rgba(139,46,20,0.06);
-  }
-  .cascade-node.soon {
-    border-style: dashed; opacity: .5;
-  }
-  .cascade-arrow {
-    color: var(--border); font-size: .85rem;
-  }
-
+  
   /* ── LEVELS ──────────────────────────── */
   .levels-grid {
     display: grid; gap: .75rem;
@@ -287,7 +256,7 @@
 
   /* ── ABOUT ───────────────────────────── */
   .about-cols {
-    display: grid; gap: 3rem; margin-top: 2rem;
+    display: grid; gap: 3rem; margin-top: 2rem; align-items: start;
   }
   @media (min-width: 768px) {
     .about-cols { grid-template-columns: 1fr 1fr; gap: 4rem; }
@@ -298,16 +267,23 @@
   /* ── O MNE ───────────────────────────── */
   #o-mne { background: var(--bg-card); }
   .profile {
-    display: flex; flex-direction: column;
-    gap: 1.5rem; margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem; margin-top: 2rem;
+    align-items: start;
   }
-  @media (min-width: 640px) {
-    .profile { flex-direction: row; align-items: center; gap: 2.5rem; }
+  @media (min-width: 600px) {
+    .profile {
+      grid-template-columns: 160px 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
   }
   .avatar {
-    width: 96px; height: 96px; flex-shrink: 0;
-    border-radius: 50%; overflow: hidden;
-    border: 2px solid var(--border);
+    width: 160px; height: 160px; flex-shrink: 0;
+    border-radius: 4px; overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
   .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
   .profile-name {
@@ -320,8 +296,8 @@
     text-transform: uppercase; margin-bottom: .75rem;
   }
   .profile-bio {
-    font-size: .88rem; color: var(--ink-muted);
-    line-height: 1.75; max-width: 440px;
+    font-size: .95rem; color: var(--ink-muted);
+    line-height: 1.9; margin-top: .75rem;
   }
 
   /* ── FOOTER ──────────────────────────── */
@@ -382,6 +358,9 @@ var TRANSLATIONS = {
     task1Label: '💛 Pestuj vzťahy',
     task1Title: 'Urob niečo dobré pre niekoho blízkeho',
     task1Text: 'Zavolaj, pomôž, buď pri tom. Malé gestá, ktoré udržiavajú väzby nažive.',
+    badge1: '1 bod',
+    badge2: '2 body',
+    badge3: '3 body',
     task1Score: 'Až 3× za sebou · potom musíš spoznať niekoho nového',
     task2Label: '🤜 Prehĺb vzťah',
     task2Title: 'Spoznaj niekoho, koho poznáš, lepšie',
@@ -489,6 +468,9 @@ var TRANSLATIONS = {
     task1Label: '💛 Pestuj vzťahy',
     task1Title: 'Urob niečo dobré pre niekoho blízkeho',
     task1Text: 'Zavolaj, pomôž, buď pri tom. Malé gestá, ktoré udržiavajú väzby nažive.',
+    badge1: '1 bod',
+    badge2: '2 body',
+    badge3: '3 body',
     task1Score: 'Až 3× za sebou · potom musíš spoznať niekoho nového',
     task2Label: '🤜 Prehĺb vzťah',
     task2Title: 'Spoznaj niekoho, koho poznáš, lepšie',
@@ -630,6 +612,9 @@ function applyLang(l) {
   // How section
   setText('#dt-howLabel', T.howLabel);
   set('#dt-howTitle', T.howTitle);
+  setText('#dt-badge1', T.badge1);
+  setText('#dt-badge2', T.badge2);
+  setText('#dt-badge3', T.badge3);
   setText('#dt-task1Label', T.task1Label);
   setText('#dt-task1Title', T.task1Title);
   setText('#dt-task1Text', T.task1Text);
@@ -642,6 +627,9 @@ function applyLang(l) {
   setText('#dt-task3Title', T.task3Title);
   setText('#dt-task3Text', T.task3Text);
   setText('#dt-task3Score', T.task3Score);
+  setText('#dt-badge1', T.badge1);
+  setText('#dt-badge2', T.badge2);
+  setText('#dt-badge3', T.badge3);
   setText('#dt-task1Label', T.task1Label);
   setText('#dt-task1Title', T.task1Title);
   setText('#dt-task1Text', T.task1Text);
@@ -654,14 +642,6 @@ function applyLang(l) {
   setText('#dt-task3Title', T.task3Title);
   setText('#dt-task3Text', T.task3Text);
   setText('#dt-task3Score', T.task3Score);
-  setText('#dt-cascadeLabel', T.cascadeLabel);
-  setText('#dt-cascSoloSub', T.cascSoloSub);
-  setText('#dt-cascTeam', T.cascTeam);
-  setText('#dt-cascTeamSub', T.cascTeamSub);
-  setText('#dt-cascCity', T.cascCity);
-  setText('#dt-cascCitySub', T.cascCitySub);
-  setText('#dt-cascWorld', T.cascWorld);
-  setText('#dt-cascWorldSub', T.cascWorldSub);
 
   // Levels
   setText('#dt-levelsLabel', T.levelsLabel);
@@ -820,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="mode-label" id="dt-task1Label">💛 Pestuj vzťahy</div>
         <div class="steps">
           <div class="step">
-            <span class="step-num" style="background:rgba(184,136,42,0.15);color:#B8882A;">1 bod</span>
+            <span class="step-num" style="background:rgba(184,136,42,0.15);color:#B8882A;" id="dt-badge1">1 bod</span>
             <div class="step-body">
               <strong id="dt-task1Title">Urob niečo dobré pre niekoho blízkeho</strong>
               <span id="dt-task1Text">Zavolaj, pomôž, buď pri tom. Malé gestá, ktoré udržiavajú väzby nažive.</span>
@@ -835,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="mode-label" id="dt-task2Label">🤜 Prehĺb vzťah</div>
         <div class="steps">
           <div class="step">
-            <span class="step-num" style="background:rgba(196,96,58,0.15);color:#C4603A;">2 body</span>
+            <span class="step-num" style="background:rgba(196,96,58,0.15);color:#C4603A;" id="dt-badge2">2 body</span>
             <div class="step-body">
               <strong id="dt-task2Title">Spoznaj niekoho, koho poznáš, lepšie</strong>
               <span id="dt-task2Text">Nie len "ahoj" v chodbe — skutočný rozhovor, spoločná aktivita, niečo čo vás posunie bližšie.</span>
@@ -850,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="mode-label" id="dt-task3Label">🤝 Spoznaj niekoho nového</div>
         <div class="steps">
           <div class="step">
-            <span class="step-num" style="background:rgba(139,46,20,0.15);color:#C4603A;">3 body</span>
+            <span class="step-num" style="background:rgba(139,46,20,0.15);color:#C4603A;" id="dt-badge3">3 body</span>
             <div class="step-body">
               <strong id="dt-task3Title">Oslovi cudzinca</strong>
               <span id="dt-task3Text">Vymeňte si kontakty alebo aspoň mená. Najnáročnejšia úloha — a jediná, ktorá odomkne ďalšie kolo pestovania.</span>
@@ -861,19 +841,7 @@ document.addEventListener('DOMContentLoaded', function(){
       </div>
     </div>
 
-    <!-- Cascade -->
-    <div class="cascade-wrap">
-      <div class="cascade-label" id="dt-cascadeLabel">Ako body kaskádujú</div>
-      <div class="cascade-row">
-        <div class="cascade-node active">👤 Solo<br><small id="dt-cascSoloSub">individuálny</small></div>
-        <span class="cascade-arrow">→</span>
-        <div class="cascade-node active">👥 <span id="dt-cascTeam">Tím</span><br><small id="dt-cascTeamSub">tím + solo</small></div>
-        <span class="cascade-arrow">→</span>
-        <div class="cascade-node active">🏙️ <span id="dt-cascCity">Mesto</span><br><small id="dt-cascCitySub">mesto + tím + solo</small></div>
-        <span class="cascade-arrow">→</span>
-        <div class="cascade-node soon">🌍 <span id="dt-cascWorld">Svet</span><br><small id="dt-cascWorldSub">všetky úrovne</small></div>
-      </div>
-    </div>
+
 
 
   </div>
@@ -947,7 +915,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <div>
         <div class="profile-name">Filip Halečka</div>
         <div class="profile-role" id="dt-aboutRole">Školský psychológ · Sociálny pracovník</div>
-        <p class="profile-bio"><span id="dt-aboutBio">Som školský psychológ, sociálny pracovník na psychiatrii a morálne ambiciózny nerd. Tento projekt je vyústením osobného presvedčenia, že čím širší morálny okruh si človek uhryzne, tým plnší život žije. Rád čítam, píšem, hrám airsoft a premýšľam o veciach, ktoré sa nedajú ľahko vyriešiť.</span></p>
+        <p class="profile-bio" style="border-left:2px solid rgba(139,46,20,0.4);padding-left:1rem;"><span id="dt-aboutBio">Som školský psychológ, sociálny pracovník na psychiatrii a morálne ambiciózny nerd. Tento projekt je vyústením osobného presvedčenia, že čím širší morálny okruh si človek uhryzne, tým plnší život žije. Rád čítam, píšem, hrám airsoft a premýšľam o veciach, ktoré sa nedajú ľahko vyriešiť.</span></p>
       </div>
     </div>
   </div>
