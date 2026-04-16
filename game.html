@@ -583,6 +583,59 @@ function regionToCountry(r){
   return r;
 }
 
+// ── FLAG HELPERS ────────────────────────────────────────────
+// Unicode regional-indicator flags — zero bytes, rendered by OS font
+function flagEmoji(cc){
+  if(!cc||cc.length!==2) return '';
+  const A=0x1F1E6;
+  return String.fromCodePoint(...cc.toUpperCase().split('').map(c=>A+c.charCodeAt(0)-65));
+}
+
+// Slovak country name → ISO-2. Extend freely.
+const COUNTRY_FLAGS={
+  'Slovensko':'SK','Česko':'CZ','Rakúsko':'AT','Nemecko':'DE',
+  'Poľsko':'PL','Maďarsko':'HU','Ukrajina':'UA','Rusko':'RU',
+  'Francúzsko':'FR','Taliansko':'IT','Španielsko':'ES','Portugalsko':'PT',
+  'Veľká Británia':'GB','Spojené kráľovstvo':'GB','Írsko':'IE',
+  'Holandsko':'NL','Belgicko':'BE','Luxembursko':'LU',
+  'Švajčiarsko':'CH','Lichtenštajnsko':'LI',
+  'Dánsko':'DK','Švédsko':'SE','Nórsko':'NO','Fínsko':'FI','Island':'IS',
+  'Estónsko':'EE','Lotyšsko':'LV','Litva':'LT','Bielorusko':'BY',
+  'Rumunsko':'RO','Bulharsko':'BG','Slovinsko':'SI','Chorvátsko':'HR',
+  'Srbsko':'RS','Bosna a Hercegovina':'BA','Čierna Hora':'ME',
+  'Severné Macedónsko':'MK','Albánsko':'AL','Kosovo':'XK',
+  'Grécko':'GR','Turecko':'TR','Cyprus':'CY','Malta':'MT',
+  'USA':'US','Spojené štáty':'US','Kanada':'CA','Mexiko':'MX',
+  'Brazília':'BR','Argentína':'AR','Čile':'CL',
+  'Japonsko':'JP','Čína':'CN','Južná Kórea':'KR','India':'IN',
+  'Indonézia':'ID','Vietnam':'VN','Thajsko':'TH',
+  'Austrália':'AU','Nový Zéland':'NZ',
+  'Južná Afrika':'ZA','Egypt':'EG','Nigéria':'NG','Keňa':'KE','Maroko':'MA',
+};
+function countryFlag(name){
+  const cc=COUNTRY_FLAGS[name];
+  return cc?flagEmoji(cc):'🏳️';
+}
+
+// Regions look like "SK · Bratislavský kraj" — first 2 chars are ISO-2
+function regionFlag(regionLabel){
+  if(!regionLabel) return '🏳️';
+  const m=regionLabel.match(/^([A-Z]{2})\s*·/);
+  return m?flagEmoji(m[1]):'🏳️';
+}
+
+// Continents — no official flags; use EU for Európa, real flag for Antarktída,
+// hemisphere-globes for the rest
+const CONTINENT_EMOJI={
+  'Európa':'🇪🇺','Ázia':'🌏','Afrika':'🌍',
+  'Severná Amerika':'🌎','Južná Amerika':'🌎',
+  'Austrália a Oceánia':'🌏','Oceánia':'🌏',
+  'Antarktída':'🇦🇶','Iný kontinent':'🌐',
+};
+function continentFlag(name){return CONTINENT_EMOJI[name]||'🌐';}
+
+
+
 const R=React.createElement;
 const {useState,useEffect,useRef}=React;
 
@@ -2457,7 +2510,11 @@ function App(){
       transition:'all .15s',whiteSpace:'nowrap',
     }},label);
 
-    const GeoRow=(item,i,myName)=>R('div',{key:item.name,style:{
+    const GeoRow=(item,i,myName,kind)=>{
+      const flag=kind==='state'?countryFlag(item.name):
+                 kind==='continent'?continentFlag(item.name):
+                 kind==='region'?regionFlag(item.name):null;
+      return R('div',{key:item.name,style:{
       display:'flex',alignItems:'center',gap:'.75rem',
       padding:'.65rem 0',
       borderBottom:'1px solid rgba(245,237,220,0.05)',
@@ -2467,6 +2524,10 @@ function App(){
         color:i===0?'#C08B2A':'rgba(245,237,220,0.2)',
         width:'1.8rem',textAlign:'center',flexShrink:0,
       }},i+1),
+      flag&&R('div',{style:{
+        fontSize:'1.4rem',lineHeight:1,flexShrink:0,
+        filter:item.name===myName?'none':'saturate(0.75)',
+      }},flag),
       R('div',{style:{flex:1}},
         R('div',{style:{
           fontFamily:"'Libre Baskerville',serif",fontSize:'.85rem',
@@ -2491,6 +2552,7 @@ function App(){
         flexShrink:0,
       }},Math.round(item.points))
     );
+    };
 
     const IndRow=(p,i)=>{
       const isMe=p.uid===me.uid;
@@ -2581,13 +2643,13 @@ function App(){
           sCities.length===0?emptyMsg:R('div',null,...sCities.map((item,i)=>CityRow(item,i,me,licensed,cityFunding))));
       if(lbTab==='region')
         return R(FoggedList,{locked:myPts<PLAY_CITY,lockMsg:myPts+'/'+PLAY_CITY+' bodov'},
-          sRegions.length===0?emptyMsg:R('div',null,...sRegions.map((r,i)=>GeoRow(r,i,me.region||me.city))));
+          sRegions.length===0?emptyMsg:R('div',null,...sRegions.map((r,i)=>GeoRow(r,i,me.region||me.city,'region'))));
       if(lbTab==='state')
         return R(FoggedList,{locked:myPts<PLAY_REGION,lockMsg:myPts+'/'+PLAY_REGION+' bodov'},
-          sStates.length===0?emptyMsg:R('div',null,...sStates.map((s,i)=>GeoRow(s,i,me.country))));
+          sStates.length===0?emptyMsg:R('div',null,...sStates.map((s,i)=>GeoRow(s,i,me.country,'state'))));
       if(lbTab==='continent')
         return R(FoggedList,{locked:myPts<PLAY_STATE,lockMsg:myPts+'/'+PLAY_STATE+' bodov'},
-          sContinents.length===0?emptyMsg:R('div',null,...sContinents.map((c,i)=>GeoRow(c,i,countryToContinent(me.country||'')))));
+          sContinents.length===0?emptyMsg:R('div',null,...sContinents.map((c,i)=>GeoRow(c,i,countryToContinent(me.country||''),'continent'))));
       if(lbTab==='global')
         return R('div',{style:{
           border:'1px solid rgba(192,139,42,0.15)',
