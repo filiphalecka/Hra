@@ -48,6 +48,20 @@ body{
 /* spinner */
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes orbit{to{transform:rotate(360deg);}}
+@keyframes floatDot{0%,100%{transform:translateY(0);opacity:.35;}50%{transform:translateY(-14px);opacity:.8;}}
+@keyframes ptsGlow{0%,100%{text-shadow:0 0 0 rgba(192,139,42,0);}50%{text-shadow:0 0 22px rgba(192,139,42,0.38);}}
+@keyframes ringDraw{from{stroke-dashoffset:var(--c);}to{stroke-dashoffset:var(--o);}}
+@keyframes shine{0%{transform:translateX(-120%);}100%{transform:translateX(220%);}}
+@keyframes breathe{0%,100%{opacity:.55;transform:scale(1);}50%{opacity:1;transform:scale(1.04);}}
+@keyframes slideInUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.pts-glow{animation:ptsGlow 3.2s ease-in-out infinite;}
+.bar-shine{position:absolute;top:0;left:0;height:100%;width:30%;background:linear-gradient(90deg,transparent,rgba(245,237,220,0.35),transparent);animation:shine 2.8s ease-in-out infinite;}
+.hero-dot{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(192,139,42,0.55);pointer-events:none;}
+.card-game{transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s,border-color .2s;}
+.card-game:hover{transform:translateY(-3px);border-color:rgba(192,139,42,0.35)!important;box-shadow:0 12px 32px rgba(192,139,42,0.12);}
+.card-game:active{transform:translateY(-1px);}
+
 
 /* inputs */
 input,select{
@@ -1998,325 +2012,323 @@ function App(){
 
   // ── HOME SCREEN ────────────────────────────────────────────
   if(scr==='home'){
-    const lbPlayers=sPlayers.slice(0,8);
+    const lbPlayers=sPlayers.slice(0,5);
     const myRank=sPlayers.findIndex(p=>p.uid===me.uid)+1;
     const above=sPlayers[myRank-2]||null;
     const ptsDiff=above?(above.points||0)-(me.points||0):0;
     const b1=taskState.bonding1Count,b2=taskState.bonding2Count;
     const b1ok=taskState.bonding1Available,b2ok=taskState.bonding2Available;
 
-    return R('div',{style:{paddingBottom:'5rem'}},
-      // ── TOP BAR
+    // ── World ring geometry ───────────────────────────────
+    const worldTarget=4150000000; // 50% of 8.3B
+    const worldPct=Math.min(100,(globalStats.count/worldTarget)*100);
+    const ringR=88, ringC=2*Math.PI*ringR;
+    const ringOffset=ringC*(1-Math.max(0.003,worldPct/100)); // min visible sliver
+    const sk=getLang()==='sk';
+
+    return R('div',{style:{paddingBottom:'5rem',position:'relative',overflow:'hidden'}},
+
+      // ── AMBIENT PARTICLES ────────────────────────────────
+      R('div',{style:{position:'absolute',inset:0,pointerEvents:'none',zIndex:0}},
+        ...Array.from({length:14}).map((_,i)=>R('span',{key:i,className:'hero-dot',style:{
+          left:((7+i*11.3)%96)+'%',
+          top:((5+i*13.7)%92)+'%',
+          animation:'floatDot '+(3.2+(i%5)*0.7)+'s ease-in-out '+(i*0.35)+'s infinite alternate',
+        }}))
+      ),
+
+      // ── TOP BAR ──────────────────────────────────────────
       R('div',{style:{
+        position:'sticky',top:0,zIndex:50,
         display:'flex',alignItems:'center',justifyContent:'space-between',
         padding:'.6rem 1rem',
-        background:'rgba(13,10,6,0.95)',
-        backdropFilter:'blur(12px)',
+        background:'rgba(13,10,6,0.88)',backdropFilter:'blur(14px)',
         borderBottom:'1px solid rgba(245,237,220,0.06)',
-        position:'sticky',top:0,zIndex:50,
       }},
         R('div',{style:{
           fontFamily:"'Bebas Neue',sans-serif",
-          fontSize:'1.05rem',letterSpacing:'.2em',
-          color:'rgba(245,237,220,0.35)',
+          fontSize:'1.05rem',letterSpacing:'.22em',
+          color:'rgba(245,237,220,0.45)',
         }},t('appName')),
-        R('div',{style:{display:'flex',gap:'.4rem',alignItems:'center'}},
-          isAdmin(me)&&R('button',{
-            onClick:()=>window.location.href='admin.html',
-            style:MiniBtn,
-          },'Admin'),
-          R('button',{
-            onClick:()=>setLang(getLang()==='sk'?'en':'sk'),
-            style:MiniBtn,
-          },getLang()==='sk'?'EN':'SK'),
-          R('button',{onClick:doLogout,style:{...MiniBtn,color:'rgba(181,69,27,0.7)',borderColor:'rgba(181,69,27,0.25)'}},
-            '↩'),
-          USE_FIREBASE&&R('span',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.45rem',
-            padding:'.1rem .35rem',
-            background:'rgba(192,139,42,0.1)',
-            border:'1px solid rgba(192,139,42,0.25)',
-            color:'rgba(192,139,42,0.5)',
-          }},'live')
+        R('div',{style:{display:'flex',gap:'.35rem',alignItems:'center'}},
+          isAdmin(me)&&R('button',{onClick:()=>window.location.href='admin.html',style:MiniBtn},'Admin'),
+          R('button',{onClick:()=>setLang(getLang()==='sk'?'en':'sk'),style:MiniBtn},getLang()==='sk'?'EN':'SK'),
+          R('button',{onClick:doLogout,style:{...MiniBtn,color:'rgba(181,69,27,0.72)',borderColor:'rgba(181,69,27,0.28)'}},'↩')
         )
       ),
 
       R(Fl,{msg:flash}),
 
-      // ── HERO RANK CARD
+      // ══ WORLD HERO ═══════════════════════════════════════
       R('div',{style:{
-        margin:'1rem 1rem .75rem',
-        background:'linear-gradient(135deg,#1A1008 0%,#0F0C07 100%)',
+        position:'relative',zIndex:2,
+        margin:'1.25rem 1rem .25rem',
+        padding:'1.4rem 1rem 1.6rem',
+        background:'radial-gradient(ellipse at 50% 20%, rgba(192,139,42,0.12) 0%, rgba(140,36,16,0.04) 45%, transparent 75%)',
         border:'1px solid rgba(192,139,42,0.18)',
-        overflow:'hidden',
-        position:'relative',
+        borderTop:'2px solid rgba(192,139,42,0.5)',
+        textAlign:'center',
+        animation:'slideInUp .7s ease both',
       }},
-        // Big rank number watermark
         R('div',{style:{
-          position:'absolute',right:'-0.1em',top:'-0.15em',
+          fontFamily:"'IBM Plex Mono',monospace",
+          fontSize:'.48rem',letterSpacing:'.28em',
+          color:'rgba(192,139,42,0.7)',
+          textTransform:'uppercase',marginBottom:'.15rem',
+        }},sk?'· svet · cieľ 50% populácie ·':'· world · goal 50% of humanity ·'),
+
+        // SVG ring + count
+        R('div',{style:{position:'relative',display:'inline-block',margin:'.4rem 0 .85rem'}},
+          R('svg',{width:200,height:200,viewBox:'0 0 200 200',style:{display:'block'}},
+            R('defs',null,
+              R('linearGradient',{id:'ringGrad',x1:'0%',y1:'0%',x2:'100%',y2:'100%'},
+                R('stop',{offset:'0%',stopColor:'#8C2410'}),
+                R('stop',{offset:'55%',stopColor:'#C08B2A'}),
+                R('stop',{offset:'100%',stopColor:'#F5EDD8'})
+              )
+            ),
+            // Base ring
+            R('circle',{cx:100,cy:100,r:ringR,fill:'none',
+              stroke:'rgba(245,237,220,0.06)',strokeWidth:2}),
+            // Progress arc
+            R('circle',{cx:100,cy:100,r:ringR,fill:'none',
+              stroke:'url(#ringGrad)',strokeWidth:3,strokeLinecap:'round',
+              strokeDasharray:ringC,strokeDashoffset:ringOffset,
+              transform:'rotate(-90 100 100)',
+              style:{transition:'stroke-dashoffset 1.8s cubic-bezier(.6,.05,.3,1)',
+                     filter:'drop-shadow(0 0 6px rgba(192,139,42,0.45))'}
+            }),
+            // Orbiting pulse-dot (group rotates around 100,100)
+            R('g',{style:{
+              transformOrigin:'100px 100px',
+              animation:'orbit 22s linear infinite',
+            }},
+              R('circle',{cx:100,cy:100-ringR,r:3.5,fill:'#F5EDD8',
+                style:{filter:'drop-shadow(0 0 8px #C08B2A)'}})
+            )
+          ),
+          // Centered text
+          R('div',{style:{
+            position:'absolute',top:'50%',left:'50%',
+            transform:'translate(-50%,-50%)',
+            textAlign:'center',pointerEvents:'none',width:'80%',
+          }},
+            R('div',{style:{
+              fontFamily:"'Bebas Neue',sans-serif",
+              fontSize:'2.6rem',letterSpacing:'.04em',
+              color:'#F5EDD8',lineHeight:.95,
+              animation:'breathe 4s ease-in-out infinite',
+            }},globalStats.count.toLocaleString(sk?'sk-SK':'en-US')),
+            R('div',{style:{
+              fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:'.46rem',letterSpacing:'.18em',
+              color:'rgba(245,237,220,0.35)',
+              textTransform:'uppercase',marginTop:'.25rem',
+            }},sk?'hráčov na svete':'players worldwide'),
+            R('div',{style:{
+              fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:'.62rem',color:'#C08B2A',marginTop:'.4rem',
+              letterSpacing:'.12em',
+            }},globalStats.pctDisplay+'%')
+          )
+        ),
+        // missing line
+        R('div',{style:{
+          fontFamily:"'Libre Baskerville',serif",
+          fontSize:'.8rem',fontStyle:'italic',
+          color:'rgba(245,237,220,0.48)',marginTop:'.35rem',
+        }},sk?'chýba ešte ':'still missing ',
+          R('span',{style:{color:'#C08B2A',fontWeight:600,fontStyle:'normal'}},
+            globalStats.missing.toLocaleString(sk?'sk-SK':'en-US')),
+          sk?' ľudí':' people'
+        ),
+        // See world leaderboard
+        R('button',{onClick:()=>{setLbTab('global');setScr('lb');},
+          style:{
+            marginTop:'.9rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.54rem',
+            letterSpacing:'.18em',textTransform:'uppercase',
+            color:'#F5EDD8',
+            background:'transparent',
+            border:'1px solid rgba(192,139,42,0.45)',
+            padding:'.55rem 1.2rem',cursor:'pointer',
+            transition:'all .2s',
+          },
+          onMouseOver:(e)=>{e.currentTarget.style.background='rgba(192,139,42,0.1)';e.currentTarget.style.borderColor='#C08B2A';},
+          onMouseOut:(e)=>{e.currentTarget.style.background='transparent';e.currentTarget.style.borderColor='rgba(192,139,42,0.45)';}
+        },sk?'Svetový rebríček →':'World leaderboard →')
+      ),
+
+      // ══ PLAYER CARD ══════════════════════════════════════
+      R('div',{className:'card-game',style:{
+        position:'relative',zIndex:2,
+        margin:'1rem 1rem .75rem',
+        background:'linear-gradient(135deg,rgba(26,16,8,0.9) 0%,rgba(15,12,7,0.94) 100%)',
+        border:'1px solid rgba(192,139,42,0.2)',
+        overflow:'hidden',
+        animation:'slideInUp .7s .1s ease both',
+      }},
+        // Big rank watermark
+        R('div',{style:{
+          position:'absolute',right:'-0.08em',top:'-0.14em',
           fontFamily:"'Bebas Neue',sans-serif",
-          fontSize:'8rem',lineHeight:1,
-          color:'rgba(192,139,42,0.06)',
+          fontSize:'7.5rem',lineHeight:1,
+          color:'rgba(192,139,42,0.08)',
           userSelect:'none',pointerEvents:'none',
           letterSpacing:'-.02em',
         }},'#'+myRank),
 
-        R('div',{style:{padding:'1.1rem 1.2rem',position:'relative'}},
-          R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'.6rem'}},
-            R('div',null,
+        R('div',{style:{padding:'1.15rem 1.2rem',position:'relative'}},
+          R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'.7rem'}},
+            R('div',{style:{minWidth:0,flex:1,paddingRight:'.5rem'}},
               R('div',{style:{
                 fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:'.5rem',letterSpacing:'.2em',
-                color:'rgba(192,139,42,0.5)',
+                fontSize:'.48rem',letterSpacing:'.22em',
+                color:'rgba(192,139,42,0.6)',
                 textTransform:'uppercase',marginBottom:'.3rem',
               }},'#'+myRank+' · '+(me.city||'—')),
               R('div',{style:{
                 fontFamily:"'Libre Baskerville',serif",
-                fontSize:'1.75rem',fontWeight:700,
-                color:'#F5EDD8',lineHeight:1,
-              }},me.nickname),
-              me.referralCode&&R('div',{style:{
-                fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:'.48rem',color:'rgba(192,139,42,0.35)',
-                marginTop:'.3rem',letterSpacing:'.1em',
-              }},t('myCode')+': '+me.referralCode)
+                fontSize:'1.7rem',fontWeight:700,
+                color:'#F5EDD8',lineHeight:1.05,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+              }},me.nickname)
             ),
             R('div',{style:{textAlign:'right',flexShrink:0}},
-              R('div',{style:{
+              R('div',{className:'pts-glow',style:{
                 fontFamily:"'Bebas Neue',sans-serif",
-                fontSize:'3.5rem',lineHeight:1,
+                fontSize:'3.3rem',lineHeight:1,
                 color:'#F5EDD8',letterSpacing:'.02em',
               }},me.points||0),
               R('div',{style:{
                 fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:'.48rem',color:'rgba(245,237,220,0.3)',
-                letterSpacing:'.1em',textTransform:'uppercase',
+                fontSize:'.46rem',color:'rgba(245,237,220,0.32)',
+                letterSpacing:'.12em',textTransform:'uppercase',
               }},t('points'))
             )
           ),
-          // Progress to next
           above?R('div',null,
             R('div',{style:{
               display:'flex',justifyContent:'space-between',
               fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
-              color:'rgba(245,237,220,0.28)',marginBottom:'.3rem',
+              color:'rgba(245,237,220,0.3)',marginBottom:'.32rem',
+              letterSpacing:'.08em',
             }},
               R('span',null,'↑ '+above.nickname),
-              R('span',{style:{color:'rgba(192,139,42,0.6)'}},'-'+ptsDiff+'b')
+              R('span',{style:{color:'rgba(192,139,42,0.75)'}},'-'+ptsDiff+'b')
             ),
-            R('div',{style:{height:'2px',background:'rgba(245,237,220,0.06)',borderRadius:'1px'}},
+            R('div',{style:{height:'3px',background:'rgba(245,237,220,0.06)',position:'relative',overflow:'hidden'}},
               R('div',{style:{
-                height:'100%',borderRadius:'1px',
-                background:'linear-gradient(90deg,#8C2410,#C08B2A)',
+                height:'100%',position:'relative',overflow:'hidden',
+                background:'linear-gradient(90deg,#8C2410,#C08B2A,#F5EDD8)',
                 width:Math.max(4,Math.min(98,100-ptsDiff/((above.points||1)/100)))+'%',
-                transition:'width .7s ease',
-              }})
+                transition:'width 1s cubic-bezier(.5,.1,.3,1)',
+              }},R('div',{className:'bar-shine'}))
             )
           ):R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
-            color:'rgba(192,139,42,0.5)',marginTop:'.25rem',
-          }},'🏆 '+t('na čele rebríčka'))
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.54rem',
+            color:'rgba(192,139,42,0.75)',marginTop:'.25rem',letterSpacing:'.15em',
+            textTransform:'uppercase',
+          }},'🏆 '+(sk?'na čele rebríčka':'leading the ranks')),
+          me.referralCode&&R('div',{style:{
+            fontFamily:"'IBM Plex Mono',monospace",
+            fontSize:'.48rem',color:'rgba(192,139,42,0.5)',
+            marginTop:'.8rem',letterSpacing:'.16em',
+            paddingTop:'.65rem',borderTop:'1px dashed rgba(192,139,42,0.18)',
+            textTransform:'uppercase',
+          }},(sk?'tvoj kód · ':'your code · '),R('span',{style:{color:'#F5EDD8',letterSpacing:'.22em',fontSize:'.55rem'}},me.referralCode))
         )
       ),
 
-      // ── SOM SÚČASŤOU
-      (()=>{
-        const myBgIds=new Set();
-        myTeams.forEach(tt=>{if(tt.bigGroupId)myBgIds.add(tt.bigGroupId);});
-        (me.bigGroupIds||[]).forEach(id=>myBgIds.add(id));
-        const pts=me.points||0;
-        const geoChips=[
-          {label:me.city||'Mesto',icon:'🏙️',active:pts>=0,level:'city'},
-          {label:(me.region||me.city||'Kraj').replace(/^[A-Z]{2} · /,''),icon:'🗺️',active:pts>=PLAY_CITY,level:'region'},
-          {label:me.country||'Štát',icon:'🏛️',active:pts>=PLAY_REGION,level:'state'},
-          {label:'Európa',icon:'🌍',active:pts>=PLAY_STATE,level:'continent'},
-          {label:'Svet',icon:'🌐',active:pts>=PLAY_CONTINENT,level:'global'},
-        ];
-        return R('div',{style:{margin:'0 1rem .75rem'}},
-          R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.48rem',
-            letterSpacing:'.18em',textTransform:'uppercase',
-            color:'rgba(245,237,220,0.25)',marginBottom:'.45rem',
-          }},t('myLevels')||'Som súčasťou'),
-          R('div',{style:{display:'flex',flexWrap:'wrap',gap:'.3rem'}},
-            // Individual
-            R('span',{style:LevelChip(true,false)},'👤 Jednotlivec'),
-            // Teams
-            ...myTeams.map(tt=>R('span',{key:tt.id,
-              style:LevelChip(true,false),
-              onClick:()=>setScr('team'),
-            },'👥 '+tt.name)),
-            myTeams.length===0&&R('span',{style:LevelChip(false,false)},'👥 Malá sk. 🔒'),
-            // Big groups
-            ...[...myBgIds].map(id=>bigGroups[id]?R('span',{key:id,
-              style:LevelChip(true,true),
-            },'🏛 '+bigGroups[id].name):null).filter(Boolean),
-            myBgIds.size===0&&R('span',{style:LevelChip(false,false)},'🏛 Veľká sk. 🔒'),
-            // Geo
-            ...geoChips.map(g=>R('span',{key:g.level,
-              style:LevelChip(g.active,true),
-              onClick:g.active?()=>{setLbTab(g.level);setScr('lb');}:null,
-            },g.icon+' '+g.label+(g.active?'':' 🔒')))
-          )
-        );
-      })(),
-
-      // ── WORLD STRIP
-      R('div',{style:{
-        margin:'0 1rem .75rem',
-        padding:'.55rem .9rem',
-        border:'1px solid rgba(192,139,42,0.1)',
-        background:'rgba(192,139,42,0.03)',
-        display:'flex',alignItems:'center',gap:'.75rem',
-      }},
-        R('div',{style:{flex:1}},
-          R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.47rem',
-            letterSpacing:'.12em',textTransform:'uppercase',
-            color:'rgba(192,139,42,0.4)',marginBottom:'.2rem',
-          }},t('worldGoal')||'Svet · cieľ 50%'),
-          R('div',{style:{height:'2px',background:'rgba(245,237,220,0.05)'}},
-            R('div',{style:{
-              height:'100%',
-              background:'rgba(192,139,42,0.4)',
-              width:Math.min(100,globalStats.pct/50*100)+'%',
-            }})
-          ),
-          R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.46rem',
-            color:'rgba(245,237,220,0.15)',marginTop:'.18rem',
-          }},globalStats.count+' hráčov')
-        ),
+      // ══ TASK CARDS ═══════════════════════════════════════
+      R('div',{style:{position:'relative',zIndex:2,margin:'1.25rem 1rem .75rem'}},
         R('div',{style:{
-          fontFamily:"'Bebas Neue',sans-serif",
-          fontSize:'1.4rem',letterSpacing:'.05em',
-          color:'rgba(192,139,42,0.5)',flexShrink:0,
-        }},globalStats.pctDisplay+'%')
-      ),
+          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.52rem',
+          letterSpacing:'.28em',textTransform:'uppercase',
+          color:'rgba(245,237,220,0.32)',marginBottom:'.85rem',
+          textAlign:'center',
+        }},sk?'· čo urobíš teraz? ·':'· what now? ·'),
 
-      // ── TASKS
-      R('div',{style:{margin:'0 1rem .75rem'}},
-        R('div',{style:{
-          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.48rem',
-          letterSpacing:'.18em',textTransform:'uppercase',
-          color:'rgba(245,237,220,0.25)',marginBottom:'.5rem',
-        }},t('whatNow')||'Čo môžeš urobiť teraz'),
-
-        // Task 1 — bonding1
-        TaskCard({
-          emoji:'💛',pts:1,
-          title:getLang()==='sk'?'Urob dobro pre blízkeho':'Do good for someone close',
-          available:b1ok,
-          count:b1,max:3,
-          locked_msg:getLang()==='sk'?'Najprv sa zoznám s niekým novým':'First meet someone new',
+        TaskCard({emoji:'💛',pts:1,
+          title:sk?'Urob dobro pre blízkeho':'Do good for someone close',
+          available:b1ok,count:b1,max:3,
+          locked_msg:sk?'Najprv sa zoznám s niekým novým':'First meet someone new',
           onClick:b1ok?()=>{setNote('');setActiveTask({id:'bonding1',pts:1,emoji:'💛',title:t('bonding1Title')||'Urob dobro',color:'#C08B2A'});setScr('log');}:null,
-          accentColor:'#C08B2A',
-        }),
-        TaskCard({
-          emoji:'🤜',pts:2,
-          title:getLang()==='sk'?'Prehĺb existujúci vzťah':'Deepen a relationship',
-          available:b2ok,
-          count:b2,max:2,
-          locked_msg:getLang()==='sk'?'Najprv sa zoznám s niekým novým':'First meet someone new',
+          accentColor:'#C08B2A'}),
+        TaskCard({emoji:'🤜',pts:2,
+          title:sk?'Prehĺb existujúci vzťah':'Deepen a relationship',
+          available:b2ok,count:b2,max:2,
+          locked_msg:sk?'Najprv sa zoznám s niekým novým':'First meet someone new',
           onClick:b2ok?()=>{setNote('');setActiveTask({id:'bonding2',pts:2,emoji:'🤜',title:t('bonding2Title')||'Prehĺb vzťah',color:'#B5451B'});setScr('log');}:null,
-          accentColor:'#B5451B',
-        }),
-        TaskCard({
-          emoji:'🤝',pts:3,
-          title:getLang()==='sk'?'Zoznám sa s niekým novým':'Meet someone new',
-          available:true,
-          count:null,max:null,
-          locked_msg:'',
+          accentColor:'#B5451B'}),
+        TaskCard({emoji:'🤝',pts:3,
+          title:sk?'Zoznám sa s niekým novým':'Meet someone new',
+          available:true,count:null,max:null,locked_msg:'',
           onClick:()=>{setNote('');setActiveTask({id:'bridging',pts:3,emoji:'🤝',title:t('bridgingTitle')||'Nové zoznámenie',color:'#8C2410'});setScr('log');},
-          accentColor:'#8C2410',
-        }),
+          accentColor:'#8C2410'})
       ),
 
-      // ── LEADERBOARD PREVIEW
-      R('div',{style:{margin:'0 1rem'}},
-        // Header row with tabs
+      // ══ LEADERBOARD PREVIEW (top 5) ══════════════════════
+      R('div',{style:{position:'relative',zIndex:2,margin:'1.5rem 1rem 0'}},
         R('div',{style:{
-          display:'flex',alignItems:'center',justifyContent:'space-between',
-          marginBottom:'.5rem',
+          display:'flex',alignItems:'baseline',justifyContent:'space-between',
+          marginBottom:'.6rem',
         }},
           R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.48rem',
-            letterSpacing:'.18em',textTransform:'uppercase',
-            color:'rgba(245,237,220,0.25)',
-          }},t('leaderboard')||'Rebríček'),
-          R('div',{style:{display:'flex',gap:'.3rem'}},
-            ['ind','small','city'].map(tab=>
-              R('button',{key:tab,
-                onClick:()=>{setLbTab(tab);setScr('lb');},
-                style:{
-                  fontFamily:"'IBM Plex Mono',monospace",fontSize:'.46rem',
-                  letterSpacing:'.06em',padding:'.2rem .5rem',
-                  border:'1px solid '+(lbTab===tab?'rgba(192,139,42,0.45)':'rgba(245,237,220,0.1)'),
-                  background:lbTab===tab?'rgba(192,139,42,0.12)':'transparent',
-                  color:lbTab===tab?'#C08B2A':'rgba(245,237,220,0.3)',
-                  cursor:'pointer',transition:'all .15s',
-                },
-              },tab==='ind'?t('ind').slice(0,4):tab==='small'?'Tím':'Mesto')
-            )
-          )
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.52rem',
+            letterSpacing:'.28em',textTransform:'uppercase',
+            color:'rgba(245,237,220,0.32)',
+          }},sk?'· najlepší hráči ·':'· top players ·'),
+          R('button',{onClick:()=>setScr('lb'),
+            style:{
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
+              letterSpacing:'.14em',color:'rgba(192,139,42,0.7)',
+              background:'transparent',border:'none',cursor:'pointer',
+              textTransform:'uppercase',padding:0,
+            }},sk?'všetky →':'all →')
         ),
-
-        // Rows
         R('div',{style:{
-          border:'1px solid rgba(245,237,220,0.07)',
-          overflow:'hidden',
+          border:'1px solid rgba(245,237,220,0.08)',overflow:'hidden',
+          background:'rgba(13,10,6,0.3)',
         }},
           ...lbPlayers.map((p,i)=>{
             const isMe=p.uid===me.uid;
+            const medal=i===0?'#C08B2A':i===1?'rgba(245,237,220,0.55)':i===2?'rgba(181,69,27,0.7)':'rgba(245,237,220,0.22)';
             return R('div',{key:p.uid,style:{
               display:'flex',alignItems:'center',gap:'.7rem',
-              padding:'.5rem .85rem',
-              background:isMe?'rgba(192,139,42,0.07)':'transparent',
-              borderLeft:isMe?'2px solid rgba(192,139,42,0.5)':'2px solid transparent',
+              padding:'.6rem .9rem',
+              background:isMe?'rgba(192,139,42,0.08)':'transparent',
+              borderLeft:isMe?'2px solid rgba(192,139,42,0.6)':'2px solid transparent',
               borderBottom:i<lbPlayers.length-1?'1px solid rgba(245,237,220,0.04)':'none',
-              transition:'background .15s',
+              animation:'slideInUp .5s '+(0.15+i*0.06)+'s ease both',
             }},
               R('div',{style:{
                 fontFamily:"'Bebas Neue',sans-serif",
-                fontSize:'.9rem',letterSpacing:'.05em',
-                color:i===0?'#C08B2A':isMe?'rgba(245,237,220,0.5)':'rgba(245,237,220,0.2)',
+                fontSize:'1rem',letterSpacing:'.05em',color:medal,
                 width:'1.5rem',textAlign:'center',flexShrink:0,
+                textShadow:i===0?'0 0 10px rgba(192,139,42,0.45)':'none',
               }},i+1),
               R('div',{style:{
-                flex:1,
-                fontFamily:"'Libre Baskerville',serif",fontSize:'.83rem',
-                color:isMe?'#F5EDD8':'rgba(245,237,220,0.55)',
+                flex:1,minWidth:0,
+                fontFamily:"'Libre Baskerville',serif",fontSize:'.88rem',
+                color:isMe?'#F5EDD8':'rgba(245,237,220,0.62)',
                 fontWeight:isMe?700:400,
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-              }},
-                p.nickname,
+              }},p.nickname,
                 isMe&&R('span',{style:{
-                  fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',
-                  letterSpacing:'.08em',color:'#C08B2A',
-                  border:'1px solid rgba(192,139,42,0.4)',
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:'.4rem',
+                  letterSpacing:'.14em',color:'#C08B2A',
+                  border:'1px solid rgba(192,139,42,0.5)',
                   padding:'.05rem .3rem',marginLeft:'.4rem',verticalAlign:'middle',
-                }},'TY')
+                }},sk?'TY':'YOU')
               ),
               R('div',{style:{
                 fontFamily:"'Bebas Neue',sans-serif",
-                fontSize:'1.15rem',letterSpacing:'.03em',
-                color:isMe?'#C08B2A':'rgba(245,237,220,0.35)',flexShrink:0,
+                fontSize:'1.2rem',letterSpacing:'.03em',
+                color:isMe?'#C08B2A':'rgba(245,237,220,0.42)',flexShrink:0,
               }},p.points||0)
             );
-          }),
-          // See all button
-          R('button',{
-            onClick:()=>setScr('lb'),
-            style:{
-              display:'block',width:'100%',padding:'.5rem',
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.52rem',
-              letterSpacing:'.1em',textTransform:'uppercase',
-              color:'rgba(192,139,42,0.4)',
-              background:'rgba(192,139,42,0.04)',
-              border:'none',borderTop:'1px solid rgba(245,237,220,0.04)',
-              cursor:'pointer',transition:'color .15s',
-            },
-          },'Zobraziť všetko →')
+          })
         )
       )
     );
