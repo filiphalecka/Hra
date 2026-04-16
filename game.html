@@ -16,7 +16,7 @@
   --fs:'Libre Baskerville',Georgia,serif;
   --fm:'IBM Plex Mono',monospace;
 }
-html,body{height:100%;overflow:hidden;}
+html,body{min-height:100%;}body{overflow-x:hidden;overflow-y:auto;}
 body{
   background:var(--bg);color:var(--ink);font-family:var(--fs);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
@@ -2026,13 +2026,13 @@ function App(){
     const ringOffset=ringC*(1-Math.max(0.003,worldPct/100)); // min visible sliver
     const sk=getLang()==='sk';
 
-    return R('div',{style:{paddingBottom:'5rem',position:'relative',overflow:'hidden'}},
+    return R('div',{style:{paddingBottom:'5rem',position:'relative'}},
 
       // ── AMBIENT PARTICLES ────────────────────────────────
       R('div',{style:{position:'absolute',inset:0,pointerEvents:'none',zIndex:0}},
         ...Array.from({length:14}).map((_,i)=>R('span',{key:i,className:'hero-dot',style:{
-          left:((7+i*11.3)%96)+'%',
-          top:((5+i*13.7)%92)+'%',
+          left:((5+i*7.1)%90)+'%',
+          top:((5+i*13.7)%88)+'%',
           animation:'floatDot '+(3.2+(i%5)*0.7)+'s ease-in-out '+(i*0.35)+'s infinite alternate',
         }}))
       ),
