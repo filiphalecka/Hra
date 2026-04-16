@@ -342,13 +342,15 @@ const DB={
   },
   async _put(path,data){
     const tok=this.getToken();
-    await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
+    const r=await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
       method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!r.ok){const txt=await r.text();throw new Error('DB PUT '+path+' failed: '+r.status+' '+txt);}
   },
   async _patch(path,data){
     const tok=this.getToken();
-    await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
+    const r=await fetch(FB_DB_URL+'/'+path+'.json'+(tok?'?auth='+tok:''),{
       method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!r.ok){const txt=await r.text();throw new Error('DB PATCH '+path+' failed: '+r.status+' '+txt);}
   },
   async getPlayers(){
     if(USE_FIREBASE){try{return(await this._get('players'))||{};}catch{}}
@@ -1452,8 +1454,9 @@ function App(){
           teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
           referralCode:myCode,
           referredBy:referralCode.trim()||null,bonding1Count:0,bonding2Count:0};
-        await DB.setPlayer(res.localId,profile);
+        // Session MUST be saved before DB.setPlayer — setPlayer reads idToken from it
         lsSet('hps:session',{uid:res.localId,idToken:res.idToken,email:email.trim()});
+        await DB.setPlayer(res.localId,profile);
         // Give referrer 5 points
         if(referralCode.trim()){
           const allPl=await DB.getPlayers();
