@@ -179,6 +179,26 @@ sup{font-size:.5rem;color:var(--gold);vertical-align:super;}
     <p id="i-p3-health">Mechanizmus je jasný: sociálna izolácia zvyšuje kortizol, narúša spánok, oslabuje imunitu. <em>Telo potrebuje druhých biologicky</em> — nie len psychologicky.<sup>6</sup> A opačne — každá pozitívna interakcia uvoľňuje oxytocín, znižuje stres a posilňuje imunitný systém. Merateľne. Opakovane potvrdené.</p>
   </div>
 
+  <div class="arg" id="a-crime">
+    <div class="arg-tag" id="i-tag-crime">Pre tých, komu záleží na bezpečnosti</div>
+    <h2 id="i-h2-crime">Komunity, kde sa ľudia poznajú,<br><em>sú bezpečnejšie.</em></h2>
+    <p id="i-p1-crime">Nie je to len intuícia. Komunitné programy na posilnenie väzieb medzi susedmi znižujú kriminalitu v danej oblasti podľa výskumu v priemere o 17 % — a sú nákladovo efektívnejšie než zvýšenie policajnej prítomnosti.<sup>7</sup></p>
+    <span class="big-num" id="i-stat-crime">−17 %</span>
+    <span class="big-label" id="i-stat-crime-l">pokles kriminality v oblastiach s komunitnými programami sociálneho kapitálu<sup>7</sup></span>
+    <p id="i-p2-crime">Mechanizmus je jednoduchý: keď ťa v okolí poznajú, kriminalita sa ťa dotýka osobnejšie — a ostatní ťa skôr odhalia. Sociálne väzby zvyšujú <em>kolektívnu efektivitu</em> — ochotu susedov zasiahnuť, keď vidia problém.<sup>8</sup></p>
+    <p id="i-p3-crime">Každé stretnutie v tejto hre je vlákno v bezpečnostnej sieti tvojej komunity.</p>
+  </div>
+
+  <div class="arg" id="a-aging">
+    <div class="arg-tag" id="i-tag-aging">Pre tých, čo chcú žiť dlhšie</div>
+    <h2 id="i-h2-aging">Sociálne väzby spomaľujú<br><em>biologické starnutie.</em></h2>
+    <p id="i-p1-aging">Cornellská štúdia na 2 100 dospelých zistila, že ľudia s vyššou mierou celoživotných sociálnych väzieb vykazujú pomalšie epigenetické starnutie a nižšie hladiny chronického zápalu.<sup>9</sup></p>
+    <span class="big-num" id="i-stat-aging">91 %</span>
+    <span class="big-label" id="i-stat-aging-l">vyššie riziko úmrtnosti u sociálne izolovaných ľudí — PNAS<sup>10</sup></span>
+    <p id="i-p2-aging">Tri neurobiologické dráhy spájajú sociálnu oporu so zdravím: autonómny nervový systém, neuroendokrinný systém a imunitný systém. Sila tohto efektu je porovnateľná s vplyvom fajčenia.<sup>11</sup></p>
+    <p id="i-p3-aging">Tvoje telo potrebuje druhých ľudí. Nie len psychologicky — <em>biologicky.</em></p>
+  </div>
+
 </div>
 
 <div class="fns" id="fns">
@@ -189,6 +209,11 @@ sup{font-size:.5rem;color:var(--gold);vertical-align:super;}
   <div class="fn" id="fn4"><sup>4</sup> Granovetter, M. S. (1973). The Strength of Weak Ties. <em>American Journal of Sociology, 78(6)</em>, 1360–1380. <a href="https://doi.org/10.1086/225469" target="_blank">doi.org/10.1086/225469</a></div>
   <div class="fn" id="fn5"><sup>5</sup> Holt-Lunstad, J., Smith, T. B. & Layton, J. B. (2010). Social Relationships and Mortality Risk. <em>PLOS Medicine, 7(7)</em>. <a href="https://doi.org/10.1371/journal.pmed.1000316" target="_blank">doi.org/10.1371/journal.pmed.1000316</a></div>
   <div class="fn" id="fn6"><sup>6</sup> Uchino, B. N. (2006). Social Support and Health: A Review of Physiological Processes. <em>Journal of Behavioral Medicine, 29(4)</em>, 377–387.</div>
+  <div class="fn" id="fn7"><sup>7</sup> Gonzalez, R. & Komisarow, S. (2020). Community-based monitoring and crime prevention. <em>Journal of Economic Behavior & Organization</em>. Tiež: Sanfelice, V. (2019). Cost-benefit analysis.</div>
+  <div class="fn" id="fn8"><sup>8</sup> Sampson, R. J. et al. (1997). Neighborhoods and Violent Crime: A Multilevel Study of Collective Efficacy. <em>Science, 277(5328)</em>, 918–924.</div>
+  <div class="fn" id="fn9"><sup>9</sup> Ong, A. D. et al. (2025). Cumulative social advantage and biological aging. <em>Brain, Behavior and Immunity — Health.</em> Cornell University.</div>
+  <div class="fn" id="fn10"><sup>10</sup> Yang, Y. C. et al. (2016). Social relationships and physiological determinants of longevity. <em>PNAS, 113(3)</em>, 578–583.</div>
+  <div class="fn" id="fn11"><sup>11</sup> Uchino, B. N. et al. (2021). Social Support and Longevity: Meta-Analysis-Based Evidence. <em>Frontiers in Psychology, 12</em>.</div>
 </div>
 
 <div class="cta-wrap" id="cta">
@@ -203,9 +228,11 @@ const MAP = {
   community: { args:['a-community'], fns:['fn3'] },
   curious:   { args:['a-curious'],   fns:['fn4'] },
   health:    { args:['a-health'],    fns:['fn5','fn6'] },
+  crime:     { args:['a-crime'],     fns:['fn7','fn8'] },
+  aging:     { args:['a-aging'],     fns:['fn9','fn10','fn11'] },
 };
-const ALL_ARGS = ['a-lonely','a-meaning','a-community','a-curious','a-health'];
-const ALL_FNS  = ['fn1','fn2','fn3','fn4','fn5','fn6'];
+const ALL_ARGS = ['a-lonely','a-meaning','a-community','a-curious','a-health','a-crime','a-aging'];
+const ALL_FNS  = ['fn1','fn2','fn3','fn4','fn5','fn6','fn7','fn8','fn9','fn10','fn11'];
 
 function pick(el){
   el.classList.toggle('sel');
