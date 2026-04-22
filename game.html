@@ -2733,6 +2733,7 @@ function App(){
 
   // ── LEADERBOARD SCREEN ─────────────────────────────────────
   if(scr==='lb'){
+    const sk=getLang()==='sk';
     const cityMap={},regionMap={},stateMap={},continentMap={},globalTotal={pts:0,players:0};
     Object.values(players).forEach(p=>{
       if(p.city){const k=p.city;cityMap[k]=cityMap[k]||{name:k,points:0,players:0};cityMap[k].points+=p.points||0;cityMap[k].players++;}
@@ -2886,19 +2887,20 @@ function App(){
         );
       }
       if(lbTab==='city')
-        return R(FoggedList,{locked:false,lockMsg:''},
+        return R(FoggedList,{locked:myPts<PLAY_CITY,lockMsg:myPts+'/'+PLAY_CITY+' '+(sk?'bodov':'pts')},
           sCities.length===0?emptyMsg:R('div',null,...sCities.map((item,i)=>CityRow(item,i,me,licensed,cityFunding))));
       if(lbTab==='region')
-        return R(FoggedList,{locked:myPts<PLAY_CITY,lockMsg:myPts+'/'+PLAY_CITY+' bodov'},
+        return R(FoggedList,{locked:myPts<PLAY_REGION,lockMsg:myPts+'/'+PLAY_REGION+' '+(sk?'bodov':'pts')},
           sRegions.length===0?emptyMsg:R('div',null,...sRegions.map((r,i)=>GeoRow(r,i,me.region||me.city,'region'))));
       if(lbTab==='state')
-        return R(FoggedList,{locked:myPts<PLAY_REGION,lockMsg:myPts+'/'+PLAY_REGION+' bodov'},
+        return R(FoggedList,{locked:myPts<PLAY_STATE,lockMsg:myPts+'/'+PLAY_STATE+' '+(sk?'bodov':'pts')},
           sStates.length===0?emptyMsg:R('div',null,...sStates.map((s,i)=>GeoRow(s,i,me.country,'state'))));
       if(lbTab==='continent')
-        return R(FoggedList,{locked:myPts<PLAY_STATE,lockMsg:myPts+'/'+PLAY_STATE+' bodov'},
+        return R(FoggedList,{locked:myPts<PLAY_CONTINENT,lockMsg:myPts+'/'+PLAY_CONTINENT+' '+(sk?'bodov':'pts')},
           sContinents.length===0?emptyMsg:R('div',null,...sContinents.map((c,i)=>GeoRow(c,i,countryToContinent(me.country||''),'continent'))));
       if(lbTab==='global')
-        return R('div',{style:{
+        return R(FoggedList,{locked:myPts<PLAY_GLOBAL,lockMsg:myPts+'/'+PLAY_GLOBAL+' '+(sk?'bodov':'pts')},
+        R('div',{style:{
           border:'1px solid rgba(192,139,42,0.15)',
           background:'rgba(192,139,42,0.04)',
           padding:'2rem',textAlign:'center',marginTop:'.5rem',
@@ -2910,7 +2912,7 @@ function App(){
           R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.6rem',color:'rgba(245,237,220,0.35)',marginTop:'1rem'}},'CHÝBA'),
           R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'2.8rem',color:'#F5EDD8',lineHeight:1}},
             Math.max(0,Math.round(8300000000*0.5-globalTotal.players)).toLocaleString('sk-SK'))
-        );
+        ));
     };
 
     return R('div',{style:{padding:'1rem 1rem 5rem'}},
@@ -2940,11 +2942,11 @@ function App(){
         color:'rgba(245,237,220,0.22)',marginBottom:'.4rem',
       }},'Geografické'),
       R('div',{style:{display:'flex',borderBottom:'1px solid rgba(245,237,220,0.07)',marginBottom:'1rem',overflowX:'auto'}},
-        TabBtn('city','Mestá'),
-        TabBtn('region','Kraje'),
-        TabBtn('state','Štáty'),
-        TabBtn('continent','Kontinent'),
-        TabBtn('global','Svet'),
+        TabBtn('city',(sk?'Mestá':'Cities')+(myPts<PLAY_CITY?' 🔒':'')),
+        TabBtn('region',(sk?'Kraje':'Regions')+(myPts<PLAY_REGION?' 🔒':'')),
+        TabBtn('state',(sk?'Štáty':'Countries')+(myPts<PLAY_STATE?' 🔒':'')),
+        TabBtn('continent',(sk?'Kontinent':'Continent')+(myPts<PLAY_CONTINENT?' 🔒':'')),
+        TabBtn('global',(sk?'Svet':'World')+(myPts<PLAY_GLOBAL?' 🔒':'')),
       ),
 
       renderLbContent()
