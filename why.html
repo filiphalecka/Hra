@@ -93,7 +93,7 @@ sup{font-size:.5rem;color:var(--gold);vertical-align:super;}
   </p>
 </section>
 
-<div class="q-wrap">
+<div class="q-wrap" style="padding-bottom:5rem;">
   <div class="q-label" id="i-q-label">Skôr než začneš</div>
   <div class="q-text" id="i-q-text">Čo ťa sem priviedlo?</div>
   <div class="opts" id="opts">
@@ -119,7 +119,7 @@ sup{font-size:.5rem;color:var(--gold);vertical-align:super;}
     </button>
   </div>
   <button id="submit-btn" onclick="submit()" style="
-    display:none;
+    display:block;
     margin-top:1.5rem;
     font-family:'DM Mono',monospace;font-size:.68rem;
     letter-spacing:.12em;text-transform:uppercase;
@@ -238,7 +238,7 @@ function pick(el){
   el.classList.toggle('sel');
   // Show submit button only when something is selected
   const anySelected = document.querySelectorAll('.opt.sel').length > 0;
-  document.getElementById('submit-btn').style.display = anySelected ? 'block' : 'none';
+  // submit button always visible
 }
 
 function submit(){

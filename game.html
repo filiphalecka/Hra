@@ -254,16 +254,16 @@ const ADMIN_EMAIL  = 'filip.halecka@gmail.com';
 
 
 // Thresholds
-const CITY_THRESHOLD      = 50;
-const PLAY_CITY = 50;
-const PLAY_REGION = 100;
-const PLAY_STATE = 150;
-const PLAY_CONTINENT = 175;
-const PLAY_GLOBAL = 200;
-const REGION_THRESHOLD    = 100;
-const STATE_THRESHOLD     = 150;
-const CONTINENT_THRESHOLD = 175;
-const GLOBAL_THRESHOLD    = 200;
+const CITY_THRESHOLD      = 300;
+const PLAY_CITY = 300;
+const PLAY_REGION = 500;
+const PLAY_STATE = 750;
+const PLAY_CONTINENT = 1050;
+const PLAY_GLOBAL = 1400;
+const REGION_THRESHOLD    = 500;
+const STATE_THRESHOLD     = 750;
+const CONTINENT_THRESHOLD = 1050;
+const GLOBAL_THRESHOLD    = 1400;
 
 // ── Štartovacie kategórie veľkých skupín ─────────────────────
 // Každá kategória má pole podkategórií (typy skupín)
@@ -955,7 +955,7 @@ const TASK_CATALOG = [
 ];
 
 // Level thresholds — must earn this many points to unlock tasks of this level
-const LEVEL_THRESHOLDS = [0, 15, 50, 100, 150, 175, 200];
+const LEVEL_THRESHOLDS = [0, 150, 300, 500, 750, 1050, 1400];
 const LEVEL_NAMES_SK = ['Jednotlivec','Susedstvo','Mesto','Kraj','Štát','Kontinent','Svet'];
 const LEVEL_NAMES_EN = ['Individual','Neighbourhood','City','Region','Country','Continent','World'];
 
@@ -2458,7 +2458,7 @@ function App(){
             R('div',{style:{
               fontFamily:"'IBM Plex Mono',monospace",fontSize:'.44rem',
               color:'rgba(192,139,42,0.5)',letterSpacing:'.1em',
-            }},(sk?'lvl ':'lvl ')+myLevel+' · '+(sk?LEVEL_NAMES_SK[myLevel]:LEVEL_NAMES_EN[myLevel]))
+            }},(sk?'lvl ':'lvl ')+myLevel+' · '+(sk?LEVEL_NAMES_SK[myLevel]:LEVEL_NAMES_EN[myLevel])+(nextThresh?(' · '+myPts+'/'+nextThresh):''))
           ),
 
           // Daily 3 cards
@@ -2470,22 +2470,51 @@ function App(){
               accentColor:task.color})
           ),
 
-          // "Show all" expandable
-          allTasks.length>3&&R('details',{style:{marginTop:'.4rem'}},
+          // "Show all" expandable — shows ALL tasks, locked ones greyed out
+          R('details',{style:{marginTop:'.4rem'}},
             R('summary',{style:{
               fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
               letterSpacing:'.12em',color:'rgba(192,139,42,0.5)',
               cursor:'pointer',padding:'.4rem 0',textTransform:'uppercase',
               listStyle:'none',
-            }},sk?'▾ všetky úlohy ('+allTasks.length+')':'▾ all tasks ('+allTasks.length+')'),
+            }},sk?'▾ všetky úlohy ('+TASK_CATALOG.length+')':'▾ all tasks ('+TASK_CATALOG.length+')'),
             R('div',{style:{paddingTop:'.3rem'}},
-              ...allTasks.filter(t=>!daily.find(d=>d.id===t.id)).map(task=>
-                TaskCard({emoji:task.emoji,pts:task.pts,
-                  title:sk?task.sk:task.en,
-                  available:true,count:null,max:null,locked_msg:'',
-                  onClick:taskClick(task),
-                  accentColor:task.color})
-              )
+              // Group by level
+              ...LEVEL_THRESHOLDS.map((thresh,lvlIdx)=>{
+                const lvlTasks=TASK_CATALOG.filter(t=>t.level===lvlIdx);
+                if(lvlTasks.length===0) return null;
+                const unlocked=myLevel>=lvlIdx;
+                const lvlName=sk?LEVEL_NAMES_SK[lvlIdx]:LEVEL_NAMES_EN[lvlIdx];
+                return R('div',{key:lvlIdx,style:{marginBottom:'.6rem'}},
+                  // Level header
+                  R('div',{style:{
+                    display:'flex',alignItems:'center',gap:'.5rem',
+                    marginBottom:'.35rem',paddingTop:lvlIdx>0?'.4rem':0,
+                  }},
+                    R('div',{style:{
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.46rem',
+                      letterSpacing:'.18em',textTransform:'uppercase',
+                      color:unlocked?'rgba(192,139,42,0.6)':'rgba(245,237,220,0.2)',
+                    }},lvlName),
+                    R('div',{style:{
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',
+                      color:unlocked?'rgba(192,139,42,0.35)':'rgba(245,237,220,0.12)',
+                      letterSpacing:'.08em',
+                    }},unlocked?'✓':(thresh+' '+(sk?'bodov':'pts'))),
+                    R('div',{style:{flex:1,height:'1px',background:unlocked?'rgba(192,139,42,0.12)':'rgba(245,237,220,0.05)'}})
+                  ),
+                  // Tasks in this level
+                  ...lvlTasks.map(task=>{
+                    const isDailyPick=daily.find(d=>d.id===task.id);
+                    return TaskCard({emoji:task.emoji,pts:task.pts,
+                      title:(sk?task.sk:task.en)+(isDailyPick?(sk?' · dnes':' · today'):''),
+                      available:unlocked,count:null,max:null,
+                      locked_msg:thresh+' '+(sk?'bodov na odomknutie':'pts to unlock'),
+                      onClick:unlocked?taskClick(task):null,
+                      accentColor:task.color});
+                  })
+                );
+              }).filter(Boolean)
             )
           ),
 
