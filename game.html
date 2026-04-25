@@ -37,7 +37,7 @@ body{
   color:var(--gold);text-decoration:none;
 }
 .g-nav-back{
-  font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;
+  font-family:var(--fm);font-size:.74rem;letter-spacing:.1em;
   color:var(--ink3);text-decoration:none;text-transform:uppercase;transition:color .2s;
 }
 .g-nav-back:hover{color:var(--ink2);}
@@ -113,7 +113,7 @@ textarea:focus{border-color:rgba(192,139,42,.4);}
 </nav>
 
 <div id="game-root" style="padding-bottom:0;">
-  <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:rgba(245,237,220,.2);padding:.5rem 0;">načítavam…</div>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:rgba(245,237,220,.2);padding:.5rem 0;">načítavam…</div>
 </div>
 
 <div class="g-bnav" id="g-bnav" style="display:none;">
@@ -644,37 +644,37 @@ const {useState,useEffect,useRef}=React;
 const dark='rgba(250,245,239,';
 const S={
   inp:{width:'100%',padding:'.7rem 1rem',border:'1px solid rgba(250,245,239,0.18)',
-    background:'rgba(250,245,239,0.05)',fontSize:'.9rem',color:'#FAF5EF',outline:'none',
+    background:'rgba(250,245,239,0.05)',fontSize:'1.05rem',color:'#FAF5EF',outline:'none',
     fontFamily:"'Syne',sans-serif",borderRadius:0,marginBottom:'.75rem'},
   sel:{width:'100%',padding:'.7rem 1rem',border:'1px solid rgba(250,245,239,0.18)',
-    background:'#1a1610',fontSize:'.9rem',color:'#FAF5EF',outline:'none',
+    background:'#1a1610',fontSize:'1.05rem',color:'#FAF5EF',outline:'none',
     fontFamily:"'Syne',sans-serif",borderRadius:0,marginBottom:'.75rem',cursor:'pointer'},
   btnP:{padding:'.75rem 1.5rem',border:'none',background:'#8B2E14',color:'#FAF5EF',
-    fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,letterSpacing:'.08em',
+    fontFamily:"'Syne',sans-serif",fontSize:'.95rem',fontWeight:500,letterSpacing:'.08em',
     textTransform:'uppercase',cursor:'pointer',borderRadius:0,display:'block'},
   btnS:{padding:'.75rem 1.5rem',border:'1px solid rgba(250,245,239,0.25)',background:'transparent',
-    color:'#FAF5EF',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,
+    color:'#FAF5EF',fontFamily:"'Syne',sans-serif",fontSize:'.95rem',fontWeight:500,
     letterSpacing:'.08em',textTransform:'uppercase',cursor:'pointer',borderRadius:0},
   btnG:{padding:'.75rem 1.5rem',border:'none',background:'#B8882A',color:'#FAF5EF',
-    fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,letterSpacing:'.08em',
+    fontFamily:"'Syne',sans-serif",fontSize:'.95rem',fontWeight:500,letterSpacing:'.08em',
     textTransform:'uppercase',cursor:'pointer',borderRadius:0,display:'block'},
   btnM:{padding:'.55rem .9rem',border:'1px solid rgba(250,245,239,0.14)',background:'transparent',
-    color:dark+'.42)',fontFamily:"'Syne',sans-serif",fontSize:'.75rem',
+    color:dark+'.42)',fontFamily:"'Syne',sans-serif",fontSize:'1.05rem',
     letterSpacing:'.05em',textTransform:'uppercase',cursor:'pointer',borderRadius:0},
   btnLink:{background:'none',border:'none',color:'rgba(196,96,58,0.85)',fontFamily:"'Syne',sans-serif",
-    fontSize:'.8rem',cursor:'pointer',padding:0,textDecoration:'underline'},
+    fontSize:'.95rem',cursor:'pointer',padding:0,textDecoration:'underline'},
   card:{background:'rgba(250,245,239,0.05)',border:'1px solid rgba(250,245,239,0.1)',
     padding:'1.5rem 1.75rem',marginBottom:'1rem'},
   cardGold:{background:'rgba(184,136,42,0.08)',border:'1px solid rgba(184,136,42,0.3)',
     padding:'1.5rem 1.75rem',marginBottom:'1rem'},
-  lbl:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.15em',
+  lbl:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',letterSpacing:'.15em',
     color:dark+'.38)',textTransform:'uppercase',display:'block',marginBottom:'.4rem'},
-  err:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#C4603A',marginTop:'-.5rem',marginBottom:'.75rem'},
-  ok:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',color:'#B8882A',marginBottom:'.75rem'},
+  err:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',color:'#C4603A',marginTop:'-.5rem',marginBottom:'.75rem'},
+  ok:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',color:'#B8882A',marginBottom:'.75rem'},
   flash:{background:'rgba(184,136,42,0.13)',border:'1px solid rgba(184,136,42,0.28)',
-    padding:'.75rem 1rem',fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+    padding:'.75rem 1rem',fontFamily:"'DM Mono',monospace",fontSize:'1rem',
     color:'#FAF5EF',letterSpacing:'.05em',marginBottom:'1rem'},
-  eye:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',letterSpacing:'.15em',
+  eye:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',letterSpacing:'.15em',
     textTransform:'uppercase',color:'#C4603A',marginBottom:'.75rem'},
   h:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'1.9rem',fontWeight:600,
     color:'#FAF5EF',marginBottom:'1.5rem',lineHeight:1.1},
@@ -682,53 +682,53 @@ const S={
   row:{display:'flex',alignItems:'center',gap:'.75rem',padding:'.85rem 0',
     borderBottom:'1px solid rgba(250,245,239,0.07)'},
   pt:{fontFamily:"'DM Mono',monospace",fontSize:'1.1rem',fontWeight:500,color:'#B8882A'},
-  badge:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.08em',
+  badge:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',letterSpacing:'.08em',
     padding:'.2rem .55rem',border:'1px solid rgba(250,245,239,0.18)',color:dark+'.48)'},
-  badgeA:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.08em',
+  badgeA:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',letterSpacing:'.08em',
     padding:'.2rem .55rem',background:'#8B2E14',border:'none',color:'#FAF5EF'},
-  badgeG:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',letterSpacing:'.08em',
+  badgeG:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',letterSpacing:'.08em',
     padding:'.2rem .55rem',background:'#B8882A',border:'none',color:'#FAF5EF'},
-  badgeFb:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',letterSpacing:'.06em',
+  badgeFb:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',letterSpacing:'.06em',
     padding:'.15rem .45rem',background:'rgba(184,136,42,0.15)',
     border:'1px solid rgba(184,136,42,0.3)',color:'#B8882A'},
-  tab:{padding:'.6rem 1rem',fontSize:'.8rem',cursor:'pointer',color:dark+'.38)',
+  tab:{padding:'.6rem 1rem',fontSize:'.95rem',cursor:'pointer',color:dark+'.38)',
     background:'none',border:'none',borderBottom:'2px solid transparent',
     fontFamily:"'Syne',sans-serif",letterSpacing:'.05em'},
-  tabA:{padding:'.6rem 1rem',fontSize:'.8rem',cursor:'pointer',color:'#FAF5EF',
+  tabA:{padding:'.6rem 1rem',fontSize:'.95rem',cursor:'pointer',color:'#FAF5EF',
     background:'none',border:'none',borderBottom:'2px solid #C4603A',
     fontFamily:"'Syne',sans-serif",letterSpacing:'.05em'},
   stat:{background:'rgba(250,245,239,0.05)',border:'1px solid rgba(250,245,239,0.1)',
     padding:'1rem 1.25rem',textAlign:'center'},
   statN:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:'2.5rem',
     fontWeight:600,color:'#C4603A',lineHeight:1},
-  statL:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',color:dark+'.3)',
+  statL:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',color:dark+'.3)',
     letterSpacing:'.1em',textTransform:'uppercase',marginTop:'.25rem'},
   tCode:{fontFamily:"'DM Mono',monospace",fontSize:'1.8rem',fontWeight:500,
     color:'#B8882A',letterSpacing:'.2em',padding:'.75rem 1rem',
     background:'rgba(250,245,239,0.04)',border:'1px solid rgba(250,245,239,0.1)',
     textAlign:'center',margin:'.75rem 0'},
   rank:{display:'inline-flex',alignItems:'center',justifyContent:'center',
-    width:'1.8rem',height:'1.8rem',fontFamily:"'DM Mono',monospace",fontSize:'.75rem',
+    width:'1.8rem',height:'1.8rem',fontFamily:"'DM Mono',monospace",fontSize:'1.05rem',
     color:dark+'.32)',border:'1px solid rgba(250,245,239,0.1)'},
   cascade:{display:'flex',alignItems:'center',flexWrap:'wrap',gap:'.25rem',
     padding:'1rem 1.25rem',background:'rgba(250,245,239,0.03)',
     border:'1px solid rgba(250,245,239,0.07)'},
   cn:{padding:'.35rem .7rem',border:'1px solid rgba(250,245,239,0.1)',
-    fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:dark+'.32)'},
+    fontFamily:"'DM Mono',monospace",fontSize:'.76rem',color:dark+'.32)'},
   cna:{padding:'.35rem .7rem',border:'1px solid #C4603A',
-    fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'#C4603A'},
+    fontFamily:"'DM Mono',monospace",fontSize:'.76rem',color:'#C4603A'},
   cnlock:{padding:'.35rem .7rem',border:'1px dashed rgba(184,136,42,0.4)',
-    fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(184,136,42,0.6)'},
-  arr:{fontFamily:"'DM Mono',monospace",fontSize:'.75rem',color:'rgba(250,245,239,0.18)',padding:'0 .1rem'},
+    fontFamily:"'DM Mono',monospace",fontSize:'.76rem',color:'rgba(184,136,42,0.6)'},
+  arr:{fontFamily:"'DM Mono',monospace",fontSize:'1.05rem',color:'rgba(250,245,239,0.18)',padding:'0 .1rem'},
   lvlBtn:{flex:1,padding:'.85rem .5rem',border:'1px solid rgba(250,245,239,0.15)',
     background:'rgba(250,245,239,0.04)',cursor:'pointer',textAlign:'center',
-    fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.5)',fontSize:'.8rem',borderRadius:0},
+    fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.5)',fontSize:'.95rem',borderRadius:0},
   lvlBtnA:{flex:1,padding:'.85rem .5rem',border:'1px solid #C4603A',
     background:'rgba(196,96,58,0.1)',cursor:'pointer',textAlign:'center',
-    fontFamily:"'Syne',sans-serif",color:'#FAF5EF',fontSize:'.8rem',fontWeight:500,borderRadius:0},
+    fontFamily:"'Syne',sans-serif",color:'#FAF5EF',fontSize:'.95rem',fontWeight:500,borderRadius:0},
   lvlBtnLock:{flex:1,padding:'.85rem .5rem',border:'1px dashed rgba(250,245,239,0.1)',
     background:'transparent',cursor:'not-allowed',textAlign:'center',
-    fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.2)',fontSize:'.8rem',borderRadius:0},
+    fontFamily:"'Syne',sans-serif",color:'rgba(250,245,239,0.2)',fontSize:'.95rem',borderRadius:0},
   progress:{height:'4px',background:'rgba(250,245,239,0.1)',margin:'.75rem 0'},
   progressFill:{height:'100%',background:'#B8882A',transition:'width .4s ease'},
   fog:{
@@ -749,7 +749,7 @@ const S={
     paddingBottom:'1.25rem',
   },
   fogLabel:{
-    fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+    fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
     letterSpacing:'.12em',color:'rgba(250,245,239,0.4)',
     textTransform:'uppercase',textAlign:'center',
   },
@@ -760,18 +760,18 @@ const S={
   // Category picker styles
   catGrid:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.5rem',marginBottom:'1rem'},
   catBtn:{padding:'.65rem .9rem',border:'1px solid rgba(250,245,239,0.2)',background:'rgba(250,245,239,0.08)',
-    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:500,
+    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.95rem',fontWeight:500,
     color:'rgba(250,245,239,0.75)',textAlign:'center',borderRadius:0,letterSpacing:'.03em'},
   catBtnA:{padding:'.65rem .9rem',border:'1px solid #C4603A',background:'rgba(196,96,58,0.18)',
-    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:600,
+    cursor:'pointer',fontFamily:"'Syne',sans-serif",fontSize:'.95rem',fontWeight:600,
     color:'#FAF5EF',textAlign:'center',borderRadius:0,letterSpacing:'.03em'},
   typeChip:{display:'inline-block',padding:'.3rem .75rem',margin:'.2rem',
     border:'1px solid rgba(250,245,239,0.25)',fontFamily:"'DM Mono',monospace",
-    fontSize:'.65rem',color:'rgba(250,245,239,0.65)',cursor:'pointer',
+    fontSize:'.95rem',color:'rgba(250,245,239,0.65)',cursor:'pointer',
     background:'rgba(250,245,239,0.06)',borderRadius:0},
   typeChipA:{display:'inline-block',padding:'.3rem .75rem',margin:'.2rem',
     border:'1px solid #C4603A',background:'rgba(196,96,58,0.18)',
-    fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'#FAF5EF',
+    fontFamily:"'DM Mono',monospace",fontSize:'.95rem',color:'#FAF5EF',
     cursor:'pointer',borderRadius:0},
 };
 
@@ -801,7 +801,7 @@ function Fl({msg}){return msg?R('div',{style:S.flash},msg):null;}
 function Lbl({c}){return R('label',{style:S.lbl},c);}
 function Err({m}){return m?R('div',{style:S.err},m):null;}
 function Ok({m}){return m?R('div',{style:S.ok},m):null;}
-function Bk({to,set,l}){return R(Btn,{onClick:()=>set(to),v:'m',s:{marginBottom:'1.5rem',fontSize:'.7rem',padding:'.45rem .85rem'}},'← '+l);}
+function Bk({to,set,l}){return R(Btn,{onClick:()=>set(to),v:'m',s:{marginBottom:'1.5rem',fontSize:'1rem',padding:'.45rem .85rem'}},'← '+l);}
 function Divider(){return R('div',{style:{borderTop:'1px solid rgba(250,245,239,0.1)',margin:'1.25rem 0'}});}
 function FoggedList({children,locked,lockMsg}){
   if(!locked) return R('div',null,...(Array.isArray(children)?children:[children]));
@@ -810,7 +810,7 @@ function FoggedList({children,locked,lockMsg}){
     R('div',{style:S.fogOverlay},
       R('div',{style:{textAlign:'center'}},
         R('div',{style:{...S.fogLabel,marginBottom:'.3rem'}},'🔒 Uzamknuté'),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
           color:'rgba(250,245,239,0.25)'}},lockMsg||'Odomkni túto úroveň')
       )
     )
@@ -846,7 +846,7 @@ function CategoryPicker({categories,selectedCat,selectedType,onCat,onType,onRequ
     ),
     // Request new category button
     R('button',{
-      style:{...S.btnM,marginTop:'.5rem',fontSize:'.65rem',color:'rgba(184,136,42,0.7)',
+      style:{...S.btnM,marginTop:'.5rem',fontSize:'.95rem',color:'rgba(184,136,42,0.7)',
         borderColor:'rgba(184,136,42,0.2)'},
       onClick:onRequestNew},
       '+ Navrhnúť novú kategóriu')
@@ -1027,8 +1027,8 @@ function LevelPicker({selected,onSelect,me,myTeams,activeTeamId,onTeamChange,lic
         style:lv.locked?S.lvlBtnLock:selected===lv.id?S.lvlBtnA:S.lvlBtn,
         onClick:()=>!lv.locked&&onSelect(lv.id),
         title:lv.locked?lv.lockMsg:''},
-        R('div',{style:{fontWeight:500,marginBottom:'.15rem',fontSize:'.75rem'}},lv.label),
-        R('div',{style:{fontSize:'.6rem',opacity:.7}},lv.locked?'🔒':lv.sub)
+        R('div',{style:{fontWeight:500,marginBottom:'.15rem',fontSize:'1.05rem'}},lv.label),
+        R('div',{style:{fontSize:'.76rem',opacity:.7}},lv.locked?'🔒':lv.sub)
       ))
     ),
     (selected==='team'||selected==='city')&&hasTeam&&myTeams.length>1&&R('div',null,
@@ -1063,21 +1063,21 @@ function LevelProgress({me,onShop,licensed}){
       const p=pct(pts,lv.thresh);
       if(lv.can) return R('div',{key:lv.id,style:{...S.card,
         borderColor:'rgba(184,136,42,0.3)',background:'rgba(184,136,42,0.06)',marginBottom:'.5rem'}},
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase'}},
           lv.label+' · '+lv.name+' ✓')
       );
       const needsInteractions=pts<lv.thresh;
       const needsLicense=!lv.licensed&&pts>=lv.thresh;
       return R('div',{key:lv.id,style:{...S.card,marginBottom:'.5rem'}},
         R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.4rem'}},
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}},
             lv.label+(lv.name&&lv.name!=='?'?' · '+lv.name:'')),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:needsLicense?'#B8882A':'rgba(250,245,239,0.3)'}},
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',color:needsLicense?'#B8882A':'rgba(250,245,239,0.3)'}},
             needsLicense?'potrebná licencia!':(pts+' / '+lv.thresh))
         ),
         needsInteractions&&R('div',{style:S.progress},R('div',{style:{...S.progressFill,width:p+'%'}})),
         needsLicense&&R('div',null,
-          R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.45)',marginBottom:'.6rem',lineHeight:1.5}},
+          R('div',{style:{fontSize:'.95rem',color:'rgba(250,245,239,0.45)',marginBottom:'.6rem',lineHeight:1.5}},
             lv.name+' ešte nemá licenciu. Kúp ju a odomkni pre všetkých.'),
           R(Btn,{onClick:onShop,v:'g',full:true,s:{padding:'.6rem'}},'🏙️ Kúpiť licenciu')
         ),
@@ -1137,7 +1137,7 @@ function CityShop({me,onBack}){
     R(Bk,{to:'home',set:onBack,l:t('back')}),
     R('div',{style:S.eye},'E-shop · licencie'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Odomkni ',R('em',{style:S.hEm},'svoju úroveň')),
-    R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
+    R('div',{style:{fontSize:'1rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
       'Jedna licencia odomkne úroveň pre všetkých hráčov z danej oblasti alebo organizácie.'),
 
     // Tabs
@@ -1155,7 +1155,7 @@ function CityShop({me,onBack}){
         R('div',null,
           R('div',{style:{fontFamily:"'Syne',sans-serif",fontWeight:500,
             color:'#FAF5EF',fontSize:'.95rem',marginBottom:'.25rem'}},tier.label),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
             color:'rgba(250,245,239,0.35)'}},tier.sub)
         ),
         R('div',{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",
@@ -1164,14 +1164,14 @@ function CityShop({me,onBack}){
       ),
       R('a',{href:contactLink(tier),style:{
         display:'block',textAlign:'center',
-        fontFamily:"'Syne',sans-serif",fontSize:'.8rem',fontWeight:600,
+        fontFamily:"'Syne',sans-serif",fontSize:'.95rem',fontWeight:600,
         letterSpacing:'.08em',textTransform:'uppercase',
         color:'#FAF5EF',background:'#8B2E14',
         padding:'.75rem',textDecoration:'none'}},
         'Mám záujem → email')
     )),
 
-    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+    R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
       color:'rgba(250,245,239,0.2)',lineHeight:1.7,marginTop:'1rem',textAlign:'center'}},
       'Po kliknutí sa otvorí emailový klient s predvyplnenou správou.',R('br',null),
       'Platobný systém bude dostupný čoskoro.')
@@ -1229,11 +1229,11 @@ function CityRow(item, i, me, licensed, cityFunding){
       R(RankBadge,{i}),
       R('div',{style:{flex:1}},
         R('div',{style:{
-          fontFamily:"'Syne',sans-serif",fontSize:'.88rem',
+          fontFamily:"'Syne',sans-serif",fontSize:'1rem',
           fontWeight:isMyCity?500:400,
           color:isMyCity?'#FAF5EF':'rgba(250,245,239,0.68)'
         }}, item.name, isMyCity&&R(YouTag,null)),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
           color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},item.players+' hráčov')
       ),
       R(Pts,{v:Math.round(item.points),me:isMyCity})
@@ -1246,14 +1246,14 @@ function CityRow(item, i, me, licensed, cityFunding){
       R(RankBadge,{i}),
       R('div',{style:{flex:1}},
         R('div',{style:{
-          fontFamily:"'Syne',sans-serif",fontSize:'.88rem',
+          fontFamily:"'Syne',sans-serif",fontSize:'1rem',
           fontWeight:isMyCity?500:400,
           color:isMyCity?'#FAF5EF':'rgba(250,245,239,0.55)'
         }}, item.name, isMyCity&&R(YouTag,null)),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
           color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},item.players+' hráčov')
       ),
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.9rem',
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'1.05rem',
         color:'rgba(250,245,239,0.13)',letterSpacing:'.12em',flexShrink:0,userSelect:'none'}},'• • •')
     ),
     R('div',{style:{
@@ -1261,11 +1261,11 @@ function CityRow(item, i, me, licensed, cityFunding){
       border:'1px solid rgba(250,245,239,0.07)',padding:'.55rem .75rem',
     }},
       R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.35rem'}},
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
           letterSpacing:'.09em',textTransform:'uppercase',color:'rgba(250,245,239,0.28)'}},
           isMyCity ? '🏙️ Tvoje mesto ešte nemá licenciu' : 'Bez licencie'
         ),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',
           color:pctFunded>0?'#B8882A':'rgba(250,245,239,0.2)',fontWeight:500}},
           contributed+'€ / '+target+'€')
       ),
@@ -1277,14 +1277,14 @@ function CityRow(item, i, me, licensed, cityFunding){
       pctFunded < 100
         ? R('div',{style:{display:'flex',alignItems:'center',gap:'.65rem'}},
             R('a',{href:makeLink(),style:{
-              fontFamily:"'DM Mono',monospace",fontSize:'.55rem',letterSpacing:'.08em',
+              fontFamily:"'DM Mono',monospace",fontSize:'1rem',letterSpacing:'.08em',
               textTransform:'uppercase',color:'#FAF5EF',background:'#8B2E14',
               padding:'.28rem .65rem',textDecoration:'none',display:'inline-block',flexShrink:0,
             }},'+ Prispieť'),
-            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.5rem',color:'rgba(250,245,239,0.2)'}},
+            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',color:'rgba(250,245,239,0.2)'}},
               'chýba '+missing+'€ · min. 1€')
           )
-        : R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.55rem',color:'#4A7C59'}},
+        : R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',color:'#4A7C59'}},
             '✓ Cieľ splnený — mesto sa čoskoro odomkne')
     )
   );
@@ -1305,7 +1305,7 @@ function BigBtn(bg, bgHover){
     background: bg || '#8C2410',
     color:'#F5EDD8',
     fontFamily:"'IBM Plex Mono',monospace",
-    fontSize:'.68rem',letterSpacing:'.12em',
+    fontSize:'.95rem',letterSpacing:'.12em',
     textTransform:'uppercase',
     cursor:'pointer',
     transition:'background .18s',
@@ -1315,7 +1315,7 @@ function BigBtn(bg, bgHover){
 
 const MiniBtn = {
   fontFamily:"'IBM Plex Mono',monospace",
-  fontSize:'.54rem',letterSpacing:'.07em',
+  fontSize:'1rem',letterSpacing:'.07em',
   padding:'.25rem .55rem',
   background:'transparent',
   border:'1px solid rgba(245,237,220,0.12)',
@@ -1327,7 +1327,7 @@ const MiniBtn = {
 function AuthLabel(text){
   return R('label',{style:{
     fontFamily:"'IBM Plex Mono',monospace",
-    fontSize:'.55rem',letterSpacing:'.14em',
+    fontSize:'1rem',letterSpacing:'.14em',
     textTransform:'uppercase',
     color:'rgba(245,237,220,0.35)',
     display:'block',marginBottom:'.35rem',
@@ -1342,7 +1342,7 @@ const H2Style = {
 
 function LevelChip(active, isGroup){
   if(active && isGroup) return {
-    fontFamily:"'IBM Plex Mono',monospace",fontSize:'.49rem',
+    fontFamily:"'IBM Plex Mono',monospace",fontSize:'.65rem',
     letterSpacing:'.07em',padding:'.2rem .5rem',
     border:'1px solid rgba(45,94,62,0.45)',
     background:'rgba(45,94,62,0.12)',
@@ -1350,14 +1350,14 @@ function LevelChip(active, isGroup){
     cursor:'pointer',transition:'all .15s',
   };
   if(active) return {
-    fontFamily:"'IBM Plex Mono',monospace",fontSize:'.49rem',
+    fontFamily:"'IBM Plex Mono',monospace",fontSize:'.65rem',
     letterSpacing:'.07em',padding:'.2rem .5rem',
     border:'1px solid rgba(192,139,42,0.4)',
     background:'rgba(192,139,42,0.1)',
     color:'#C08B2A',
   };
   return {
-    fontFamily:"'IBM Plex Mono',monospace",fontSize:'.49rem',
+    fontFamily:"'IBM Plex Mono',monospace",fontSize:'.65rem',
     letterSpacing:'.07em',padding:'.2rem .5rem',
     border:'1px dashed rgba(245,237,220,0.1)',
     color:'rgba(245,237,220,0.18)',
@@ -1385,12 +1385,12 @@ function TaskCard({emoji,pts,title,available,count,max,locked_msg,onClick,accent
     R('div',{style:{flex:1,minWidth:0}},
       R('div',{style:{
         fontFamily:"'Libre Baskerville',serif",
-        fontSize:'.85rem',fontWeight:available?700:400,
+        fontSize:'1rem',fontWeight:available?700:400,
         color:available?'#F5EDD8':'rgba(245,237,220,0.4)',
         marginBottom:'.18rem',
       }},title),
       !available&&R('div',{style:{
-        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
+        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
         color:'rgba(245,237,220,0.25)',letterSpacing:'.06em',
       }},locked_msg)
     ),
@@ -1402,7 +1402,7 @@ function TaskCard({emoji,pts,title,available,count,max,locked_msg,onClick,accent
       }}))
     ),
     max==null&&R('div',{style:{
-      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.58rem',
+      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.74rem',
       color:'rgba(245,237,220,0.18)',flexShrink:0,
     }},'∞'),
     R('div',{style:{
@@ -2157,7 +2157,7 @@ function App(){
         }},'HRA'),
         R('div',{style:{
           fontFamily:"'Libre Baskerville',serif",
-          fontSize:'.85rem',fontStyle:'italic',
+          fontSize:'1rem',fontStyle:'italic',
           color:'rgba(245,237,220,0.4)',letterSpacing:'.05em',
         }},'proti samote')
       ),
@@ -2172,7 +2172,7 @@ function App(){
             onClick:()=>{setAuthTab(tab);setAe('');setAok('');},
             style:{
               flex:1,padding:'.85rem',border:'none',background:'transparent',
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.62rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'1.05rem',
               letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',
               color:authTab===tab?'#F5EDD8':'rgba(245,237,220,0.3)',
               borderBottom:authTab===tab?'2px solid #C08B2A':'2px solid transparent',
@@ -2201,7 +2201,7 @@ function App(){
           ),
           R('button',{onClick:doReset,style:{
             display:'block',width:'100%',textAlign:'center',
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.6rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.76rem',
             letterSpacing:'.08em',color:'rgba(245,237,220,0.3)',
             background:'none',border:'none',cursor:'pointer',
             marginTop:'.75rem',padding:'.5rem',
@@ -2252,7 +2252,7 @@ function App(){
     return R('div',{style:{padding:'2rem 1.5rem',textAlign:'center'}},
       R('div',{style:{fontSize:'3rem',marginBottom:'1.5rem'}},'📧'),
       R('h2',{style:H2Style},'Overiť e-mail'),
-      R('p',{style:{color:'rgba(245,237,220,0.5)',fontFamily:"'IBM Plex Mono',monospace",fontSize:'.7rem',lineHeight:1.8,marginBottom:'2rem'}},
+      R('p',{style:{color:'rgba(245,237,220,0.5)',fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',lineHeight:1.8,marginBottom:'2rem'}},
         'Na tvoj e-mail sme poslali overovací odkaz.'),
       R('button',{onClick:doCheckVerified,disabled:busy,style:BigBtn('#8C2410','#B5451B')},busy?'…':'Skontrolovať'),
       R('button',{onClick:doResendVerify,style:{...BigBtn('transparent','rgba(245,237,220,0.06)'),marginTop:'.5rem',border:'1px solid rgba(245,237,220,0.12)'}},
@@ -2323,7 +2323,7 @@ function App(){
       }},
         R('div',{style:{
           fontFamily:"'IBM Plex Mono',monospace",
-          fontSize:'.48rem',letterSpacing:'.28em',
+          fontSize:'1.05rem',letterSpacing:'.28em',
           color:'rgba(192,139,42,0.7)',
           textTransform:'uppercase',marginBottom:'.15rem',
         }},sk?'· svet · cieľ 50% populácie ·':'· world · goal 50% of humanity ·'),
@@ -2372,13 +2372,13 @@ function App(){
             }},globalStats.count.toLocaleString(sk?'sk-SK':'en-US')),
             R('div',{style:{
               fontFamily:"'IBM Plex Mono',monospace",
-              fontSize:'.46rem',letterSpacing:'.18em',
+              fontSize:'.76rem',letterSpacing:'.18em',
               color:'rgba(245,237,220,0.35)',
               textTransform:'uppercase',marginTop:'.25rem',
             }},sk?'hráčov na svete':'players worldwide'),
             R('div',{style:{
               fontFamily:"'IBM Plex Mono',monospace",
-              fontSize:'.62rem',color:'#C08B2A',marginTop:'.4rem',
+              fontSize:'1.05rem',color:'#C08B2A',marginTop:'.4rem',
               letterSpacing:'.12em',
             }},globalStats.pctDisplay+'%')
           )
@@ -2386,7 +2386,7 @@ function App(){
         // missing line
         R('div',{style:{
           fontFamily:"'Libre Baskerville',serif",
-          fontSize:'.8rem',fontStyle:'italic',
+          fontSize:'.95rem',fontStyle:'italic',
           color:'rgba(245,237,220,0.48)',marginTop:'.35rem',
         }},sk?'chýba ešte ':'still missing ',
           R('span',{style:{color:'#C08B2A',fontWeight:600,fontStyle:'normal'}},
@@ -2397,7 +2397,7 @@ function App(){
         R('button',{onClick:()=>{setLbTab('global');setScr('lb');},
           style:{
             marginTop:'.9rem',
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.54rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
             letterSpacing:'.18em',textTransform:'uppercase',
             color:'#F5EDD8',
             background:'transparent',
@@ -2434,7 +2434,7 @@ function App(){
             R('div',{style:{minWidth:0,flex:1,paddingRight:'.5rem'}},
               R('div',{style:{
                 fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:'.48rem',letterSpacing:'.22em',
+                fontSize:'1.05rem',letterSpacing:'.22em',
                 color:'rgba(192,139,42,0.6)',
                 textTransform:'uppercase',marginBottom:'.3rem',
               }},'#'+myRank+' · '+(me.city||'—')),
@@ -2453,7 +2453,7 @@ function App(){
               }},me.points||0),
               R('div',{style:{
                 fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:'.46rem',color:'rgba(245,237,220,0.32)',
+                fontSize:'.76rem',color:'rgba(245,237,220,0.32)',
                 letterSpacing:'.12em',textTransform:'uppercase',
               }},t('points'))
             )
@@ -2461,7 +2461,7 @@ function App(){
           above?R('div',null,
             R('div',{style:{
               display:'flex',justifyContent:'space-between',
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
               color:'rgba(245,237,220,0.3)',marginBottom:'.32rem',
               letterSpacing:'.08em',
             }},
@@ -2477,20 +2477,20 @@ function App(){
               }},R('div',{className:'bar-shine'}))
             )
           ):R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.54rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
             color:'rgba(192,139,42,0.75)',marginTop:'.25rem',letterSpacing:'.15em',
             textTransform:'uppercase',
           }},'🏆 '+(sk?'na čele rebríčka':'leading the ranks')),
           me.referralCode&&R('div',{style:{
             fontFamily:"'IBM Plex Mono',monospace",
-            fontSize:'.48rem',color:'rgba(192,139,42,0.5)',
+            fontSize:'1.05rem',color:'rgba(192,139,42,0.5)',
             marginTop:'.8rem',letterSpacing:'.16em',
             paddingTop:'.65rem',borderTop:'1px dashed rgba(192,139,42,0.18)',
             textTransform:'uppercase',
-          }},(sk?'tvoj kód · ':'your code · '),R('span',{style:{color:'#F5EDD8',letterSpacing:'.22em',fontSize:'.55rem'}},me.referralCode)),
+          }},(sk?'tvoj kód · ':'your code · '),R('span',{style:{color:'#F5EDD8',letterSpacing:'.22em',fontSize:'1rem'}},me.referralCode)),
           myTeamIds.length>0&&R('div',{style:{
             fontFamily:"'IBM Plex Mono',monospace",
-            fontSize:'.46rem',color:'rgba(245,237,220,0.25)',
+            fontSize:'.76rem',color:'rgba(245,237,220,0.25)',
             marginTop:'.35rem',letterSpacing:'.1em',
           }},(sk?'tímy: ':'teams: ')+myTeamIds.length)
         )
@@ -2521,12 +2521,12 @@ function App(){
             marginBottom:'.65rem',
           }},
             R('div',{style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.52rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
               letterSpacing:'.28em',textTransform:'uppercase',
               color:'rgba(245,237,220,0.32)',
             }},sk?'· dnešné úlohy ·':'· today\'s tasks ·'),
             R('div',{style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.44rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.74rem',
               color:'rgba(192,139,42,0.5)',letterSpacing:'.1em',
             }},(sk?'lvl ':'lvl ')+myLevel+' · '+(sk?LEVEL_NAMES_SK[myLevel]:LEVEL_NAMES_EN[myLevel])+(nextThresh?(' · '+myPts+'/'+nextThresh):''))
           ),
@@ -2552,7 +2552,7 @@ function App(){
           // "Show all" expandable — shows ALL tasks, locked ones greyed out
           R('details',{style:{marginTop:'.4rem'}},
             R('summary',{style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
               letterSpacing:'.12em',color:'rgba(192,139,42,0.5)',
               cursor:'pointer',padding:'.4rem 0',textTransform:'uppercase',
               listStyle:'none',
@@ -2571,12 +2571,12 @@ function App(){
                     marginBottom:'.35rem',paddingTop:lvlIdx>0?'.4rem':0,
                   }},
                     R('div',{style:{
-                      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.46rem',
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.76rem',
                       letterSpacing:'.18em',textTransform:'uppercase',
                       color:unlocked?'rgba(192,139,42,0.6)':'rgba(245,237,220,0.2)',
                     }},lvlName),
                     R('div',{style:{
-                      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',
                       color:unlocked?'rgba(192,139,42,0.35)':'rgba(245,237,220,0.12)',
                       letterSpacing:'.08em',
                     }},unlocked?'✓':(thresh+' '+(sk?'bodov':'pts'))),
@@ -2613,7 +2613,7 @@ function App(){
             background:'rgba(192,139,42,0.03)',
           }},
             R('div',{style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.48rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'1.05rem',
               letterSpacing:'.14em',color:'rgba(192,139,42,0.45)',
               textTransform:'uppercase',marginBottom:'.25rem',
             }},sk?'Ďalšia úroveň: '+nextLevelName:'Next level: '+nextLevelName),
@@ -2626,7 +2626,7 @@ function App(){
               }})
             ),
             R('div',{style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.44rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.74rem',
               color:'rgba(245,237,220,0.2)',marginTop:'.2rem',
               letterSpacing:'.08em',
             }},myPts+' / '+nextThresh+(sk?' bodov':' points'))
@@ -2641,13 +2641,13 @@ function App(){
           marginBottom:'.6rem',
         }},
           R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.52rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
             letterSpacing:'.28em',textTransform:'uppercase',
             color:'rgba(245,237,220,0.32)',
           }},sk?'· najlepší hráči ·':'· top players ·'),
           R('button',{onClick:()=>setScr('lb'),
             style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
               letterSpacing:'.14em',color:'rgba(192,139,42,0.7)',
               background:'transparent',border:'none',cursor:'pointer',
               textTransform:'uppercase',padding:0,
@@ -2676,7 +2676,7 @@ function App(){
               }},i+1),
               R('div',{style:{
                 flex:1,minWidth:0,
-                fontFamily:"'Libre Baskerville',serif",fontSize:'.88rem',
+                fontFamily:"'Libre Baskerville',serif",fontSize:'1rem',
                 color:isMe?'#F5EDD8':'rgba(245,237,220,0.62)',
                 fontWeight:isMe?700:400,
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
@@ -2721,12 +2721,12 @@ function App(){
         R('div',{style:{fontSize:'2.2rem',lineHeight:1,flexShrink:0}},task.emoji),
         R('div',{style:{flex:1}},
           R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',
             letterSpacing:'.15em',textTransform:'uppercase',
             color:'rgba(192,139,42,0.6)',marginBottom:'.2rem',
           }},task.title),
           R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
             color:'rgba(245,237,220,0.3)',
           }},task.hint||(isBonding?bondingHint:'Oslovi cudzinca, vymeňte si kontakty alebo mená.'))
         ),
@@ -2746,7 +2746,7 @@ function App(){
       // Note input
       R('div',{style:{marginBottom:'1.25rem'}},
         R('div',{style:{
-          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',
+          fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
           letterSpacing:'.12em',textTransform:'uppercase',
           color:'rgba(245,237,220,0.35)',marginBottom:'.5rem',
           display:'block',
@@ -2762,7 +2762,7 @@ function App(){
             background:'rgba(245,237,220,0.04)',
             border:'1px solid '+(ne?'rgba(181,69,27,0.5)':'rgba(245,237,220,0.12)'),
             color:'#F5EDD8',
-            fontFamily:"'Libre Baskerville',serif",fontSize:'.9rem',
+            fontFamily:"'Libre Baskerville',serif",fontSize:'1.05rem',
             padding:'.85rem 1rem',outline:'none',lineHeight:1.7,
             transition:'border-color .2s',
           },
@@ -2770,7 +2770,7 @@ function App(){
           onBlur:e=>e.target.style.borderColor=ne?'rgba(181,69,27,0.5)':'rgba(245,237,220,0.12)',
         }),
         ne&&R('div',{style:{
-          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.62rem',
+          fontFamily:"'IBM Plex Mono',monospace",fontSize:'1.05rem',
           color:'#B5451B',marginTop:'.35rem',
         }},ne)
       ),
@@ -2782,7 +2782,7 @@ function App(){
         border:'1px solid '+(encPublic?'rgba(192,139,42,0.25)':'rgba(245,237,220,0.08)'),
         background:encPublic?'rgba(192,139,42,0.06)':'transparent',
         cursor:'pointer',transition:'all .2s',
-        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.58rem',
+        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.74rem',
         color:encPublic?'rgba(245,237,220,0.7)':'rgba(245,237,220,0.35)',
         letterSpacing:'.06em',
       }},
@@ -2866,19 +2866,19 @@ function App(){
       }},flag),
       R('div',{style:{flex:1}},
         R('div',{style:{
-          fontFamily:"'Libre Baskerville',serif",fontSize:'.85rem',
+          fontFamily:"'Libre Baskerville',serif",fontSize:'1rem',
           color:item.name===myName?'#F5EDD8':'rgba(245,237,220,0.55)',
           fontWeight:item.name===myName?700:400,
         }},
           item.name,
           item.name===myName&&R('span',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',
             color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',
             padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle',
           }},'TY')
         ),
         R('div',{style:{
-          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',
+          fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
           color:'rgba(245,237,220,0.25)',marginTop:'.1rem',
         }},item.players+' hráčov')
       ),
@@ -2906,18 +2906,18 @@ function App(){
         }},i+1),
         R('div',{style:{flex:1}},
           R('div',{style:{
-            fontFamily:"'Libre Baskerville',serif",fontSize:'.85rem',
+            fontFamily:"'Libre Baskerville',serif",fontSize:'1rem',
             color:isMe?'#F5EDD8':'rgba(245,237,220,0.55)',fontWeight:isMe?700:400,
           }},
             p.nickname,
             isMe&&R('span',{style:{
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',
               color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',
               padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle',
             }},'TY')
           ),
           R('div',{style:{
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
             color:'rgba(245,237,220,0.25)',marginTop:'.1rem',
           }},p.city+(p.country?', '+p.country:''))
         ),
@@ -2929,7 +2929,7 @@ function App(){
     };
 
     const emptyMsg=R('div',{style:{
-      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.7rem',
+      fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',
       color:'rgba(245,237,220,0.2)',padding:'2.5rem 0',textAlign:'center',
     }},'—');
 
@@ -2947,9 +2947,9 @@ function App(){
           }},
             R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'.95rem',color:i===0?'#C08B2A':'rgba(245,237,220,0.2)',width:'1.8rem',textAlign:'center',flexShrink:0}},i+1),
             R('div',{style:{flex:1}},
-              R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontSize:'.85rem',color:inTeam?'#F5EDD8':'rgba(245,237,220,0.55)',fontWeight:inTeam?700:400}},
-                t.name,inTeam&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle'}},'TÝM')),
-              R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(245,237,220,0.25)',marginTop:'.1rem'}},(t.members||[]).length+' členov')
+              R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontSize:'1rem',color:inTeam?'#F5EDD8':'rgba(245,237,220,0.55)',fontWeight:inTeam?700:400}},
+                t.name,inTeam&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle'}},'TÝM')),
+              R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(245,237,220,0.25)',marginTop:'.1rem'}},(t.members||[]).length+' členov')
             ),
             R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.2rem',color:inTeam?'#C08B2A':'rgba(245,237,220,0.35)',flexShrink:0}},t.points||0)
           );
@@ -2966,8 +2966,8 @@ function App(){
             return R('div',{key:g.id,style:{display:'flex',alignItems:'center',gap:'.75rem',padding:'.65rem 0',borderBottom:'1px solid rgba(245,237,220,0.05)',borderLeft:inBg?'2px solid rgba(192,139,42,0.4)':'2px solid transparent',paddingLeft:inBg?'.75rem':'0'}},
               R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'.95rem',color:i===0?'#C08B2A':'rgba(245,237,220,0.2)',width:'1.8rem',textAlign:'center',flexShrink:0}},i+1),
               R('div',{style:{flex:1}},
-                R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontSize:'.85rem',color:inBg?'#F5EDD8':'rgba(245,237,220,0.55)',fontWeight:inBg?700:400}},g.name,inBg&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle'}},'MOJA')),
-                R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(245,237,220,0.25)',marginTop:'.1rem'}},g.category+(g.type?' · '+g.type:''))
+                R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontSize:'1rem',color:inBg?'#F5EDD8':'rgba(245,237,220,0.55)',fontWeight:inBg?700:400}},g.name,inBg&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle'}},'MOJA')),
+                R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(245,237,220,0.25)',marginTop:'.1rem'}},g.category+(g.type?' · '+g.type:''))
               ),
               R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.2rem',color:inBg?'#C08B2A':'rgba(245,237,220,0.35)',flexShrink:0}},g.points||0)
             );
@@ -2994,7 +2994,7 @@ function App(){
           padding:'2rem',textAlign:'center',marginTop:'.5rem',
         }},
           R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'4rem',letterSpacing:'.03em',color:'#C08B2A',lineHeight:1}},globalTotal.pctDisplay||'0.00%'),
-          R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(245,237,220,0.3)',letterSpacing:'.1em',textTransform:'uppercase',marginTop:'.35rem',marginBottom:'1.25rem'}},'populácie sveta hrá'),
+          R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(245,237,220,0.3)',letterSpacing:'.1em',textTransform:'uppercase',marginTop:'.35rem',marginBottom:'1.25rem'}},'populácie sveta hrá'),
           R('div',{style:{height:'5px',background:'rgba(245,237,220,0.07)',borderRadius:'3px',margin:'0 0 .5rem'}},
             R('div',{style:{height:'100%',background:'#C08B2A',borderRadius:'3px',width:Math.min(100,(globalTotal.players/8300000000)*100/0.5*100)+'%'}})),
           R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.6rem',color:'rgba(245,237,220,0.35)',marginTop:'1rem'}},'CHÝBA'),
@@ -3014,7 +3014,7 @@ function App(){
 
       // Tabs — groups
       R('div',{style:{
-        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.46rem',
+        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.76rem',
         letterSpacing:'.18em',textTransform:'uppercase',
         color:'rgba(245,237,220,0.22)',marginBottom:'.4rem',
       }},'Skupiny'),
@@ -3025,7 +3025,7 @@ function App(){
       ),
       // Tabs — geo
       R('div',{style:{
-        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.46rem',
+        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.76rem',
         letterSpacing:'.18em',textTransform:'uppercase',
         color:'rgba(245,237,220,0.22)',marginBottom:'.4rem',
       }},'Geografické'),
@@ -3054,8 +3054,8 @@ function App(){
       R('h2',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'2.2rem',letterSpacing:'.1em',color:'#F5EDD8',marginBottom:'1.5rem',lineHeight:1}},'SKUPINY'),
 
       // My teams
-      R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(245,237,220,0.28)',marginBottom:'.6rem'}},'Malé skupiny'),
-      myTeams.length===0&&R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.65rem',color:'rgba(245,237,220,0.2)',marginBottom:'1rem'}},'Ešte nie si v žiadnom tíme.'),
+      R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(245,237,220,0.28)',marginBottom:'.6rem'}},'Malé skupiny'),
+      myTeams.length===0&&R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',color:'rgba(245,237,220,0.2)',marginBottom:'1rem'}},'Ešte nie si v žiadnom tíme.'),
       ...myTeams.map(tm=>{
         const bg=tm.bigGroupId?bigGroups[tm.bigGroupId]:null;
         const isActive=activeTeamId===tm.id;
@@ -3067,12 +3067,12 @@ function App(){
         }},
           R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'.5rem'}},
             R('div',null,
-              R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontWeight:700,fontSize:'.92rem',marginBottom:'.2rem'}},
+              R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontWeight:700,fontSize:'1.05rem',marginBottom:'.2rem'}},
                 tm.name,
-                isFounder&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',color:'rgba(245,237,220,0.35)',border:'1px solid rgba(245,237,220,0.15)',padding:'.05rem .28rem',marginLeft:'.35rem',verticalAlign:'middle'}},'zakladateľ')
+                isFounder&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',color:'rgba(245,237,220,0.35)',border:'1px solid rgba(245,237,220,0.15)',padding:'.05rem .28rem',marginLeft:'.35rem',verticalAlign:'middle'}},'zakladateľ')
               ),
-              bg&&R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(192,139,42,0.6)',marginBottom:'.1rem'}},'↳ '+bg.name),
-              R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(245,237,220,0.28)'}},
+              bg&&R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(192,139,42,0.6)',marginBottom:'.1rem'}},'↳ '+bg.name),
+              R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(245,237,220,0.28)'}},
                 'Kód: '+tm.code+' · '+(tm.members||[]).length+' členov · '+(tm.points||0)+' b')
             ),
             R('div',{style:{display:'flex',gap:'.3rem',flexWrap:'wrap',justifyContent:'flex-end'}},
@@ -3088,7 +3088,7 @@ function App(){
 
       // My big groups
       myBigGroupList.length>0&&R('div',null,
-        R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(245,237,220,0.28)',margin:'1.25rem 0 .6rem'}},'Veľké skupiny'),
+        R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(245,237,220,0.28)',margin:'1.25rem 0 .6rem'}},'Veľké skupiny'),
         ...myBigGroupList.map(bg=>{
           const parent=bg.parentId?bigGroups[bg.parentId]:null;
           return R('div',{key:bg.id,style:{
@@ -3097,12 +3097,12 @@ function App(){
           },onClick:()=>setScr('manage_bg_'+bg.id)},
             R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
               R('div',null,
-                R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontWeight:700,fontSize:'.9rem',marginBottom:'.2rem'}},
-                  bg.name,bg.founderId===me.uid&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.42rem',color:'rgba(245,237,220,0.35)',border:'1px solid rgba(245,237,220,0.15)',padding:'.05rem .28rem',marginLeft:'.35rem',verticalAlign:'middle'}},'zakladateľ')),
-                parent&&R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(192,139,42,0.55)',marginBottom:'.1rem'}},'↳ '+parent.name),
-                R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',color:'rgba(245,237,220,0.28)'}},bg.category+(bg.type?' · '+bg.type:'')+' · '+bg.points+' b')
+                R('div',{style:{fontFamily:"'Libre Baskerville',serif",fontWeight:700,fontSize:'1.05rem',marginBottom:'.2rem'}},
+                  bg.name,bg.founderId===me.uid&&R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',color:'rgba(245,237,220,0.35)',border:'1px solid rgba(245,237,220,0.15)',padding:'.05rem .28rem',marginLeft:'.35rem',verticalAlign:'middle'}},'zakladateľ')),
+                parent&&R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(192,139,42,0.55)',marginBottom:'.1rem'}},'↳ '+parent.name),
+                R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',color:'rgba(245,237,220,0.28)'}},bg.category+(bg.type?' · '+bg.type:'')+' · '+bg.points+' b')
               ),
-              R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.58rem',color:'rgba(245,237,220,0.3)'}},'Spravovať →')
+              R('span',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.74rem',color:'rgba(245,237,220,0.3)'}},'Spravovať →')
             )
           );
         })
@@ -3110,7 +3110,7 @@ function App(){
 
       // Join BG direct
       R('div',{style:{
-        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',letterSpacing:'.16em',
+        fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',letterSpacing:'.16em',
         textTransform:'uppercase',color:'rgba(245,237,220,0.28)',margin:'1.25rem 0 .6rem',
       }},'Pripojiť sa ku veľkej skupine'),
       R('div',{style:{display:'flex',gap:'.5rem',marginBottom:'1.5rem'}},
@@ -3121,10 +3121,10 @@ function App(){
       R('div',{style:{borderTop:'1px solid rgba(245,237,220,0.07)',marginTop:'.5rem',paddingTop:'1.25rem'}}),
 
       // Create team
-      R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.5rem',letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(245,237,220,0.28)',marginBottom:'.6rem'}},'Vytvoriť / pripojiť sa'),
+      R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.95rem',letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(245,237,220,0.28)',marginBottom:'.6rem'}},'Vytvoriť / pripojiť sa'),
       R('div',{style:{display:'flex',gap:0,marginBottom:'1rem',borderBottom:'1px solid rgba(245,237,220,0.07)'}},
         ['create','join'].map(tab=>R('button',{key:tab,onClick:()=>setTtab(tab),style:{
-          flex:1,padding:'.55rem',fontFamily:"'IBM Plex Mono',monospace",fontSize:'.58rem',
+          flex:1,padding:'.55rem',fontFamily:"'IBM Plex Mono',monospace",fontSize:'.74rem',
           letterSpacing:'.08em',textTransform:'uppercase',border:'none',background:'transparent',
           cursor:'pointer',color:ttab===tab?'#F5EDD8':'rgba(245,237,220,0.3)',
           borderBottom:ttab===tab?'2px solid #C08B2A':'2px solid transparent',transition:'all .15s',
@@ -3132,11 +3132,11 @@ function App(){
       ),
       R(Err,{m:te}),
       ttab==='create'?R('div',null,
-        R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,237,220,0.3)',marginBottom:'.35rem',display:'block'}},'Názov skupiny'),
+        R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,237,220,0.3)',marginBottom:'.35rem',display:'block'}},'Názov skupiny'),
         R(Inp,{val:tName,set:setTName,ph:'napr. Partiička zo schodov',onEnter:doCreateTeam,mb0:true}),
         R('button',{onClick:doCreateTeam,disabled:busy,style:{...BigBtn('#8C2410'),marginTop:'1rem'}},busy?'…':'Vytvoriť')
       ):R('div',null,
-        R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,237,220,0.3)',marginBottom:'.35rem',display:'block'}},'Kód skupiny'),
+        R('div',{style:{fontFamily:"'IBM Plex Mono',monospace",fontSize:'1rem',letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,237,220,0.3)',marginBottom:'.35rem',display:'block'}},'Kód skupiny'),
         R(Inp,{val:tCode,set:v=>setTCode(v.toUpperCase()),ph:'napr. AB3X7K',mono:true,onEnter:doJoinTeam,mb0:true}),
         R('button',{onClick:doJoinTeam,disabled:busy,style:{...BigBtn('#8C2410'),marginTop:'1rem'}},busy?'…':'Pripojiť sa')
       ),
@@ -3210,7 +3210,7 @@ function App(){
         }},sk?'PRÍBEHY':'STORIES'),
         R('div',{style:{
           fontFamily:"'IBM Plex Mono',monospace",
-          fontSize:'.55rem',letterSpacing:'.08em',
+          fontSize:'1rem',letterSpacing:'.08em',
           color:'rgba(245,237,220,0.3)',marginBottom:'.8rem',
           lineHeight:1.6,
         }},sk?'Každé stretnutie je príbeh. Tu sú naše.':'Every encounter is a story. Here are ours.'),
@@ -3221,7 +3221,7 @@ function App(){
             R('button',{key:tab,onClick:()=>setFeedTab(tab),
               style:{
                 flex:1,padding:'.65rem',border:'none',background:'transparent',
-                fontFamily:"'IBM Plex Mono',monospace",fontSize:'.56rem',
+                fontFamily:"'IBM Plex Mono',monospace",fontSize:'.72rem',
                 letterSpacing:'.14em',textTransform:'uppercase',cursor:'pointer',
                 color:feedTab===tab?'#F5EDD8':'rgba(245,237,220,0.28)',
                 borderBottom:feedTab===tab?'2px solid #C08B2A':'2px solid transparent',
@@ -3238,7 +3238,7 @@ function App(){
         R('div',{style:{
           padding:'3rem 1rem',textAlign:'center',
           fontFamily:"'Libre Baskerville',serif",
-          fontSize:'.9rem',fontStyle:'italic',
+          fontSize:'1.05rem',fontStyle:'italic',
           color:'rgba(245,237,220,0.25)',
         }},sk?'Zatiaľ žiadne verejné stretnutia. Zdieľaj svoje prvé!':'No public encounters yet. Share your first one!'):
 
@@ -3260,33 +3260,33 @@ function App(){
                 R('span',{style:{fontSize:'1.1rem',lineHeight:1}},typeEmoji(enc.type)),
                 R('span',{style:{
                   fontFamily:"'Libre Baskerville',serif",
-                  fontSize:'.82rem',
+                  fontSize:'.95rem',
                   color:isMe?'#F5EDD8':'rgba(245,237,220,0.6)',
                   fontWeight:isMe?700:400,flex:1,
                   overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
                 }},
                   enc.nickname,
-                  flag&&R('span',{style:{marginLeft:'.35rem',fontSize:'.75rem'}},flag),
+                  flag&&R('span',{style:{marginLeft:'.35rem',fontSize:'1.05rem'}},flag),
                   enc.city&&R('span',{style:{
                     fontFamily:"'IBM Plex Mono',monospace",
-                    fontSize:'.48rem',color:'rgba(245,237,220,0.22)',
+                    fontSize:'1.05rem',color:'rgba(245,237,220,0.22)',
                     marginLeft:'.4rem',letterSpacing:'.06em',
                   }},enc.city)
                 ),
                 isMyFeed&&R('span',{style:{
-                  fontSize:'.6rem',flexShrink:0,marginRight:'.15rem',
+                  fontSize:'.76rem',flexShrink:0,marginRight:'.15rem',
                   opacity:.4,
                 }},enc.public?'🌐':'🔒'),
                 R('span',{style:{
                   fontFamily:"'IBM Plex Mono',monospace",
-                  fontSize:'.46rem',color:'rgba(245,237,220,0.18)',
+                  fontSize:'.76rem',color:'rgba(245,237,220,0.18)',
                   letterSpacing:'.06em',flexShrink:0,
                 }},timeAgo(enc.date))
               ),
               // Note text
               enc.note&&R('div',{style:{
                 fontFamily:"'Libre Baskerville',serif",
-                fontSize:'.82rem',fontStyle:'italic',
+                fontSize:'.95rem',fontStyle:'italic',
                 color:'rgba(245,237,220,0.45)',
                 lineHeight:1.7,
                 paddingLeft:'1.6rem',
@@ -3295,7 +3295,7 @@ function App(){
               // Type label
               R('div',{style:{
                 fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:'.42rem',letterSpacing:'.12em',
+                fontSize:'.72rem',letterSpacing:'.12em',
                 color:'rgba(192,139,42,0.35)',
                 textTransform:'uppercase',
                 paddingLeft:'1.6rem',
@@ -3309,7 +3309,7 @@ function App(){
       isMyFeed&&myEnc.length>0&&R('div',{style:{
         padding:'1rem',textAlign:'center',
         fontFamily:"'IBM Plex Mono',monospace",
-        fontSize:'.52rem',color:'rgba(245,237,220,0.2)',
+        fontSize:'.95rem',color:'rgba(245,237,220,0.2)',
         letterSpacing:'.12em',
       }},(sk?'Celkom stretnutí: ':'Total encounters: ')+myEnc.length)
     );
@@ -3321,7 +3321,7 @@ function App(){
     R('div',{style:S.eye},'Pripojiť sa ku veľkej skupine'),
     R('h3',{style:{...S.h,fontSize:'1.6rem'}},'Zadaj ',R('em',{style:S.hEm},'kód skupiny')),
     R('div',{style:S.card},
-      R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.6,marginBottom:'1.25rem'}},
+      R('div',{style:{fontSize:'1rem',color:'rgba(250,245,239,0.5)',lineHeight:1.6,marginBottom:'1.25rem'}},
         'Kód dostaneš od zakladateľa skupiny (napr. zboru alebo oblasti).'),
       R(Lbl,{c:'Kód skupiny'}),
       R(Inp,{val:bgCode,set:v=>setBgCode(v.toUpperCase()),ph:'napr. ZB9K2M',mono:true,mb0:true}),
@@ -3360,7 +3360,7 @@ function App(){
 
       // ── Ak tím NEMÁ veľkú skupinu ──
       !myBg&&R('div',null,
-        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
+        R('div',{style:{fontSize:'1rem',color:'rgba(250,245,239,0.5)',lineHeight:1.7,marginBottom:'1.5rem'}},
           'Veľká skupina združuje malé skupiny rovnakého typu. Môžeš vytvoriť novú alebo sa pripojiť ku existujúcej kódom.'),
         R('div',{style:{display:'flex',borderBottom:'1px solid rgba(250,245,239,0.1)',marginBottom:'1.25rem'}},
           R('button',{onClick:()=>setBgtab('create'),style:bgtab==='create'?S.tabA:S.tab},'Vytvoriť novú'),
@@ -3393,13 +3393,13 @@ function App(){
               return R('div',{key:g.id,style:{
                 display:'flex',alignItems:'center',gap:'.5rem',
                 paddingLeft:(i*1.2)+'rem'}},
-                R('span',{style:{color:'rgba(250,245,239,0.2)',fontFamily:"'DM Mono',monospace",fontSize:'.7rem'}},
+                R('span',{style:{color:'rgba(250,245,239,0.2)',fontFamily:"'DM Mono',monospace",fontSize:'1rem'}},
                   i===0?'▶':' └'),
                 R('div',{style:{
                   padding:'.4rem .8rem',
                   border:'1px solid '+(isCurrent?'#C4603A':'rgba(250,245,239,0.15)'),
                   background:isCurrent?'rgba(196,96,58,0.1)':'transparent',
-                  fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                  fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
                   color:isCurrent?'#FAF5EF':'rgba(250,245,239,0.5)',
                   flex:1}},
                   g.name,
@@ -3414,15 +3414,15 @@ function App(){
               children.map(c=>R('div',{key:c.id,style:{
                 display:'flex',alignItems:'center',gap:'.5rem',
                 paddingLeft:'1.2rem',marginBottom:'.3rem'}},
-                R('span',{style:{color:'rgba(250,245,239,0.2)',fontFamily:"'DM Mono',monospace",fontSize:'.7rem'}},' └'),
-                R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                R('span',{style:{color:'rgba(250,245,239,0.2)',fontFamily:"'DM Mono',monospace",fontSize:'1rem'}},' └'),
+                R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
                   color:'rgba(250,245,239,0.45)',padding:'.35rem .7rem',
                   border:'1px solid rgba(250,245,239,0.1)',flex:1}},
                   c.name,' · ',c.points,' b')
               ))
             )
           ),
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
             color:'rgba(250,245,239,0.28)',marginTop:'.75rem'}},
             'Kód: '+myBg.code,
             myBg.category&&' · '+myBg.category+(myBg.type?' / '+myBg.type:'')
@@ -3438,16 +3438,16 @@ function App(){
             background:'rgba(184,136,42,0.07)',border:'1px solid rgba(184,136,42,0.2)',
             marginBottom:'.75rem'}},
             R('div',null,
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
                 color:'rgba(184,136,42,0.7)',textTransform:'uppercase',
                 letterSpacing:'.1em',marginBottom:'.15rem'}},'Zaradená v'),
               R('div',{style:{fontWeight:500,color:'#FAF5EF'}},parent.name)
             ),
             R('div',{style:{display:'flex',gap:'.4rem'}},
               R(Btn,{onClick:()=>setScr('manage_bg_'+parent.id),v:'m',
-                s:{fontSize:'.65rem',padding:'.3rem .65rem'}},'Otvoriť'),
+                s:{fontSize:'.95rem',padding:'.3rem .65rem'}},'Otvoriť'),
               R(Btn,{onClick:()=>doLeaveParentGroup(myBg.id),v:'m',busy,
-                s:{fontSize:'.65rem',padding:'.3rem .65rem',
+                s:{fontSize:'.95rem',padding:'.3rem .65rem',
                   color:'rgba(196,96,58,0.6)'}},'Odpojiť')
             )
           ),
@@ -3462,7 +3462,7 @@ function App(){
           bge2&&R(Err,{m:bge2}),
           !showCreateParent
             ?R('div',null,
-                R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+                R('div',{style:{fontSize:'.95rem',color:'rgba(250,245,239,0.4)',
                   marginBottom:'.6rem'}},
                   parent?'Zmeniť nadradenú skupinu:':'Zadaj kód existujúcej skupiny:'),
                 R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
@@ -3476,7 +3476,7 @@ function App(){
                 )
               )
             :R('div',null,
-                R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+                R('div',{style:{fontSize:'.95rem',color:'rgba(250,245,239,0.4)',
                   marginBottom:'.75rem',lineHeight:1.6}},
                   'Vytvor novú nadradenú skupinu (napr. zbor pre oddiel). '+myBg.name+' sa do nej automaticky zaradí.'),
                 R(Lbl,{c:'Názov novej skupiny'}),
@@ -3493,8 +3493,8 @@ function App(){
 
         // Info pre ne-zakladateľov
         !isFounder&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
-          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}}),
-          R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)'}},'Hierarchiu môže spravovať len zakladateľ skupiny.')
+          R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',color:'rgba(250,245,239,0.35)',letterSpacing:'.1em',textTransform:'uppercase'}}),
+          R('div',{style:{fontSize:'1rem',color:'rgba(250,245,239,0.5)'}},'Hierarchiu môže spravovať len zakladateľ skupiny.')
         )
       )
     );
@@ -3536,7 +3536,7 @@ function App(){
       R(Fl,{msg:flash}),
       R('div',{style:S.eye},'Správa skupiny'),
       R('h3',{style:{...S.h,fontSize:'1.6rem'}},bg.name),
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
         color:'rgba(250,245,239,0.35)',marginBottom:'1rem',letterSpacing:'.08em'}},
         bg.category+(bg.type?' · '+bg.type:'')+' · Kód: ',
         R('strong',{style:{color:'#B8882A',letterSpacing:'.15em'}},bg.code),
@@ -3545,10 +3545,10 @@ function App(){
 
       // Ak nemá nadradenú — formulár hore ako výzva na akciu
       isFounder&&!parent&&R('div',{style:{...S.cardGold,marginBottom:'.75rem'}},
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
           color:'#B8882A',letterSpacing:'.1em',textTransform:'uppercase',
           marginBottom:'.5rem'}},'Zaraď skupinu do vyššieho celku'),
-        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.6)',
+        R('div',{style:{fontSize:'1rem',color:'rgba(250,245,239,0.6)',
           lineHeight:1.6,marginBottom:'.75rem'}},
           'Táto skupina zatiaľ nie je súčasťou žiadneho zboru, farnosti ani iného vyššieho celku. Zadaj kód nadradenej skupiny.'),
         bge2&&R(Err,{m:bge2}),
@@ -3560,7 +3560,7 @@ function App(){
           R(Btn,{onClick:()=>doJoinParentGroup(bgId),v:'g',busy,
             s:{padding:'.7rem 1rem',whiteSpace:'nowrap'}},'Zaradiť')
         ),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
           color:'rgba(250,245,239,0.3)',marginTop:'.5rem'}},'Nemáš kód? Požiadaj vedúceho zboru.')
       ),
 
@@ -3573,16 +3573,16 @@ function App(){
             return R('div',{key:g.id,
               style:{display:'flex',alignItems:'center',gap:'.5rem',paddingLeft:(i*1.25)+'rem',cursor:isCur?'default':'pointer'},
               onClick:()=>!isCur&&setScr('manage_bg_'+g.id)},
-              R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+              R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',
                 color:'rgba(250,245,239,0.2)',flexShrink:0}},i===0?'◆':' └'),
               R('div',{style:{
                 padding:'.35rem .75rem',flex:1,
                 border:'1px solid '+(isCur?'#C4603A':'rgba(250,245,239,0.12)'),
                 background:isCur?'rgba(196,96,58,0.1)':'rgba(250,245,239,0.03)',
-                fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+                fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
                 color:isCur?'#FAF5EF':'rgba(250,245,239,0.5)'}},
                 g.name,
-                !isCur&&R('span',{style:{marginLeft:'.4rem',fontSize:'.55rem',color:'rgba(250,245,239,0.25)'}},'→ otvoriť'),
+                !isCur&&R('span',{style:{marginLeft:'.4rem',fontSize:'1rem',color:'rgba(250,245,239,0.25)'}},'→ otvoriť'),
                 R('span',{style:{marginLeft:'.5rem',opacity:.35}},'· '+g.points+' b')
               )
             );
@@ -3592,14 +3592,14 @@ function App(){
             style:{display:'flex',alignItems:'center',gap:'.5rem',
               paddingLeft:(chain.length*1.25)+'rem',cursor:'pointer'},
             onClick:()=>setScr('manage_bg_'+c.id)},
-            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',
               color:'rgba(250,245,239,0.15)',flexShrink:0}},' └'),
             R('div',{style:{padding:'.35rem .75rem',flex:1,
               border:'1px solid rgba(250,245,239,0.08)',
-              fontFamily:"'DM Mono',monospace",fontSize:'.65rem',
+              fontFamily:"'DM Mono',monospace",fontSize:'.95rem',
               color:'rgba(250,245,239,0.38)'}},
               c.name,' · ',c.points,' b',
-              R('span',{style:{marginLeft:'.4rem',fontSize:'.55rem',color:'rgba(250,245,239,0.25)'}},'→ otvoriť')
+              R('span',{style:{marginLeft:'.4rem',fontSize:'1rem',color:'rgba(250,245,239,0.25)'}},'→ otvoriť')
             )
           )),
           // Malé skupiny (tímy)
@@ -3607,11 +3607,11 @@ function App(){
             childTeams.map(t=>R('div',{key:t.id,
               style:{display:'flex',alignItems:'center',gap:'.5rem',
                 paddingLeft:(chain.length*1.25)+'rem',marginTop:'.25rem'}},
-              R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+              R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'1rem',
                 color:'rgba(250,245,239,0.1)',flexShrink:0}},' └'),
               R('div',{style:{padding:'.25rem .6rem',
                 border:'1px dashed rgba(250,245,239,0.08)',
-                fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+                fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
                 color:'rgba(250,245,239,0.25)'}},
                 '👥 '+t.name+' · '+(t.members||[]).length+' členov')
             ))
@@ -3630,16 +3630,16 @@ function App(){
             padding:'.65rem 1rem',background:'rgba(184,136,42,0.07)',
             border:'1px solid rgba(184,136,42,0.2)',marginBottom:'.5rem'}},
             R('div',null,
-              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+              R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
                 color:'rgba(184,136,42,0.7)',textTransform:'uppercase',
                 letterSpacing:'.1em',marginBottom:'.15rem'}},'Aktuálne zaradená v'),
-              R('div',{style:{fontWeight:500,color:'#FAF5EF',fontSize:'.9rem'}},parent.name)
+              R('div',{style:{fontWeight:500,color:'#FAF5EF',fontSize:'1.05rem'}},parent.name)
             ),
             R('div',{style:{display:'flex',gap:'.4rem'}},
               R(Btn,{onClick:()=>setScr('manage_bg_'+parent.id),v:'m',
-                s:{fontSize:'.65rem',padding:'.3rem .65rem'}},'Otvoriť'),
+                s:{fontSize:'.95rem',padding:'.3rem .65rem'}},'Otvoriť'),
               R(Btn,{onClick:()=>doLeaveParentGroup(bgId),v:'m',busy,
-                s:{fontSize:'.65rem',padding:'.3rem .65rem',
+                s:{fontSize:'.95rem',padding:'.3rem .65rem',
                   color:'rgba(196,96,58,0.6)'}},'Odpojiť')
             )
           )
@@ -3656,7 +3656,7 @@ function App(){
         bge2&&R(Err,{m:bge2}),
         !showCreateParent
           ?R('div',null,
-              R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+              R('div',{style:{fontSize:'.95rem',color:'rgba(250,245,239,0.4)',
                 marginBottom:'.6rem'}},
                 parent?'Zmeniť nadradenú skupinu:':'Zadaj kód existujúcej skupiny:'),
               R('div',{style:{display:'flex',gap:'.5rem',alignItems:'flex-end'}},
@@ -3670,7 +3670,7 @@ function App(){
               )
             )
           :R('div',null,
-              R('div',{style:{fontSize:'.8rem',color:'rgba(250,245,239,0.4)',
+              R('div',{style:{fontSize:'.95rem',color:'rgba(250,245,239,0.4)',
                 marginBottom:'.75rem',lineHeight:1.6}},
                 'Vytvor novú nadradenú skupinu (napr. zbor, farnosť). '+bg.name+' sa do nej automaticky zaradí.'),
               R(Lbl,{c:'Názov novej skupiny'}),
@@ -3688,9 +3688,9 @@ function App(){
       // Opustiť skupinu (pre členov čo nie sú zakladatelia)
       !isFounder&&isMember&&R('div',{style:{...S.card,marginBottom:'.75rem'}},
         R(Lbl,{c:'Členstvo'}),
-        R('div',{style:{fontSize:'.85rem',color:'rgba(250,245,239,0.5)',marginBottom:'.75rem'}},'Si členom tejto skupiny.'),
+        R('div',{style:{fontSize:'1rem',color:'rgba(250,245,239,0.5)',marginBottom:'.75rem'}},'Si členom tejto skupiny.'),
         R(Btn,{onClick:()=>doLeaveBigGroupDirect(bgId),v:'m',busy,
-          s:{color:'rgba(196,96,58,0.6)',fontSize:'.75rem'}},'Opustiť skupinu')
+          s:{color:'rgba(196,96,58,0.6)',fontSize:'1.05rem'}},'Opustiť skupinu')
       ),
 
       // Zapnúť/Vypnúť + zmazať (zakladateľ alebo admin)
@@ -3698,14 +3698,14 @@ function App(){
         R(Lbl,{c:'Správa skupiny'}),
         R('div',{style:{display:'flex',gap:'.5rem',flexWrap:'wrap'}},
           R(Btn,{onClick:()=>toggleGroupActive('bg',bgId),v:'m',busy,
-            s:{fontSize:'.75rem',
+            s:{fontSize:'1.05rem',
               color:bg.active===false?'rgba(184,136,42,0.8)':'rgba(250,245,239,0.5)'}},
             bg.active===false?'▶ Zapnúť skupinu':'⏸ Vypnúť skupinu'),
           isAdmin(me)&&R(Btn,{onClick:()=>deleteGroup('bg',bgId),v:'m',busy,
-            s:{fontSize:'.75rem',color:'rgba(196,96,58,0.6)',
+            s:{fontSize:'1.05rem',color:'rgba(196,96,58,0.6)',
               borderColor:'rgba(196,96,58,0.25)'}},'🗑 Zmazať skupinu')
         ),
-        bg.active===false&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.6rem',
+        bg.active===false&&R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.76rem',
           color:'rgba(184,136,42,0.5)',marginTop:'.75rem',lineHeight:1.6}},
           'Vypnutá skupina sa nezobrazuje v rebríčku ale body sa zachovávajú.')
       )
