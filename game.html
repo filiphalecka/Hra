@@ -1483,7 +1483,7 @@ function App(){
   const[bgtab,setBgtab]=useState('create');
 
   const[lbTab,setLbTab]=useState('ind');
-  const[feedTab,setFeedTab]=useState('global');
+  const[feedTab,setFeedTab]=useState('my');
   const[encPublic,setEncPublic]=useState(true);
   const[cityFunding,setCityFunding]=useState({});
   const[lbCatFilter,setLbCatFilter]=useState('');
@@ -3167,8 +3167,9 @@ function App(){
     const allEnc=[];
     Object.values(players).forEach(p=>{
       (p.encounters||[]).forEach(enc=>{
-        // Global feed only shows encounters marked as public
-        if(enc.public){
+        // Global feed: public encounters, OR encounters with meaningful notes (2+ words)
+        const hasNote=enc.note&&enc.note.trim().split(/\s+/).length>=2;
+        if(enc.public||hasNote){
           allEnc.push({...enc,nickname:p.nickname||'?',uid:p.uid,
             playerCity:p.city||'',playerCountry:p.country||''});
         }
