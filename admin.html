@@ -395,9 +395,12 @@ function renderPlayers(){
       </div>
       <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
         <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:#B8882A;">${Math.floor(p.points||0)}</span>
-        ${p.email!==ADMIN_EMAIL?`<button class="btn btn-d btn-sm" onclick="deletePlayer('${esc(p.uid)}')">✕ Zmazať</button>`:''}
+        <button class="btn btn-sm" onclick="showEncounters('${esc(p.uid)}')" style="font-size:.6rem;">E ${(p.encounters||[]).length}</button>
+        <button class="btn btn-sm" onclick="resetPoints('${esc(p.uid)}')" style="font-size:.6rem;">R</button>
+        ${p.email!==ADMIN_EMAIL?`<button class="btn btn-d btn-sm" onclick="deletePlayer('${esc(p.uid)}')">X</button>`:''}
       </div>
     </div>
+    <div id="enc-${esc(p.uid)}" style="display:none;"></div>
   `).join('');
 }
 
@@ -748,6 +751,98 @@ if(checkAccess()){
   loadAll();
   setInterval(loadAll,30000);
 }
+
+// -- Encounter management --
+async function deleteEncounter(uid, idx){
+  var p = allPlayers[uid];
+  if(!p) return;
+  var enc = (p.encounters||[])[idx];
+  if(!enc) return;
+  if(!confirm('Zmazat encounter #'+(idx+1)+' od '+p.nickname+'?\n"'+(enc.note||'(bez poznamky)')+'"')) return;
+  var newEnc = (p.encounters||[]).slice();
+  newEnc.splice(idx, 1);
+  var ptsDelta = enc.type==='bridging'?3:enc.type==='bonding2'?2:1;
+  var newPts = Math.max(0, (p.points||0) - ptsDelta);
+  try {
+    if(USE_FIREBASE){ await dbPatch('players/'+uid, {encounters: newEnc, points: newPts}); }
+    else { p.encounters = newEnc; p.points = newPts; localStorage.setItem('hps:players', JSON.stringify(allPlayers)); }
+    allPlayers[uid] = Object.assign({}, p, {encounters: newEnc, points: newPts});
+    showFlash('Encounter zmazany. Body: '+Math.floor(newPts));
+    renderPlayers(); showEncounters(uid);
+  } catch(e){ showFlash('Chyba: '+e.message, true); }
+}
+
+async function resetPoints(uid){
+  var p = allPlayers[uid];
+  if(!p) return;
+  if(!confirm('Resetovat body hraca '+p.nickname+' na 0?')) return;
+  try {
+    if(USE_FIREBASE){ await dbPatch('players/'+uid, {points: 0}); }
+    else { p.points = 0; localStorage.setItem('hps:players', JSON.stringify(allPlayers)); }
+    allPlayers[uid] = Object.assign({}, p, {points: 0});
+    showFlash('Body resetovane na 0.');
+    renderPlayers();
+  } catch(e){ showFlash('Chyba: '+e.message, true); }
+}
+
+async function deleteJunkEncounters(uid){
+  var p = allPlayers[uid];
+  if(!p) return;
+  var encs = p.encounters||[];
+  var junk = encs.filter(function(e){ return !e.note || e.note.trim().length <= 1; });
+  var keep = encs.filter(function(e){ return e.note && e.note.trim().length > 1; });
+  if(junk.length === 0){ showFlash('Ziadne junk encounters.'); return; }
+  if(!confirm('Zmazat '+junk.length+' encounters s prazdnou/jednopismenovou poznamkou?\nZostane '+keep.length+' encounters.')) return;
+  var ptsSub = 0;
+  junk.forEach(function(e){ ptsSub += e.type==='bridging'?3:e.type==='bonding2'?2:1; });
+  var newPts = Math.max(0, (p.points||0) - ptsSub);
+  try {
+    if(USE_FIREBASE){ await dbPatch('players/'+uid, {encounters: keep, points: newPts}); }
+    else { p.encounters = keep; p.points = newPts; localStorage.setItem('hps:players', JSON.stringify(allPlayers)); }
+    allPlayers[uid] = Object.assign({}, p, {encounters: keep, points: newPts});
+    showFlash('Zmazanych '+junk.length+' junk encounters. Body: '+Math.floor(newPts));
+    renderPlayers(); showEncounters(uid);
+  } catch(e){ showFlash('Chyba: '+e.message, true); }
+}
+
+function showEncounters(uid){
+  var p = allPlayers[uid];
+  if(!p) return;
+  var el = document.getElementById('enc-'+uid);
+  if(!el) return;
+  if(el.style.display === 'block'){ el.style.display = 'none'; return; }
+  var encs = p.encounters||[];
+  if(encs.length === 0){ el.innerHTML = '<div style="padding:.5rem;color:rgba(250,245,239,.3);font-size:.7rem;">Ziadne stretnutia.</div>'; el.style.display='block'; return; }
+  
+  function typeEmoji(t){ return t==='bridging'?'&#x1F91D;':t==='bonding1'?'&#x1F49B;':t==='bonding2'?'&#x1F91C;':'&#x1F4DD;'; }
+  function isJunk(e){ return !e.note || e.note.trim().length <= 1; }
+  var junkCount = encs.filter(isJunk).length;
+  
+  var h = '<div style="padding:.5rem;border-top:1px solid rgba(250,245,239,.06);">';
+  h += '<div style="display:flex;gap:.5rem;margin-bottom:.5rem;">';
+  h += '<button class="btn btn-sm" onclick="deleteJunkEncounters(\''+uid+'\')" style="font-size:.6rem;">Zmazat junk ('+junkCount+')</button>';
+  h += '<button class="btn btn-sm btn-d" onclick="resetPoints(\''+uid+'\')" style="font-size:.6rem;">Reset bodov</button>';
+  h += '</div>';
+  
+  for(var i = 0; i < encs.length; i++){
+    var e = encs[i];
+    var jnk = isJunk(e);
+    var dt = e.date ? new Date(e.date).toLocaleDateString('sk-SK')+' '+new Date(e.date).toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'}) : '?';
+    var noteHtml = e.note ? '<em>&quot;'+e.note.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'&quot;</em>' : '<span style="color:rgba(250,245,239,.2);">(prazdne)</span>';
+    h += '<div style="display:flex;align-items:flex-start;gap:.5rem;padding:.35rem 0;border-bottom:1px solid rgba(250,245,239,.04);'+(jnk?'background:rgba(181,69,27,.08);':'')+'">';
+    h += '<span style="font-size:.85rem;flex-shrink:0;">'+typeEmoji(e.type)+'</span>';
+    h += '<div style="flex:1;min-width:0;">';
+    h += '<div style="font-size:.7rem;color:'+(jnk?'#B5451B':'rgba(250,245,239,.5)')+';">'+noteHtml+'</div>';
+    h += '<div style="font-size:.55rem;color:rgba(250,245,239,.2);margin-top:.1rem;">'+dt+' · '+(e.city||'?')+' · '+(e.type||'?')+(e.public?' · glob.':'')+'</div>';
+    h += '</div>';
+    h += '<button class="btn btn-d btn-sm" onclick="deleteEncounter(\''+uid+'\','+i+')" style="font-size:.55rem;flex-shrink:0;">x</button>';
+    h += '</div>';
+  }
+  h += '</div>';
+  el.innerHTML = h;
+  el.style.display = 'block';
+}
+
 </script>
 </body>
 </html>

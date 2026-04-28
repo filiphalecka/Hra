@@ -1833,7 +1833,12 @@ function App(){
   }
 
   async function doEncounter(taskType, pts){
-    if(!note.trim()){setNe('Napíš aspoň pár slov.');return;}
+    const trimmed=note.trim();
+    const wordCount=trimmed.split(/\s+/).filter(w=>w.length>0).length;
+    if(!trimmed||trimmed.length<3||wordCount<2){
+      setNe(getLang()==='sk'?'Napíš aspoň 2 slová o tom, čo sa stalo.':'Write at least 2 words about what happened.');
+      return;
+    }
     setBusy(true);
     try{
       const pl=await DB.getPlayers(),tm=await DB.getTeams();
