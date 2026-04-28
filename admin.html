@@ -805,6 +805,57 @@ async function deleteJunkEncounters(uid){
   } catch(e){ showFlash('Chyba: '+e.message, true); }
 }
 
+async function deleteSelected(uid){
+  var p = allPlayers[uid];
+  if(!p) return;
+  var boxes = document.querySelectorAll('.enc-cb-'+uid+':checked');
+  if(boxes.length === 0){ showFlash('Nic nie je oznacene.'); return; }
+  var indices = [];
+  boxes.forEach(function(cb){ indices.push(parseInt(cb.dataset.idx)); });
+  indices.sort(function(a,b){ return b - a; }); // descending so splice works
+  if(!confirm('Zmazat '+indices.length+' oznacenych encounters?')) return;
+  var encs = (p.encounters||[]).slice();
+  var ptsSub = 0;
+  for(var k = 0; k < indices.length; k++){
+    var e = encs[indices[k]];
+    if(e) ptsSub += e.type==='bridging'?3:e.type==='bonding2'?2:1;
+    encs.splice(indices[k], 1);
+  }
+  var newPts = Math.max(0, (p.points||0) - ptsSub);
+  try {
+    if(USE_FIREBASE){ await dbPatch('players/'+uid, {encounters: encs, points: newPts}); }
+    else { p.encounters = encs; p.points = newPts; localStorage.setItem('hps:players', JSON.stringify(allPlayers)); }
+    allPlayers[uid] = Object.assign({}, p, {encounters: encs, points: newPts});
+    showFlash('Zmazanych '+indices.length+' encounters. Body: '+Math.floor(newPts));
+    renderPlayers(); showEncounters(uid);
+  } catch(e){ showFlash('Chyba: '+e.message, true); }
+}
+
+function toggleAllEnc(uid, master){
+  var boxes = document.querySelectorAll('.enc-cb-'+uid);
+  boxes.forEach(function(cb){ cb.checked = master.checked; });
+  updateSelectedCount(uid);
+}
+
+function updateSelectedCount(uid){
+  var boxes = document.querySelectorAll('.enc-cb-'+uid+':checked');
+  var el = document.getElementById('enc-sel-count-'+uid);
+  if(el) el.textContent = boxes.length > 0 ? boxes.length+' oznacenych' : '';
+}
+
+function selectJunk(uid){
+  var p = allPlayers[uid];
+  if(!p) return;
+  var encs = p.encounters||[];
+  var boxes = document.querySelectorAll('.enc-cb-'+uid);
+  boxes.forEach(function(cb){
+    var idx = parseInt(cb.dataset.idx);
+    var e = encs[idx];
+    cb.checked = e && (!e.note || e.note.trim().length <= 1 || e.note.trim().split(/\s+/).length < 2);
+  });
+  updateSelectedCount(uid);
+}
+
 function showEncounters(uid){
   var p = allPlayers[uid];
   if(!p) return;
@@ -815,13 +866,17 @@ function showEncounters(uid){
   if(encs.length === 0){ el.innerHTML = '<div style="padding:.5rem;color:rgba(250,245,239,.3);font-size:.7rem;">Ziadne stretnutia.</div>'; el.style.display='block'; return; }
   
   function typeEmoji(t){ return t==='bridging'?'&#x1F91D;':t==='bonding1'?'&#x1F49B;':t==='bonding2'?'&#x1F91C;':'&#x1F4DD;'; }
-  function isJunk(e){ return !e.note || e.note.trim().length <= 1; }
+  function isJunk(e){ return !e.note || e.note.trim().length <= 1 || e.note.trim().split(/\s+/).length < 2; }
   var junkCount = encs.filter(isJunk).length;
   
   var h = '<div style="padding:.5rem;border-top:1px solid rgba(250,245,239,.06);">';
-  h += '<div style="display:flex;gap:.5rem;margin-bottom:.5rem;">';
-  h += '<button class="btn btn-sm" onclick="deleteJunkEncounters(\''+uid+'\')" style="font-size:.6rem;">Zmazat junk ('+junkCount+')</button>';
-  h += '<button class="btn btn-sm btn-d" onclick="resetPoints(\''+uid+'\')" style="font-size:.6rem;">Reset bodov</button>';
+  // Toolbar
+  h += '<div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-bottom:.5rem;padding-bottom:.4rem;border-bottom:1px solid rgba(250,245,239,.06);">';
+  h += '<label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-size:.6rem;color:rgba(250,245,239,.4);"><input type="checkbox" onchange="toggleAllEnc(\''+uid+'\',this)" style="accent-color:#B8882A;">Vsetky</label>';
+  h += '<button class="btn btn-sm" onclick="selectJunk(\''+uid+'\')" style="font-size:.55rem;">Oznacit junk ('+junkCount+')</button>';
+  h += '<button class="btn btn-sm btn-d" onclick="deleteSelected(\''+uid+'\')" style="font-size:.55rem;">&#x1F5D1; Zmazat oznacene</button>';
+  h += '<span id="enc-sel-count-'+uid+'" style="font-size:.55rem;color:#B8882A;"></span>';
+  h += '<button class="btn btn-sm" onclick="resetPoints(\''+uid+'\')" style="font-size:.55rem;margin-left:auto;">Reset bodov</button>';
   h += '</div>';
   
   for(var i = 0; i < encs.length; i++){
@@ -829,18 +884,19 @@ function showEncounters(uid){
     var jnk = isJunk(e);
     var dt = e.date ? new Date(e.date).toLocaleDateString('sk-SK')+' '+new Date(e.date).toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'}) : '?';
     var noteHtml = e.note ? '<em>&quot;'+e.note.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'&quot;</em>' : '<span style="color:rgba(250,245,239,.2);">(prazdne)</span>';
-    h += '<div style="display:flex;align-items:flex-start;gap:.5rem;padding:.35rem 0;border-bottom:1px solid rgba(250,245,239,.04);'+(jnk?'background:rgba(181,69,27,.08);':'')+'">';
-    h += '<span style="font-size:.85rem;flex-shrink:0;">'+typeEmoji(e.type)+'</span>';
+    h += '<div style="display:flex;align-items:flex-start;gap:.4rem;padding:.3rem 0;border-bottom:1px solid rgba(250,245,239,.04);'+(jnk?'background:rgba(181,69,27,.08);':'')+'">';
+    h += '<input type="checkbox" class="enc-cb-'+uid+'" data-idx="'+i+'" onchange="updateSelectedCount(\''+uid+'\')" style="accent-color:#B8882A;margin-top:.15rem;flex-shrink:0;"'+(jnk?' checked':'')+'>';
+    h += '<span style="font-size:.8rem;flex-shrink:0;">'+typeEmoji(e.type)+'</span>';
     h += '<div style="flex:1;min-width:0;">';
-    h += '<div style="font-size:.7rem;color:'+(jnk?'#B5451B':'rgba(250,245,239,.5)')+';">'+noteHtml+'</div>';
-    h += '<div style="font-size:.55rem;color:rgba(250,245,239,.2);margin-top:.1rem;">'+dt+' · '+(e.city||'?')+' · '+(e.type||'?')+(e.public?' · glob.':'')+'</div>';
+    h += '<div style="font-size:.65rem;color:'+(jnk?'#B5451B':'rgba(250,245,239,.5)')+';">'+noteHtml+'</div>';
+    h += '<div style="font-size:.5rem;color:rgba(250,245,239,.2);margin-top:.1rem;">'+dt+' · '+(e.city||'?')+' · '+(e.type||'?')+(e.public?' · glob.':'')+'</div>';
     h += '</div>';
-    h += '<button class="btn btn-d btn-sm" onclick="deleteEncounter(\''+uid+'\','+i+')" style="font-size:.55rem;flex-shrink:0;">x</button>';
     h += '</div>';
   }
   h += '</div>';
   el.innerHTML = h;
   el.style.display = 'block';
+  updateSelectedCount(uid);
 }
 
 </script>
