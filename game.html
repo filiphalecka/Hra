@@ -1863,7 +1863,7 @@ function App(){
       const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
         teamId:activeTeamId||null,city:me.city||'',country:me.country||'',public:encPublic};
       const prevPts=player.points||0;
-      const p={...player,points:prevPts+(pts||1),encounters:[enc,...(player.encounters||[]).slice(0,49)],taskCounters:newCounters};
+      const p={...player,points:prevPts+(pts||1),encounters:[enc,...(Array.isArray(player.encounters)?player.encounters:player.encounters?Object.values(player.encounters):[]).filter(e=>e!=null).slice(0,49)],taskCounters:newCounters};
       await DB.setPlayer(uid,p);
 
       // Immediately update local state for instant UI response
@@ -3166,7 +3166,8 @@ function App(){
     // Collect all encounters from all players with player info
     const allEnc=[];
     Object.values(players).forEach(p=>{
-      (p.encounters||[]).forEach(enc=>{
+      const pEnc=Array.isArray(p.encounters)?p.encounters:p.encounters?Object.values(p.encounters):[];
+      pEnc.filter(e=>e!=null).forEach(enc=>{
         // Global feed: public encounters, OR encounters with meaningful notes (2+ words)
         const hasNote=enc.note&&enc.note.trim().split(/\s+/).length>=2;
         if(enc.public||hasNote){
@@ -3177,7 +3178,7 @@ function App(){
     });
     allEnc.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
-    const myEnc=(me.encounters||[]).map(enc=>({...enc,nickname:me.nickname,uid:me.uid,
+    const myEnc=(Array.isArray(me.encounters)?me.encounters:me.encounters?Object.values(me.encounters):[]).filter(e=>e!=null).map(enc=>({...enc,nickname:me.nickname,uid:me.uid,
       playerCity:me.city||'',playerCountry:me.country||''}));
 
     const isMyFeed=feedTab==='my';
