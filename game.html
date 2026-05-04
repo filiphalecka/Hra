@@ -1484,6 +1484,7 @@ function App(){
 
   const[lbTab,setLbTab]=useState('ind');
   const[feedTab,setFeedTab]=useState('my');
+  const[viewId,setViewId]=useState('me'); // 'me' | 'team:ID' | 'city' | 'region' | 'state' | 'continent' | 'global'
   const[encPublic,setEncPublic]=useState(true);
   const[cityFunding,setCityFunding]=useState({});
   const[lbCatFilter,setLbCatFilter]=useState('');
@@ -2268,6 +2269,43 @@ function App(){
 
   // ── HOME SCREEN ────────────────────────────────────────────
   if(scr==='home'){
+    // ── Identity resolver ────────────────────────────────
+    const vi = (()=>{
+      const sk=getLang()==='sk';
+      const myPts=me.points||0;
+      const myLvl=getPlayerLevel(myPts);
+      const lic=licensed||{};
+      const cityKey=(me.city||'').toLowerCase().trim();
+      const isCityLic=!!(lic.cities&&lic.cities[cityKey]);
+      const isRegionLic=!!(lic.regions&&lic.regions[(me.region||'').toLowerCase().trim()]);
+      const isStateLic=!!(lic.states&&lic.states[(me.country||'').toLowerCase().trim()]);
+
+      const identities = [
+        {id:'me',name:me.nickname,pts:myPts,icon:'I',color:'#B8882A',unlocked:true,label:sk?'Ja':'Me'},
+      ];
+      // Small teams
+      (me.teamIds||[]).forEach(tid=>{
+        const tm=teams[tid];
+        if(tm) identities.push({id:'team:'+tid,name:tm.name,pts:tm.points||0,icon:'II',color:'#2D6A4F',unlocked:true,label:sk?'Skupina':'Team'});
+      });
+      // Geo — needs level + license
+      if(me.city) identities.push({id:'city',name:me.city,
+        pts:Object.values(players).filter(p=>p.city===me.city).reduce((s,p)=>s+(p.points||0),0),
+        icon:'III',color:'#C4860A',unlocked:myLvl>=2&&isCityLic,
+        needLevel:myLvl<2,needLicense:!isCityLic,label:sk?'Mesto':'City'});
+      if(me.region) identities.push({id:'region',name:me.region,
+        pts:Object.values(players).filter(p=>p.region===me.region).reduce((s,p)=>s+(p.points||0),0),
+        icon:'IV',color:'#3B6FD4',unlocked:myLvl>=3&&isRegionLic,
+        needLevel:myLvl<3,needLicense:!isRegionLic,label:sk?'Kraj':'Region'});
+      if(me.country) identities.push({id:'state',name:me.country,
+        pts:Object.values(players).filter(p=>p.country===me.country).reduce((s,p)=>s+(p.points||0),0),
+        icon:'V',color:'#534AB7',unlocked:myLvl>=4&&isStateLic,
+        needLevel:myLvl<4,needLicense:!isStateLic,label:sk?'Stat':'Country'});
+
+      const active = identities.find(i=>i.id===viewId) || identities[0];
+      return {identities, active};
+    })();
+
     const lbPlayers=sPlayers.slice(0,5);
     const myRank=sPlayers.findIndex(p=>p.uid===me.uid)+1;
     const myTeamIds=me.teamIds||[];
@@ -2301,11 +2339,34 @@ function App(){
         background:'rgba(13,10,6,0.88)',backdropFilter:'blur(14px)',
         borderBottom:'1px solid rgba(245,237,220,0.06)',
       }},
-        R('div',{style:{
-          fontFamily:"'Bebas Neue',sans-serif",
-          fontSize:'.9rem',letterSpacing:'.22em',
-          color:'rgba(245,237,220,0.45)',
-        }},t('appName')),
+        R('div',{style:{display:'flex',alignItems:'center',gap:'.4rem'}},
+          // Identity switcher
+          R('select',{value:viewId,onChange:e=>setViewId(e.target.value),
+            style:{
+              fontFamily:"'Bebas Neue',sans-serif",
+              fontSize:'.9rem',letterSpacing:'.15em',
+              color:'#F5EDD8',
+              background:'transparent',
+              border:'none',borderBottom:'1px solid rgba(192,139,42,0.3)',
+              cursor:'pointer',
+              appearance:'none',WebkitAppearance:'none',
+              paddingRight:'1rem',
+              maxWidth:'180px',
+              overflow:'hidden',textOverflow:'ellipsis',
+            }},
+            ...vi.identities.map(id=>
+              R('option',{key:id.id,value:id.id,disabled:!id.unlocked,
+                style:{background:'#1A1008',color:id.unlocked?'#F5EDD8':'rgba(245,237,220,0.3)'}},
+                (id.unlocked?'':'\u{1F512} ')+id.name+(id.id==='me'?'':' ('+id.label+')')
+              )
+            )
+          ),
+          R('span',{style:{
+            fontFamily:"'IBM Plex Mono',monospace",
+            fontSize:'.55rem',color:'rgba(192,139,42,0.4)',
+            marginLeft:'.1rem',pointerEvents:'none',marginTop:'.1rem',
+          }},'\u25BE')
+        ),
         R('div',{style:{display:'flex',gap:'.35rem',alignItems:'center'}},
           isAdmin(me)&&R('button',{onClick:()=>window.location.href='admin.html',style:MiniBtn},'Admin'),
           R('button',{onClick:()=>setLang(getLang()==='sk'?'en':'sk'),style:MiniBtn},getLang()==='sk'?'EN':'SK'),
@@ -2432,7 +2493,7 @@ function App(){
           color:'rgba(192,139,42,0.08)',
           userSelect:'none',pointerEvents:'none',
           letterSpacing:'-.02em',
-        }},'#'+myRank),
+        }},vi.active.id==='me'?('#'+myRank):vi.active.icon),
 
         R('div',{style:{padding:'1.15rem 1.2rem',position:'relative'}},
           R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'.7rem'}},
@@ -2448,14 +2509,14 @@ function App(){
                 fontSize:'1.7rem',fontWeight:700,
                 color:'#F5EDD8',lineHeight:1.05,
                 overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-              }},me.nickname)
+              }},vi.active.name)
             ),
             R('div',{style:{textAlign:'right',flexShrink:0}},
               R('div',{className:'pts-glow',style:{
                 fontFamily:"'Bebas Neue',sans-serif",
                 fontSize:'3.3rem',lineHeight:1,
                 color:'#F5EDD8',letterSpacing:'.02em',
-              }},me.points||0),
+              }},vi.active.pts||0),
               R('div',{style:{
                 fontFamily:"'IBM Plex Mono',monospace",
                 fontSize:'.63rem',color:'rgba(245,237,220,0.32)',
@@ -2502,7 +2563,46 @@ function App(){
       ),
 
       // ══ TASK CARDS ═══════════════════════════════════════
-      // ══ DAILY TASK CARDS (aditívne) ═══════════════════════════
+      // == HOW IT WORKS (compact) ==
+      R('details',{style:{
+        position:'relative',zIndex:2,
+        margin:'0 1rem .5rem',
+        border:'1px solid rgba(192,139,42,0.12)',
+        background:'rgba(192,139,42,0.03)',
+      }},
+        R('summary',{style:{
+          padding:'.6rem .9rem',cursor:'pointer',
+          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.6rem',
+          letterSpacing:'.14em',textTransform:'uppercase',
+          color:'rgba(192,139,42,0.5)',listStyle:'none',
+        }},sk?'\u25b8 ako z\u00edska\u0165 body?':'\u25b8 how to earn points?'),
+        R('div',{style:{padding:'0 .9rem .8rem',fontSize:'.78rem',lineHeight:1.7,
+          color:'rgba(245,237,220,0.5)',fontFamily:"'Libre Baskerville',serif"}},
+          R('div',{style:{marginBottom:'.6rem'}},
+            R('div',{style:{fontWeight:700,color:'rgba(245,237,220,0.7)',marginBottom:'.15rem'}},
+              sk?'Individu\u00e1lne (v\u017edy dostupn\u00e9)':'Individual (always available)'),
+            R('span',null,'Urob dobro pre bl\u00edzkeho \u2014 1 bod'),R('br'),
+            R('span',null,'Prehl\u0301b existuj\u00faci vz\u0165ah \u2014 2 body'),R('br'),
+            R('span',null,'Spoznaj niekoho nov\u00e9ho \u2014 3 body (odomkne \u010fal\u0161ie)')
+          ),
+          R('div',{style:{marginBottom:'.6rem'}},
+            R('div',{style:{fontWeight:700,color:'rgba(245,237,220,0.7)',marginBottom:'.15rem'}},
+              sk?'Vy\u0161\u0161ie \u00farovne':'Higher levels'),
+            R('span',null,'150 bodov \u2192 Susedstvo'),R('br'),
+            R('span',null,'300 bodov \u2192 Mesto'),R('br'),
+            R('span',null,'500 bodov \u2192 Kraj'),R('br'),
+            R('span',null,'750\u20131400 bodov \u2192 \u0160t\u00e1t, Kontinent, Svet')
+          ),
+          R('div',null,
+            R('div',{style:{fontWeight:700,color:'rgba(245,237,220,0.7)',marginBottom:'.15rem'}},
+              sk?'Mal\u00e1 skupina':'Small team'),
+            sk?'Ka\u017ed\u00fd tvoj bod sa po\u010d\u00edta aj tvojmu t\u00edmu.'
+              :'Every point you earn counts for your team too.'
+          )
+        )
+      ),
+
+      // == DAILY TASK CARDS ==
       (()=>{
         const myPts=me.points||0;
         const myLevel=getPlayerLevel(myPts);
