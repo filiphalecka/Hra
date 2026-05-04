@@ -1612,12 +1612,14 @@ function App(){
   }
 
   async function refreshAll(){
+    try{
     const[pl,tm,bg,lic,cf]=await Promise.all([DB.getPlayers(),DB.getTeams(),DB.getBigGroups(),DB.getLicensed(),DB.getCityFunding()]);
     setPlayers(pl);setTeams(tm);setBigGroups(bg);setLicensed(lic||{});setCityFunding(cf||{});
     // Refresh me from fresh players data
     const sess=lsGet('hps:session');
     if(sess&&sess.uid&&pl[sess.uid]) setMe(pl[sess.uid]);
     const s=lsGet('hps:session');if(s&&pl[s.uid])setMe(pl[s.uid]);
+      } catch(e){console.warn("refreshAll error:",e);}
   }
 
   // ── AUTH ──────────────────────────────────────────────────
@@ -1846,11 +1848,13 @@ function App(){
       const uid=me.uid;
       // Map new task types to legacy bonding/bridging system
       const rawType=taskType||'bridging';
-      const type=rawType==='bonding'?'bonding1':rawType;
+      const taskId=activeTask?activeTask.id:'bridge_stranger';
+      // Map task ID to encounter type for backward compat
+      const encTypeMap={'bond_close':'bonding1','bond_deepen':'bonding2','bond_neighbor':'bonding1','bond_community':'bonding1'};
+      const type=encTypeMap[taskId]||rawType;
       const player=pl[uid]||{};
 
       // ── Task counter check ─────────────────────────────
-      const taskId=activeTask?activeTask.id:'bridge_stranger';
       const counters=getTaskCounters(player);
       if(!isTaskAvailable(taskId, counters)){
         setNe(getLang()==='sk'?'Najprv urob reštartujúcu úlohu.':'Complete the reset task first.');
@@ -2279,6 +2283,7 @@ function App(){
       const isCityLic=!!(lic.cities&&lic.cities[cityKey]);
       const isRegionLic=!!(lic.regions&&lic.regions[(me.region||'').toLowerCase().trim()]);
       const isStateLic=!!(lic.states&&lic.states[(me.country||'').toLowerCase().trim()]);
+      const isContinentLic=!!(lic.continents&&lic.continents[(countryToContinent(me.country||'')||'').toLowerCase().trim()]);
 
       const identities = [
         {id:'me',name:me.nickname,pts:myPts,icon:'I',color:'#B8882A',unlocked:true,label:sk?'Ja':'Me'},
@@ -2301,10 +2306,23 @@ function App(){
         pts:Object.values(players).filter(p=>p.country===me.country).reduce((s,p)=>s+(p.points||0),0),
         icon:'V',color:'#534AB7',unlocked:myLvl>=4&&isStateLic,
         needLevel:myLvl<4,needLicense:!isStateLic,label:sk?'Stat':'Country'});
+      // Continent
+      const myContinent=countryToContinent(me.country||'');
+      if(myContinent) identities.push({id:'continent',name:myContinent,
+        pts:Object.values(players).filter(p=>countryToContinent(p.country||'')===myContinent).reduce((s,p)=>s+(p.points||0),0),
+        icon:'VI',color:'#993556',unlocked:myLvl>=5&&isContinentLic,
+        needLevel:myLvl<5,needLicense:!isContinentLic,label:sk?'Kontinent':'Continent'});
 
       const active = identities.find(i=>i.id===viewId) || identities[0];
       return {identities, active};
     })();
+
+    // Auto-set highest unlocked identity on first load
+    if(!window.__viewIdInitDone&&vi.identities.length>1){
+      window.__viewIdInitDone=true;
+      const highest=vi.identities.slice().reverse().find(i=>i.unlocked);
+      if(highest&&highest.id!=='me') setTimeout(()=>setViewId(highest.id),0);
+    }
 
     const lbPlayers=sPlayers.slice(0,5);
     const myRank=sPlayers.findIndex(p=>p.uid===me.uid)+1;
@@ -2363,8 +2381,8 @@ function App(){
           ),
           R('span',{style:{
             fontFamily:"'IBM Plex Mono',monospace",
-            fontSize:'.55rem',color:'rgba(192,139,42,0.4)',
-            marginLeft:'.1rem',pointerEvents:'none',marginTop:'.1rem',
+            fontSize:'.65rem',color:'rgba(192,139,42,0.5)',
+            marginLeft:'.15rem',pointerEvents:'none',
           }},'\u25BE')
         ),
         R('div',{style:{display:'flex',gap:'.35rem',alignItems:'center'}},
