@@ -1667,34 +1667,49 @@ function App(){
         const pl=lsGet('hps:players')||{};
         const uid='u_'+Date.now();
         const myCode=uid.substr(0,6).toUpperCase();
-        const refBonus=referralCode.trim()?5:0;
+        // Verify referral code BEFORE giving bonus
+        let validReferrer2=null;
+        let validTeam2=null;
+        if(referralCode.trim()){
+          const allPlx=lsGet('hps:players')||{};
+          validReferrer2=Object.values(allPlx).find(p=>p.referralCode===referralCode.trim())||null;
+        }
+        if(regTeamCode.trim()){
+          const tmAllx=lsGet('hps:teams')||{};
+          const team=Object.values(tmAllx).find(t=>t.code===regTeamCode.trim());
+          if(team&&(team.members||[]).length<8) validTeam2=team;
+        }
+        const refBonus=(validReferrer2||validTeam2)?5:0;
         const profile={uid,email:email.trim(),nickname:nick.trim(),
           city:city.trim(),region:country,country:regionToCountry(country),
-          teamIds:[],bigGroupIds:[],points:refBonus,encounters:[],
+          teamIds:validTeam2?[validTeam2.id]:[],bigGroupIds:[],
+          points:refBonus,encounters:[],
           referralCode:myCode,
           referredBy:referralCode.trim()||null,bonding1Count:0,bonding2Count:0};
         pl[uid]=profile;lsSet('hps:players',pl);
-        // Give referrer 5 points
-        if(referralCode.trim()){
+        // Give individual referrer +5 (only if valid)
+        if(validReferrer2){
           const allPl=lsGet('hps:players')||{};
-          const referrer=Object.values(allPl).find(p=>p.referralCode===referralCode.trim());
-          if(referrer){
-            allPl[referrer.uid]={...referrer,points:(referrer.points||0)+5};
-            lsSet('hps:players',allPl);
-          }
+          allPl[validReferrer2.uid]={...validReferrer2,points:(validReferrer2.points||0)+5};
+          lsSet('hps:players',allPl);
         }
-        // Auto-join team if code provided at registration (localStorage path)
-        if(regTeamCode.trim()){
+        // Join team + give +5 to team AND each member
+        if(validTeam2){
           const tmAll=lsGet('hps:teams')||{};
-          const team=Object.values(tmAll).find(t=>t.code===regTeamCode.trim());
-          if(team&&(team.members||[]).length<8){
-            team.members=[...(team.members||[]),uid];
-            tmAll[team.id]=team;
-            lsSet('hps:teams',tmAll);
-            profile.teamIds=[team.id];
-            pl[uid]=profile;
-            lsSet('hps:players',pl);
+          validTeam2.members=[...(validTeam2.members||[]),uid];
+          validTeam2.points=(validTeam2.points||0)+5;
+          tmAll[validTeam2.id]=validTeam2;
+          lsSet('hps:teams',tmAll);
+          // Give +5 to each existing member (members before this new join)
+          const allPl=lsGet('hps:players')||{};
+          for(const memberUid of validTeam2.members){
+            if(memberUid===uid) continue; // skip self
+            const member=allPl[memberUid];
+            if(member){
+              allPl[memberUid]={...member,points:(member.points||0)+5};
+            }
           }
+          lsSet('hps:players',allPl);
         }
         lsSet('hps:session',{uid,email:email.trim()});
         setMe(profile);setPlayers(pl);setScr('home');
@@ -1772,24 +1787,40 @@ function App(){
   }
 
   // ── ENCOUNTER ─────────────────────────────────────────────
-  // ── Level-aware task availability ────────────────────────
-  // Each level has a "resetter" (the highest-pts bridging task in that level).
-  // Bonding tasks in a level have a max count; the resetter resets them.
-  // Counters stored in player.taskCounters = { taskId: count, ... }
+  // ── Level-aware task availability (moving resetter) ──────
+  // RULES:
+  //  - Bonding tasks have a max count (get blocked when exhausted)
+  //  - Bridging tasks are ALWAYS available (never blocked, infinite)
+  //  - The "resetter" is the highest bridging task of the player's CURRENT level
+  //  - Doing the resetter clears ALL bonding counters (from every level)
+  //  - As the player levels up, the resetter moves up; lower bridging tasks
+  //    stay infinite but no longer reset anything
   //
-  // RESET TASKS per level:
-  //   L0: bridge_stranger (resets bond_close, bond_deepen)
-  //   L1: bridge_neighbor (resets bond_neighbor)
-  //   L2: bridge_city (resets bond_community)
-  //   L3+: only bridging, no bonding to limit
+  // Counters stored in player.taskCounters = { taskId: count, ... }
 
   const TASK_LIMITS = {
-    // taskId: { max: N, resetBy: 'resetter_task_id' }
-    bond_close:    { max: 3, resetBy: 'bridge_stranger' },
-    bond_deepen:   { max: 2, resetBy: 'bridge_stranger' },
-    bond_neighbor: { max: 3, resetBy: 'bridge_neighbor' },
-    bond_community:{ max: 2, resetBy: 'bridge_city' },
+    bond_close:    { max: 3 },
+    bond_deepen:   { max: 2 },
+    bond_neighbor: { max: 3 },
+    bond_community:{ max: 2 },
   };
+
+  // The highest bridging task at each level — this is the resetter for that level
+  const LEVEL_RESETTER = {
+    0: 'bridge_stranger',
+    1: 'bridge_neighbor',
+    2: 'bridge_city',
+    3: 'bridge_region',
+    4: 'bridge_state',
+    5: 'bridge_continent',
+    6: 'bridge_world',
+  };
+
+  // Get the current resetter task id for a player (based on their level)
+  function getResetterTask(pts){
+    const lvl = getPlayerLevel(pts);
+    return LEVEL_RESETTER[lvl] || 'bridge_stranger';
+  }
 
   // Get counters from player profile
   function getTaskCounters(p){
@@ -1799,7 +1830,7 @@ function App(){
   // Check if a specific task is available
   function isTaskAvailable(taskId, counters){
     const limit = TASK_LIMITS[taskId];
-    if(!limit) return true; // no limit = always available (bridging tasks)
+    if(!limit) return true; // bridging tasks = always available (infinite)
     const count = counters[taskId] || 0;
     return count < limit.max;
   }
@@ -1819,18 +1850,23 @@ function App(){
     return counters[taskId] || 0;
   }
 
-  // After an encounter: increment counter, or reset if it's a resetter
-  function updateCountersAfterEncounter(counters, taskId){
+  // After an encounter: increment bonding counter, or (if resetter) clear all bonding
+  function updateCountersAfterEncounter(counters, taskId, playerPts){
     const newCounters = {...counters};
     const limit = TASK_LIMITS[taskId];
     if(limit){
-      // It's a limited task — increment
+      // Limited bonding task — increment its counter
       newCounters[taskId] = (newCounters[taskId] || 0) + 1;
     } else {
-      // It's a bridging/resetter — reset all tasks that list it as resetBy
-      for(const [tid, cfg] of Object.entries(TASK_LIMITS)){
-        if(cfg.resetBy === taskId) newCounters[tid] = 0;
+      // Bridging task — only the player's CURRENT resetter clears counters
+      const resetter = getResetterTask(playerPts);
+      if(taskId === resetter){
+        // Reset ALL bonding counters from every level
+        for(const tid of Object.keys(TASK_LIMITS)){
+          newCounters[tid] = 0;
+        }
       }
+      // Lower-level bridging tasks stay infinite but reset nothing
     }
     return newCounters;
   }
@@ -1862,7 +1898,7 @@ function App(){
       }
 
       // ── Update counters ──────────────────────────────────
-      const newCounters=updateCountersAfterEncounter(counters, taskId);
+      const newCounters=updateCountersAfterEncounter(counters, taskId, player.points||0);
 
       const encTypeSaved=type;
       const enc={note:note.trim(),date:new Date().toISOString(),level:playLevel,type:encTypeSaved,
@@ -2581,7 +2617,7 @@ function App(){
       ),
 
       // ══ TASK CARDS ═══════════════════════════════════════
-      // == HOW IT WORKS (compact) ==
+      // == HOW TO EARN POINTS (prose) ==
       R('details',{style:{
         position:'relative',zIndex:2,
         margin:'0 1rem .5rem',
@@ -2594,29 +2630,30 @@ function App(){
           letterSpacing:'.14em',textTransform:'uppercase',
           color:'rgba(192,139,42,0.5)',listStyle:'none',
         }},sk?'\u25b8 ako z\u00edska\u0165 body?':'\u25b8 how to earn points?'),
-        R('div',{style:{padding:'0 .9rem .8rem',fontSize:'.78rem',lineHeight:1.7,
+        R('div',{style:{padding:'.4rem .9rem .9rem',fontSize:'.78rem',lineHeight:1.85,
           color:'rgba(245,237,220,0.5)',fontFamily:"'Libre Baskerville',serif"}},
-          R('div',{style:{marginBottom:'.6rem'}},
-            R('div',{style:{fontWeight:700,color:'rgba(245,237,220,0.7)',marginBottom:'.15rem'}},
-              sk?'Individu\u00e1lne (v\u017edy dostupn\u00e9)':'Individual (always available)'),
-            R('span',null,'Urob dobro pre bl\u00edzkeho \u2014 1 bod'),R('br'),
-            R('span',null,'Prehl\u0301b existuj\u00faci vz\u0165ah \u2014 2 body'),R('br'),
-            R('span',null,'Spoznaj niekoho nov\u00e9ho \u2014 3 body (odomkne \u010fal\u0161ie)')
+          R('div',{style:{color:'rgba(245,237,220,0.7)',marginBottom:'.65rem'}},
+            sk?'Urob nie\u010do pekn\u00e9 pre bl\u00edzkeho, preh\u013ab existuj\u00faci vz\u0165ah alebo spoznaj niekoho \u00faplne nov\u00e9ho. Za ka\u017ed\u00fa aktivitu z\u00edska\u0161 1\u20138 bodov \u2014 podl\u02b9a n\u00e1ro\u010dnosti.'
+              :'Do something kind for someone close, deepen a relationship, or meet someone completely new. Each activity earns you 1\u20138 points depending on difficulty.'),
+          R('div',{style:{color:'rgba(245,237,220,0.55)',marginBottom:'.65rem'}},
+            sk?'Po\u010dtom bodov si odomyk\u00e1\u0161 nov\u00e9 \u00farovne. Star\u00e9 \u00falohy nezmizn\u00fa, len pribudn\u00fa nov\u00e9 \u2014 od susedstva a\u017e po cel\u00fd svet.'
+              :'The more points you earn, the more options unlock \u2014 from your neighbourhood all the way to the world. Old tasks stay, new ones simply join them.'),
+          R('div',{style:{color:'rgba(192,139,42,0.75)',fontWeight:600,marginBottom:'.4rem',display:'flex',alignItems:'center',flexWrap:'wrap',gap:'.4rem'}},
+            R('span',null,sk?'Pozvi priate\u013ea \u2014 obaja dostanete +5 bodov:':'Invite a friend \u2014 you both get +5 points:'),
+            me.referralCode&&R('span',{style:{
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:'.75rem',
+              color:'#F5EDD8',letterSpacing:'.18em',
+              padding:'.18rem .55rem',
+              border:'1px solid rgba(192,139,42,0.4)',
+              cursor:'pointer',userSelect:'all',
+            },onClick:()=>{
+              if(navigator.clipboard) navigator.clipboard.writeText(me.referralCode);
+              shFlash(sk?'K\u00f3d skop\u00edrovan\u00fd!':'Code copied!');
+            }},me.referralCode)
           ),
-          R('div',{style:{marginBottom:'.6rem'}},
-            R('div',{style:{fontWeight:700,color:'rgba(245,237,220,0.7)',marginBottom:'.15rem'}},
-              sk?'Vy\u0161\u0161ie \u00farovne':'Higher levels'),
-            R('span',null,'150 bodov \u2192 Susedstvo'),R('br'),
-            R('span',null,'300 bodov \u2192 Mesto'),R('br'),
-            R('span',null,'500 bodov \u2192 Kraj'),R('br'),
-            R('span',null,'750\u20131400 bodov \u2192 \u0160t\u00e1t, Kontinent, Svet')
-          ),
-          R('div',null,
-            R('div',{style:{fontWeight:700,color:'rgba(245,237,220,0.7)',marginBottom:'.15rem'}},
-              sk?'Mal\u00e1 skupina':'Small team'),
-            sk?'Ka\u017ed\u00fd tvoj bod sa po\u010d\u00edta aj tvojmu t\u00edmu.'
-              :'Every point you earn counts for your team too.'
-          )
+          R('div',{style:{color:'rgba(245,237,220,0.45)',fontSize:'.72rem'}},
+            sk?'Ke\u010f sa niekto zaregistruje s tvoj\u00edm k\u00f3dom, dostanete obaja +5 bodov. Ak ti pridel\u00ed t\u00edmov\u00fd k\u00f3d skupiny, +5 dostane t\u00edm aj v\u0161etci \u010dlenovia.'
+              :'When someone registers with your code, you both get +5 points. If they use a team code, the team and every member each get +5.')
         )
       ),
 
@@ -2661,7 +2698,8 @@ function App(){
             const remaining=taskRemaining(task.id, counters);
             const cnt=taskCount(task.id, counters);
             const limit=TASK_LIMITS[task.id];
-            const resetTask=limit?TASK_CATALOG.find(t=>t.id===limit.resetBy):null;
+            const resetterId=getResetterTask(myPts);
+            const resetTask=limit?TASK_CATALOG.find(t=>t.id===resetterId):null;
             const lockMsg=resetTask?(sk?'Najprv: '+resetTask.sk:'First: '+resetTask.en):'';
             return TaskCard({emoji:task.emoji,pts:task.pts,
               title:sk?task.sk:task.en,
@@ -2712,7 +2750,8 @@ function App(){
                   const taskAvail=unlocked&&isTaskAvailable(task.id, counters);
                   const cnt=taskCount(task.id, counters);
                   const limit=TASK_LIMITS[task.id];
-                  const resetTask=limit?TASK_CATALOG.find(t=>t.id===limit.resetBy):null;
+                  const resetterId=getResetterTask(myPts);
+                  const resetTask=limit?TASK_CATALOG.find(t=>t.id===resetterId):null;
                   const lockMsg=!unlocked
                     ?(thresh+' '+(sk?'bodov na odomknutie':'pts to unlock'))
                     :(resetTask?(sk?'Najprv: '+resetTask.sk:'First: '+resetTask.en):'');
