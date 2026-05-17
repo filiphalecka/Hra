@@ -859,6 +859,26 @@ function Err({m}){return m?R('div',{style:S.err},m):null;}
 function Ok({m}){return m?R('div',{style:S.ok},m):null;}
 function Bk({to,set,l}){return R(Btn,{onClick:()=>set(to),v:'m',s:{marginBottom:'1.5rem',fontSize:'.87rem',padding:'.45rem .85rem'}},'← '+l);}
 function Divider(){return R('div',{style:{borderTop:'1px solid rgba(250,245,239,0.1)',margin:'1.25rem 0'}});}
+// Soft lock — content always visible, just dimmed + header note when below threshold
+function SoftLock({children,locked,lockMsg}){
+  const kids=Array.isArray(children)?children:[children];
+  if(!locked) return R('div',null,...kids);
+  return R('div',null,
+    R('div',{style:{
+      display:'flex',alignItems:'center',gap:'.5rem',
+      fontFamily:"'IBM Plex Mono',monospace",fontSize:'.6rem',
+      letterSpacing:'.1em',textTransform:'uppercase',
+      color:'rgba(192,139,42,0.6)',
+      padding:'.55rem .7rem',marginBottom:'.5rem',
+      background:'rgba(192,139,42,0.06)',
+      border:'1px solid rgba(192,139,42,0.15)',
+    }},
+      R('span',null,'🔒'),
+      R('span',null,lockMsg)
+    ),
+    R('div',{style:{opacity:0.55}},...kids)
+  );
+}
 function FoggedList({children,locked,lockMsg}){
   if(!locked) return R('div',null,...(Array.isArray(children)?children:[children]));
   return R('div',{style:S.fogWrap},
@@ -3092,10 +3112,21 @@ function App(){
       transition:'all .15s',whiteSpace:'nowrap',
     }},label);
 
+    // Check if a geo entity has a license
+    const geoHasLicense=(name,kind)=>{
+      const k=(name||'').toLowerCase().trim();
+      if(kind==='city') return !!(licensed.cities&&licensed.cities[k]);
+      if(kind==='region') return !!(licensed.regions&&licensed.regions[k]);
+      if(kind==='state') return !!(licensed.states&&licensed.states[k]);
+      if(kind==='continent') return !!(licensed.continents&&licensed.continents[k]);
+      return true; // global / ind / small / big — no license needed
+    };
     const GeoRow=(item,i,myName,kind)=>{
       const flag=kind==='state'?countryFlag(item.name):
                  kind==='continent'?continentFlag(item.name):
                  kind==='region'?regionFlag(item.name):null;
+      const licOk=geoHasLicense(item.name,kind);
+      const isMine=item.name===myName;
       return R('div',{key:item.name,style:{
       display:'flex',alignItems:'center',gap:'.75rem',
       padding:'.65rem 0',
@@ -3103,36 +3134,46 @@ function App(){
     }},
       R('div',{style:{
         fontFamily:"'Bebas Neue',sans-serif",fontSize:'.84rem',
-        color:i===0?'#C08B2A':'rgba(245,237,220,0.2)',
+        color:!licOk?'rgba(245,237,220,0.18)':i===0?'#C08B2A':'rgba(245,237,220,0.2)',
         width:'1.8rem',textAlign:'center',flexShrink:0,
-      }},i+1),
+      }},licOk?(i+1):'·'),
       flag&&R('div',{style:{
         fontSize:'1.4rem',lineHeight:1,flexShrink:0,
-        filter:item.name===myName?'none':'saturate(0.75)',
+        filter:isMine?'none':'saturate(0.75)',
       }},flag),
-      R('div',{style:{flex:1}},
+      R('div',{style:{flex:1,minWidth:0}},
         R('div',{style:{
           fontFamily:"'Libre Baskerville',serif",fontSize:'.87rem',
-          color:item.name===myName?'#F5EDD8':'rgba(245,237,220,0.55)',
-          fontWeight:item.name===myName?700:400,
+          color:isMine?'#F5EDD8':'rgba(245,237,220,0.55)',
+          fontWeight:isMine?700:400,
+          display:'flex',alignItems:'center',flexWrap:'wrap',gap:'.4rem',
         }},
-          item.name,
-          item.name===myName&&R('span',{style:{
+          R('span',null,item.name),
+          isMine&&R('span',{style:{
             fontFamily:"'IBM Plex Mono',monospace",fontSize:'.6rem',
             color:'#C08B2A',border:'1px solid rgba(192,139,42,0.35)',
-            padding:'.05rem .28rem',marginLeft:'.4rem',verticalAlign:'middle',
-          }},'TY')
+            padding:'.05rem .28rem',verticalAlign:'middle',
+          }},'TY'),
+          !licOk&&R('span',{style:{
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:'.55rem',
+            letterSpacing:'.06em',textTransform:'uppercase',
+            color:'rgba(192,139,42,0.7)',
+            border:'1px solid rgba(192,139,42,0.3)',
+            padding:'.05rem .3rem',
+          }},sk?'bez licencie':'no license')
         ),
         R('div',{style:{
-          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.87rem',
-          color:'rgba(245,237,220,0.25)',marginTop:'.1rem',
-        }},item.players+' hráčov')
+          fontFamily:"'IBM Plex Mono',monospace",fontSize:'.78rem',
+          color:!licOk?'rgba(192,139,42,0.55)':'rgba(245,237,220,0.25)',
+          marginTop:'.1rem',
+        }},licOk?(item.players+' hráčov')
+            :(sk?'zatiaľ nemá kúpenú licenciu':'no license purchased yet'))
       ),
       R('div',{style:{
         fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.2rem',
-        color:item.name===myName?'#C08B2A':'rgba(245,237,220,0.35)',
-        flexShrink:0,
-      }},Math.round(item.points))
+        color:!licOk?'rgba(245,237,220,0.2)':isMine?'#C08B2A':'rgba(245,237,220,0.35)',
+        flexShrink:0,letterSpacing:licOk?'0':'.1em',
+      }},licOk?Math.round(item.points):'•••')
     );
     };
 
@@ -3221,20 +3262,15 @@ function App(){
         );
       }
       if(lbTab==='city')
-        return R(FoggedList,{locked:myPts<PLAY_CITY,lockMsg:myPts+'/'+PLAY_CITY+' '+(sk?'bodov':'pts')},
-          sCities.length===0?emptyMsg:R('div',null,...sCities.map((item,i)=>CityRow(item,i,me,licensed,cityFunding))));
+        return sCities.length===0?emptyMsg:R('div',null,...sCities.map((item,i)=>CityRow(item,i,me,licensed,cityFunding)));
       if(lbTab==='region')
-        return R(FoggedList,{locked:myPts<PLAY_REGION,lockMsg:myPts+'/'+PLAY_REGION+' '+(sk?'bodov':'pts')},
-          sRegions.length===0?emptyMsg:R('div',null,...sRegions.map((r,i)=>GeoRow(r,i,me.region||me.city,'region'))));
+        return sRegions.length===0?emptyMsg:R('div',null,...sRegions.map((r,i)=>GeoRow(r,i,me.region||me.city,'region')));
       if(lbTab==='state')
-        return R(FoggedList,{locked:myPts<PLAY_STATE,lockMsg:myPts+'/'+PLAY_STATE+' '+(sk?'bodov':'pts')},
-          sStates.length===0?emptyMsg:R('div',null,...sStates.map((s,i)=>GeoRow(s,i,me.country,'state'))));
+        return sStates.length===0?emptyMsg:R('div',null,...sStates.map((s,i)=>GeoRow(s,i,me.country,'state')));
       if(lbTab==='continent')
-        return R(FoggedList,{locked:myPts<PLAY_CONTINENT,lockMsg:myPts+'/'+PLAY_CONTINENT+' '+(sk?'bodov':'pts')},
-          sContinents.length===0?emptyMsg:R('div',null,...sContinents.map((c,i)=>GeoRow(c,i,countryToContinent(me.country||''),'continent'))));
+        return sContinents.length===0?emptyMsg:R('div',null,...sContinents.map((c,i)=>GeoRow(c,i,countryToContinent(me.country||''),'continent')));
       if(lbTab==='global')
-        return R(FoggedList,{locked:myPts<PLAY_GLOBAL,lockMsg:myPts+'/'+PLAY_GLOBAL+' '+(sk?'bodov':'pts')},
-        R('div',{style:{
+        return R('div',{style:{
           border:'1px solid rgba(192,139,42,0.15)',
           background:'rgba(192,139,42,0.04)',
           padding:'2rem',textAlign:'center',marginTop:'.5rem',
@@ -3246,7 +3282,7 @@ function App(){
           R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.6rem',color:'rgba(245,237,220,0.35)',marginTop:'1rem'}},'CHÝBA'),
           R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'2.8rem',color:'#F5EDD8',lineHeight:1}},
             Math.max(0,Math.round(8300000000*0.5-globalTotal.players)).toLocaleString('sk-SK'))
-        ));
+        );
     };
 
     return R('div',{style:{padding:'1rem 1rem 5rem'}},
