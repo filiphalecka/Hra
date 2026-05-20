@@ -619,7 +619,7 @@ const COUNTRY_FLAGS={
 };
 function countryFlag(name){
   const cc=COUNTRY_FLAGS[name];
-  return cc?flagEmoji(cc):'🏳️';
+  return cc||'??';
 }
 
 // Regions look like "SK · Bratislavský kraj" — first 2 chars are ISO-2
@@ -631,13 +631,13 @@ function regionFlag(regionLabel){
 
 // Continents — no official flags; use EU for Európa, real flag for Antarktída,
 // hemisphere-globes for the rest
-const CONTINENT_EMOJI={
-  'Európa':'🇪🇺','Ázia':'🌏','Afrika':'🌍',
-  'Severná Amerika':'🌎','Južná Amerika':'🌎',
-  'Austrália a Oceánia':'🌏','Oceánia':'🌏',
-  'Antarktída':'🇦🇶','Iný kontinent':'🌐',
+const CONTINENT_CODE={
+  'Európa':'EUR','Ázia':'ASI','Afrika':'AFR',
+  'Severná Amerika':'NAM','Južná Amerika':'SAM',
+  'Austrália a Oceánia':'OCE','Oceánia':'OCE',
+  'Antarktída':'ANT','Iný kontinent':'GLB',
 };
-function continentFlag(name){return CONTINENT_EMOJI[name]||'🌐';}
+function continentFlag(name){return CONTINENT_CODE[name]||'GLB';}
 
 
 
@@ -3125,8 +3125,13 @@ function App(){
         width:'1.8rem',textAlign:'center',flexShrink:0,
       }},licOk?(i+1):'·'),
       flag&&R('div',{style:{
-        fontSize:'1.4rem',lineHeight:1,flexShrink:0,
-        filter:isMine?'none':'saturate(0.75)',
+        fontFamily:"'IBM Plex Mono',monospace",
+        fontSize:'.6rem',letterSpacing:'.08em',fontWeight:600,
+        color:isMine?'#C08B2A':'rgba(245,237,220,0.45)',
+        border:'1px solid '+(isMine?'rgba(192,139,42,0.5)':'rgba(245,237,220,0.15)'),
+        padding:'.25rem .4rem',
+        flexShrink:0,minWidth:'2.2rem',textAlign:'center',
+        background:isMine?'rgba(192,139,42,0.05)':'transparent',
       }},flag),
       R('div',{style:{flex:1,minWidth:0}},
         R('div',{style:{
