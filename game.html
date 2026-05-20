@@ -1316,53 +1316,41 @@ function CityRow(item, i, me, licensed, cityFunding){
     );
   }
 
-  // Unlicensed — show funding bar
-  return R('div',{key:item.name,style:{padding:'.75rem 0',borderBottom:'1px solid rgba(250,245,239,0.05)'}},
-    R('div',{style:{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'.5rem'}},
-      R(RankBadge,{i}),
-      R('div',{style:{flex:1}},
-        R('div',{style:{
-          fontFamily:"'Syne',sans-serif",fontSize:'.87rem',
-          fontWeight:isMyCity?500:400,
-          color:isMyCity?'#FAF5EF':'rgba(250,245,239,0.55)'
-        }}, item.name, isMyCity&&R(YouTag,null)),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.63rem',
-          color:'rgba(250,245,239,0.28)',marginTop:'.1rem'}},item.players+' hráčov')
-      ),
-      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.9rem',
-        color:'rgba(250,245,239,0.13)',letterSpacing:'.12em',flexShrink:0,userSelect:'none'}},'• • •')
-    ),
+  // Unlicensed — masked rank + points, just a "no license" note (matches region/state style)
+  return R('div',{key:item.name,style:{
+    display:'flex',alignItems:'center',gap:'.75rem',padding:'.85rem 0',
+    borderBottom:'1px solid rgba(250,245,239,0.05)',
+    background:isMyCity?'rgba(184,136,42,0.06)':'transparent',
+    borderLeft:isMyCity?'2px solid rgba(184,136,42,0.5)':'2px solid transparent',
+    paddingLeft:isMyCity?'.5rem':0
+  }},
     R('div',{style:{
-      marginLeft:'2.25rem',background:'rgba(250,245,239,0.03)',
-      border:'1px solid rgba(250,245,239,0.07)',padding:'.55rem .75rem',
-    }},
-      R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.35rem'}},
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.84rem',
-          letterSpacing:'.09em',textTransform:'uppercase',color:'rgba(250,245,239,0.28)'}},
-          isMyCity ? '🏙️ Tvoje mesto ešte nemá licenciu' : 'Bez licencie'
-        ),
-        R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.87rem',
-          color:pctFunded>0?'#B8882A':'rgba(250,245,239,0.2)',fontWeight:500}},
-          contributed+'€ / '+target+'€')
+      fontFamily:"'Bebas Neue',sans-serif",fontSize:'.84rem',
+      color:'rgba(250,245,239,0.18)',
+      width:'1.8rem',textAlign:'center',flexShrink:0,
+    }},'·'),
+    R('div',{style:{flex:1,minWidth:0}},
+      R('div',{style:{
+        fontFamily:"'Syne',sans-serif",fontSize:'.87rem',
+        fontWeight:isMyCity?500:400,
+        color:isMyCity?'#FAF5EF':'rgba(250,245,239,0.55)',
+        display:'flex',alignItems:'center',flexWrap:'wrap',gap:'.4rem'
+      }},
+        R('span',null,item.name),
+        isMyCity&&R(YouTag,null),
+        R('span',{style:{
+          fontFamily:"'DM Mono',monospace",fontSize:'.55rem',
+          letterSpacing:'.06em',textTransform:'uppercase',
+          color:'rgba(184,136,42,0.7)',
+          border:'1px solid rgba(184,136,42,0.3)',padding:'.05rem .3rem',
+        }},'bez licencie')
       ),
-      R('div',{style:{height:'3px',background:'rgba(250,245,239,0.07)',borderRadius:'2px',marginBottom:'.45rem'}},
-        R('div',{style:{height:'100%',borderRadius:'2px',
-          background:pctFunded>=100?'#4A7C59':'#B8882A',
-          width:pctFunded+'%',transition:'width .5s',minWidth:pctFunded>0?'4px':'0'}})
-      ),
-      pctFunded < 100
-        ? R('div',{style:{display:'flex',alignItems:'center',gap:'.65rem'}},
-            R('a',{href:makeLink(),style:{
-              fontFamily:"'DM Mono',monospace",fontSize:'.87rem',letterSpacing:'.08em',
-              textTransform:'uppercase',color:'#FAF5EF',background:'#8B2E14',
-              padding:'.28rem .65rem',textDecoration:'none',display:'inline-block',flexShrink:0,
-            }},'+ Prispieť'),
-            R('span',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.84rem',color:'rgba(250,245,239,0.2)'}},
-              'chýba '+missing+'€ · min. 1€')
-          )
-        : R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.87rem',color:'#4A7C59'}},
-            '✓ Cieľ splnený — mesto sa čoskoro odomkne')
-    )
+      R('div',{style:{fontFamily:"'DM Mono',monospace",fontSize:'.7rem',
+        color:'rgba(184,136,42,0.55)',marginTop:'.1rem'}},
+        'zatiaľ nemá kúpenú licenciu')
+    ),
+    R('div',{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.2rem',
+      color:'rgba(250,245,239,0.2)',letterSpacing:'.1em',flexShrink:0,userSelect:'none'}},'•••')
   );
 }
 
@@ -3123,8 +3111,7 @@ function App(){
     };
     const GeoRow=(item,i,myName,kind)=>{
       const flag=kind==='state'?countryFlag(item.name):
-                 kind==='continent'?continentFlag(item.name):
-                 kind==='region'?regionFlag(item.name):null;
+                 kind==='continent'?continentFlag(item.name):null;
       const licOk=geoHasLicense(item.name,kind);
       const isMine=item.name===myName;
       return R('div',{key:item.name,style:{
@@ -3312,14 +3299,14 @@ function App(){
         color:'rgba(245,237,220,0.22)',marginBottom:'.4rem',
       }},'Geografické'),
       R('div',{style:{display:'flex',borderBottom:'1px solid rgba(245,237,220,0.07)',marginBottom:'1rem',overflowX:'auto'}},
-        TabBtn('city',(sk?'Mestá':'Cities')+(myPts<PLAY_CITY?' 🔒':'')),
-        TabBtn('region',(sk?'Kraje':'Regions')+(myPts<PLAY_REGION?' 🔒':'')),
-        TabBtn('state',(sk?'Štáty':'Countries')+(myPts<PLAY_STATE?' 🔒':'')),
-        TabBtn('continent',(sk?'Kontinent':'Continent')+(myPts<PLAY_CONTINENT?' 🔒':'')),
-        TabBtn('global',(sk?'Svet':'World')+(myPts<PLAY_GLOBAL?' 🔒':'')),
+        TabBtn('city',sk?'Mestá':'Cities'),
+        TabBtn('region',sk?'Kraje':'Regions'),
+        TabBtn('state',sk?'Štáty':'Countries'),
+        TabBtn('continent',sk?'Kontinent':'Continent'),
+        TabBtn('global',sk?'Svet':'World'),
       ),
 
-      renderLbContent()
+      R('div',{style:{minHeight:'60vh'}}, renderLbContent())
     );
   }
 
