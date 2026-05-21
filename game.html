@@ -455,6 +455,13 @@ const DB={
     const poll=async()=>{if(!on)return;await load();setTimeout(poll,6000);};
     setTimeout(poll,6000);return()=>{on=false;};
   },
+  onLicensed(cb){
+    const load=async()=>{cb(await this.getLicensed());};load();
+    if(!USE_FIREBASE)return()=>{};
+    let on=true;
+    const poll=async()=>{if(!on)return;await load();setTimeout(poll,6000);};
+    setTimeout(poll,6000);return()=>{on=false;};
+  },
 };
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -1576,7 +1583,8 @@ function App(){
       } else setScr('auth');
       const off1=DB.onPlayers(p=>{setPlayers(p);const s=lsGet('hps:session');if(s&&p[s.uid])setMe(p[s.uid]);});
       const off2=DB.onTeams(t=>setTeams(t));
-      offRef.current=[off1,off2];
+      const off3=DB.onLicensed(l=>setLicensed(l||{}));
+      offRef.current=[off1,off2,off3];
     })();
     return()=>offRef.current.forEach(f=>f());
   },[]);
@@ -3107,8 +3115,15 @@ function App(){
       if(kind==='region') return !!(licensed.regions&&licensed.regions[k]);
       if(kind==='state') return !!(licensed.states&&licensed.states[k]);
       if(kind==='continent') return !!(licensed.continents&&licensed.continents[k]);
-      return true; // global / ind / small / big — no license needed
+      return true;
     };
+    // ── DEBUG (zmaže sa neskôr) ──
+    if(window.console&&lbTab==='state'){
+      console.log('🔎 LB DEBUG state:');
+      console.log('  licensed.states =', licensed.states);
+      console.log('  stateMap names =', Object.keys(stateMap));
+      console.log('  me.country =', JSON.stringify(me.country));
+    }
     const GeoRow=(item,i,myName,kind)=>{
       const flag=kind==='state'?countryFlag(item.name):
                  kind==='continent'?continentFlag(item.name):null;
