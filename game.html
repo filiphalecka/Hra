@@ -373,6 +373,13 @@ const DB={
     if(USE_FIREBASE){try{await this._put('licensed',data);return;}catch(e){console.warn(e);}}
     lsSet('hps:licensed',data);
   },
+  // Merge-style write — used for granular updates that shouldn't clobber siblings
+  async patchLicensed(partial){
+    if(USE_FIREBASE){try{await this._patch('licensed',partial);return;}catch(e){console.warn(e);}}
+    const cur=lsGet('hps:licensed')||{};
+    for(const k of Object.keys(partial)){cur[k]={...(cur[k]||{}),...partial[k]};}
+    lsSet('hps:licensed',cur);
+  },
 
   async getCategories(){
     // Merge default + approved custom categories from DB
@@ -1614,7 +1621,7 @@ function App(){
       } else if(type==='global'){
         lic.global=true;
       }
-      await DB.setLicensed(lic);
+      await DB.patchLicensed(lic);
       // Retroactive: update all matching players
       const pl=await DB.getPlayers();
       for(const p of Object.values(pl)){
@@ -3117,13 +3124,7 @@ function App(){
       if(kind==='continent') return !!(licensed.continents&&licensed.continents[k]);
       return true;
     };
-    // ── DEBUG (zmaže sa neskôr) ──
-    if(window.console&&lbTab==='state'){
-      console.log('🔎 LB DEBUG state:');
-      console.log('  licensed.states =', licensed.states);
-      console.log('  stateMap names =', Object.keys(stateMap));
-      console.log('  me.country =', JSON.stringify(me.country));
-    }
+
     const GeoRow=(item,i,myName,kind)=>{
       const flag=kind==='state'?countryFlag(item.name):
                  kind==='continent'?continentFlag(item.name):null;

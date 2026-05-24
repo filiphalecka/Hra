@@ -277,7 +277,7 @@ async function updateFunding(){
       lic.cities=lic.cities||{};
       if(!lic.cities[city]){
         lic.cities[city]=true;
-        if(USE_FIREBASE){await dbPut('licensed',lic);}
+        if(USE_FIREBASE){await dbPatch('licensed',lic);}
         else{lsSet('hps:licensed',lic);}
         showFlash('🎉 Mesto "'+city+'" AUTO-ODOMKNUTÉ — cieľ splnený!');
       }else{
@@ -719,13 +719,17 @@ async function doUnlock(type){
   const name=type==='global'?'global':(el?el.value.trim().toLowerCase():'');
   if(type!=='global'&&!name){showFlash('Zadaj názov.',true);return;}
   try{
-    let lic=allLicensed;
+    // Always fetch FRESH state from DB before writing — prevents stale-state clobber
+    let lic;
+    if(USE_FIREBASE){lic=(await dbGet('licensed'))||{};}
+    else{lic=lsGet('hps:licensed')||{};}
     if(type==='city'){lic.cities=lic.cities||{};lic.cities[name]=true;}
     else if(type==='region'){lic.regions=lic.regions||{};lic.regions[name]=true;}
     else if(type==='state'){lic.states=lic.states||{};lic.states[name]=true;}
     else if(type==='continent'){lic.continents=lic.continents||{};lic.continents[name]=true;}
     else if(type==='global'){lic.global=true;}
-    if(USE_FIREBASE){await dbPut('licensed',lic);}
+    // PATCH instead of PUT — merges into existing data, won't clobber other subkeys
+    if(USE_FIREBASE){await dbPatch('licensed',lic);}
     else{lsSet('hps:licensed',lic);}
     allLicensed=lic;
     if(el)el.value='';
@@ -737,13 +741,18 @@ async function doUnlock(type){
 async function revokeLicense(type,name){
   if(!confirm('Odvolať licenciu pre "'+name+'"?'))return;
   try{
-    const lic=allLicensed;
+    // Fresh fetch — same anti-clobber pattern
+    let lic;
+    if(USE_FIREBASE){lic=(await dbGet('licensed'))||{};}
+    else{lic=lsGet('hps:licensed')||{};}
     const k=name.toLowerCase().trim();
     if(type==='Mesto'&&lic.cities)delete lic.cities[k];
     else if(type==='Kraj'&&lic.regions)delete lic.regions[k];
     else if(type==='Štát'&&lic.states)delete lic.states[k];
     else if(type==='Kontinent'&&lic.continents)delete lic.continents[k];
     else if(type==='Globálna'){lic.global=false;}
+    // For revoke we need PUT to ensure the deleted key is gone from DB
+    // (PATCH won't delete keys, only merge). PUT writes full object back.
     if(USE_FIREBASE){await dbPut('licensed',lic);}
     else{lsSet('hps:licensed',lic);}
     allLicensed=lic;
