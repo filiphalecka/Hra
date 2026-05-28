@@ -851,7 +851,9 @@ function CityPicker({val, onPick, ph, initialCountry, initialRegion, initialCity
   }, [cities, cityQuery]);
 
   // Styles
-  const selectStyle = {...S.inp, cursor:'pointer'};
+  const selectStyle = {...S.inp, background:'#1a1610', color:'#FAF5EF', cursor:'pointer'};
+  // Options need explicit styling — native dropdowns inherit OS bg (often white)
+  const optStyle = {background:'#1a1610', color:'#FAF5EF'};
   const chipRow = {display:'flex', flexWrap:'wrap', gap:'.4rem', marginBottom:'.6rem'};
   const chip = (active, completed) => ({
     fontFamily:"'IBM Plex Mono',monospace",
@@ -881,7 +883,7 @@ function CityPicker({val, onPick, ph, initialCountry, initialRegion, initialCity
         onChange: e => { setContinent(e.target.value); setCountryS(''); setRegionS(''); setCityS(''); },
         style: selectStyle,
       },
-        ...CONTINENTS.map(c => R('option', {key:c, value:c}, c))
+        ...CONTINENTS.map(c => R('option', {key:c, value:c, style:optStyle}, c))
       )
     ),
 
@@ -893,8 +895,8 @@ function CityPicker({val, onPick, ph, initialCountry, initialRegion, initialCity
         onChange: e => { setCountryS(e.target.value); setRegionS(''); setCityS(''); setCityQuery(''); },
         style: selectStyle,
       },
-        R('option', {value:''}, '— Vyber krajinu —'),
-        ...countries.map(c => R('option', {key:c, value:c}, c))
+        R('option', {value:'', style:optStyle}, '— Vyber krajinu —'),
+        ...countries.map(c => R('option', {key:c, value:c, style:optStyle}, c))
       )
     ),
 
@@ -906,8 +908,8 @@ function CityPicker({val, onPick, ph, initialCountry, initialRegion, initialCity
         onChange: e => { setRegionS(e.target.value); setCityS(''); setCityQuery(''); },
         style: selectStyle,
       },
-        R('option', {value:''}, '— Vyber kraj —'),
-        ...regions.map(r => R('option', {key:r, value:r}, r))
+        R('option', {value:'', style:optStyle}, '— Vyber kraj —'),
+        ...regions.map(r => R('option', {key:r, value:r, style:optStyle}, r))
       )
     ),
 
